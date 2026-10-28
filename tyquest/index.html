@@ -1,0 +1,2644 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>TyQuest Retro</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Silkscreen:wght@400;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+    
+    <!-- React & ReactDOM -->
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <!-- Confetti -->
+    <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
+
+    <style>
+        body {
+            overscroll-behavior-y: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        .pixel-box {
+            border: 4px solid var(--app-border);
+            box-shadow: 4px 4px 0px rgba(0,0,0,0.25);
+            border-radius: 4px;
+        }
+
+        .pixel-box-sm {
+            border: 2px solid var(--app-border);
+            box-shadow: 2px 2px 0px rgba(0,0,0,0.25);
+            border-radius: 2px;
+        }
+
+        .font-arcade { font-family: 'Silkscreen', cursive, system-ui, sans-serif, Apple Color Emoji, Segoe UI Emoji, Noto Color Emoji; }
+        .font-readable { font-family: 'Space Mono', 'Courier New', monospace; }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            50% { transform: translateY(-5px); }
+            100% { transform: translateY(0px); }
+        }
+        .animate-float { animation: float 3s ease-in-out infinite; }
+
+        @keyframes pop {
+            0% { transform: scale(0.9); opacity: 0; }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); opacity: 1; }
+        }
+        .animate-pop { animation: pop 0.2s ease-out forwards; }
+
+        @keyframes flicker {
+            0%, 100% { opacity: 1; transform: scale(1); }
+            45% { opacity: 0.85; transform: scale(0.94); }
+            50% { opacity: 1; transform: scale(1.08); }
+            55% { opacity: 0.92; transform: scale(0.97); }
+        }
+        .animate-flicker { animation: flicker 1.8s ease-in-out infinite; }
+
+        @keyframes shutterDown {
+            from { transform: translateY(-100%); }
+            to { transform: translateY(0); }
+        }
+        @keyframes shutterUp {
+            from { transform: translateY(0); }
+            to { transform: translateY(-100%); }
+        }
+        .animate-shutter-down { animation: shutterDown 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .animate-shutter-up { animation: shutterUp 0.35s cubic-bezier(0.5, 0, 0.75, 0) forwards; }
+
+        @keyframes slideUpIn {
+            from { transform: translateY(100%); }
+            to { transform: translateY(0); }
+        }
+        @keyframes slideDownOut {
+            from { transform: translateY(0); }
+            to { transform: translateY(100%); }
+        }
+        .animate-slide-up-in { animation: slideUpIn 0.4s cubic-bezier(0.22, 1, 0.36, 1) forwards; }
+        .animate-slide-down-out { animation: slideDownOut 0.3s cubic-bezier(0.5, 0, 0.75, 0) forwards; }
+
+        @keyframes slideInLeft {
+            from { transform: translateX(-100%); }
+            to { transform: translateX(0); }
+        }
+        .animate-slide-in-left { animation: slideInLeft 0.25s ease-out forwards; }
+
+        @keyframes holdPulse {
+            0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(255, 215, 0, 0.55); }
+            50% { transform: scale(1.03); box-shadow: 0 0 0 6px rgba(255, 215, 0, 0); }
+        }
+        .animate-hold-pulse { animation: holdPulse 0.5s ease-in-out infinite; }
+
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 24px); }
+        .pt-safe { padding-top: env(safe-area-inset-top, 12px); }
+        
+        input[type="date"] {
+            box-sizing: border-box;
+            appearance: none;
+            -webkit-appearance: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel" data-type="module">
+        const { useState, useEffect, useMemo, useRef } = React;
+
+        class SoundManager {
+            constructor() {
+                this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            }
+            playTone(freq, type, duration, vol = 0.1) {
+                if (this.ctx.state === 'suspended') this.ctx.resume();
+                const osc = this.ctx.createOscillator();
+                const gain = this.ctx.createGain();
+                osc.type = type;
+                osc.frequency.setValueAtTime(freq, this.ctx.currentTime);
+                gain.gain.setValueAtTime(vol, this.ctx.currentTime);
+                gain.gain.exponentialRampToValueAtTime(0.01, this.ctx.currentTime + duration);
+                osc.connect(gain);
+                gain.connect(this.ctx.destination);
+                osc.start();
+                osc.stop(this.ctx.currentTime + duration);
+            }
+            playBlip(freq = 400) { this.playTone(freq, 'square', 0.1, 0.05); }
+            playCoin() {
+                this.playTone(987.77, 'square', 0.1, 0.05);
+                setTimeout(() => this.playTone(1318.51, 'square', 0.3, 0.05), 100);
+            }
+            playMagic() {
+                this.playTone(400, 'sine', 0.1, 0.05);
+                setTimeout(() => this.playTone(600, 'sine', 0.1, 0.05), 50);
+                setTimeout(() => this.playTone(800, 'sine', 0.2, 0.05), 100);
+            }
+            playError() { this.playTone(150, 'sawtooth', 0.2, 0.05); }
+        }
+        const sound = new SoundManager();
+
+        // Layout constants for the activity heatmap's dynamic band-reflow (see activityLayout memo)
+        const ACTIVITY_GAP = 2;
+        const ACTIVITY_MONTH_LABEL_H = 11;
+        const ACTIVITY_BAND_GAP = 8;
+
+        const NAV_TITLES = { archive: 'Encyclopedia' }; // 'tasks' section title is computed from taskViewMode instead
+
+        const RETRO_THEMES = {
+            snes16bit: {
+                id: 'snes16bit', name: '16-Bit Town', isDark: false, cost: 0,
+                bg: '#edd9c0', windowBg: '#fffbf0', hudBg: '#3d253b', hudText: '#fce4a6',
+                border: '#1b122c', primary: '#477d61', colTodo: '#d88554', colDoing: '#4d8093', colDone: '#4b7d5f', tagBg: '#ebcfad'
+            },
+            sageWordnest: {
+                id: 'sageWordnest', name: 'Sage Wordnest', isDark: false, cost: 50,
+                bg: '#b9cc9f', windowBg: '#e6ebd8', hudBg: '#2b3b24', hudText: '#e6ebd8',
+                border: '#2b3b24', primary: '#425a37', colTodo: '#a3b888', colDoing: '#92a777', colDone: '#819666', tagBg: '#c5d6af'
+            },
+            mexicanCafe: {
+                id: 'mexicanCafe', name: 'Mexican Cafe', isDark: false, cost: 150,
+                bg: '#dfb182', windowBg: '#f2e3cb', hudBg: '#592c1a', hudText: '#f2e3cb',
+                border: '#36180c', primary: '#b8522b', colTodo: '#d97d43', colDoing: '#c26636', colDone: '#8f4f2c', tagBg: '#e6ccb2'
+            },
+            pixelForest: {
+                id: 'pixelForest', name: 'Pixel Forest', isDark: false, cost: 200,
+                bg: '#c8dfc0', windowBg: '#eef5e7', hudBg: '#1f3d2b', hudText: '#d9f2c4',
+                border: '#14261a', primary: '#3f7d43', colTodo: '#7fae6b', colDoing: '#5c9e78', colDone: '#4a8562', tagBg: '#d7e8c9'
+            },
+            arcadeNeon: {
+                id: 'arcadeNeon', name: 'Arcade Neon', isDark: true, cost: 250,
+                bg: '#241b3a', windowBg: '#fdf3ff', hudBg: '#ff2e92', hudText: '#fdf3ff',
+                border: '#160f24', primary: '#7c3aed', colTodo: '#a855f7', colDoing: '#ec4899', colDone: '#6d28d9', tagBg: '#f1d9ff'
+            },
+            desertOutpost: {
+                id: 'desertOutpost', name: 'Desert Outpost', isDark: false, cost: 200,
+                bg: '#e8c988', windowBg: '#fbf0da', hudBg: '#5c3d1e', hudText: '#f5dfb0',
+                border: '#3a2510', primary: '#c1782f', colTodo: '#d9a441', colDoing: '#b96b3a', colDone: '#8a5a2b', tagBg: '#eedcb5'
+            },
+            oceanByte: {
+                id: 'oceanByte', name: 'Ocean Byte', isDark: false, cost: 250,
+                bg: '#a8d4dc', windowBg: '#eaf7f9', hudBg: '#0e3b4d', hudText: '#c9eef5',
+                border: '#082530', primary: '#1c7a91', colTodo: '#3aa0b8', colDoing: '#2c7f99', colDone: '#1f647a', tagBg: '#cdeef2'
+            },
+            midnightDungeon: {
+                id: 'midnightDungeon', name: 'Midnight Dungeon', isDark: true, cost: 350,
+                bg: '#2a2438', windowBg: '#f3eefc', hudBg: '#150f1e', hudText: '#c9b8ec',
+                border: '#0c0812', primary: '#8b5cf6', colTodo: '#6d4a9c', colDoing: '#553880', colDone: '#3d2762', tagBg: '#e4d9f7'
+            }
+        };
+
+        // In-game achievements — unlocked automatically based on progress, no gold spent
+        const ACHIEVEMENTS = [
+            { id: 'a1', icon: '🗡️', name: 'First Blood', desc: 'Complete your first quest', check: (s) => s.completedCount >= 1 },
+            { id: 'a2', icon: '📜', name: 'Quest Novice', desc: 'Complete 10 quests', check: (s) => s.completedCount >= 10 },
+            { id: 'a3', icon: '🛡️', name: 'Quest Veteran', desc: 'Complete 50 quests', check: (s) => s.completedCount >= 50 },
+            { id: 'a4', icon: '🐉', name: 'Dragon Slayer', desc: 'Complete 100 quests', check: (s) => s.completedCount >= 100 },
+            { id: 'a5', icon: '⭐', name: 'Rising Hero', desc: 'Reach Level 5', check: (s) => s.level >= 5 },
+            { id: 'a6', icon: '🌟', name: 'Seasoned Hero', desc: 'Reach Level 10', check: (s) => s.level >= 10 },
+            { id: 'a7', icon: '💰', name: 'Gold Hoarder', desc: 'Hold 500 Gold at once', check: (s) => s.gold >= 500 },
+            { id: 'a8', icon: '🎨', name: 'Fashionista', desc: 'Unlock every theme', check: (s) => s.unlockedThemesCount >= s.totalThemesCount }
+        ];
+
+        const GoldBadge = ({ amount }) => (
+            <div className="inline-flex items-center gap-1 px-2 py-0.5 bg-yellow-500 text-black pixel-box-sm text-xs font-bold shadow-sm">
+                <span className="w-2.5 h-2.5 bg-yellow-300 border border-yellow-800 rounded-full inline-block"></span>
+                <span>{amount}G</span>
+            </div>
+        );
+
+        const HeroAvatar = () => (
+            <svg width="40" height="40" viewBox="0 0 16 16" className="pixel-box bg-[#87CEEB]" style={{ borderColor: 'var(--app-border)' }}>
+                <rect x="5" y="5" width="6" height="6" fill="#FFDFC4"/>
+                <rect x="4" y="3" width="8" height="3" fill="#5C3A21"/>
+                <rect x="4" y="6" width="2" height="2" fill="#5C3A21"/>
+                <rect x="10" y="6" width="2" height="2" fill="#5C3A21"/>
+                <rect x="6" y="7" width="1" height="1" fill="#000"/>
+                <rect x="9" y="7" width="1" height="1" fill="#000"/>
+                <rect x="7" y="9" width="2" height="1" fill="#E88A8A"/>
+                <rect x="4" y="11" width="8" height="5" fill="#4ade80"/>
+            </svg>
+        );
+
+        const IconBoard = ({ active }) => (
+            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" className={`transition-opacity ${active ? "opacity-100" : "opacity-40"}`}>
+                <rect x="1" y="2" width="4" height="12" />
+                <rect x="6" y="2" width="4" height="8" />
+                <rect x="11" y="2" width="4" height="10" />
+            </svg>
+        );
+
+        const IconList = ({ active }) => (
+            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" className={`transition-opacity ${active ? "opacity-100" : "opacity-40"}`}>
+                <rect x="2" y="3" width="3" height="3" />
+                <rect x="6" y="3" width="8" height="3" />
+                <rect x="2" y="8" width="3" height="3" />
+                <rect x="6" y="8" width="8" height="3" />
+            </svg>
+        );
+
+        const IconArchive = ({ active }) => (
+            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" className={`transition-opacity ${active ? "opacity-100" : "opacity-40"}`}>
+                <rect x="2" y="2" width="12" height="3" />
+                <rect x="3" y="6" width="10" height="2" />
+                <rect x="3" y="9" width="10" height="2" />
+                <rect x="3" y="12" width="7" height="2" />
+            </svg>
+        );
+
+        const IconBoss = () => (
+            <svg width="24" height="24" viewBox="0 0 16 16" fill="currentColor" className="text-red-500 animate-pulse">
+                <rect x="4" y="2" width="8" height="8" />
+                <rect x="5" y="10" width="6" height="4" />
+                <rect x="5" y="5" width="2" height="2" fill="var(--app-hudBg, #000)"/>
+                <rect x="9" y="5" width="2" height="2" fill="var(--app-hudBg, #000)"/>
+                <rect x="7" y="8" width="2" height="1" fill="var(--app-hudBg, #000)"/>
+                <rect x="5" y="11" width="1" height="3" fill="var(--app-hudBg, #000)"/>
+                <rect x="7" y="11" width="2" height="3" fill="var(--app-hudBg, #000)"/>
+                <rect x="10" y="11" width="1" height="3" fill="var(--app-hudBg, #000)"/>
+            </svg>
+        );
+
+        const IconChevronUp = () => (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square">
+                <polyline points="18 15 12 9 6 15"></polyline>
+            </svg>
+        );
+
+        const IconChevronDown = () => (
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="square">
+                <polyline points="6 9 12 15 18 9"></polyline>
+            </svg>
+        );
+
+        const DB_NAME = 'TyQuestDB';
+        const STORE_NAME = 'appData';
+
+        const initDB = () => {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open(DB_NAME, 1);
+                request.onupgradeneeded = (e) => {
+                    const db = e.target.result;
+                    if (!db.objectStoreNames.contains(STORE_NAME)) {
+                        db.createObjectStore(STORE_NAME);
+                    }
+                };
+                request.onsuccess = () => resolve(request.result);
+                request.onerror = () => reject(request.error);
+            });
+        };
+
+        const saveToDB = async (key, data) => {
+            try {
+                const db = await initDB();
+                const tx = db.transaction(STORE_NAME, 'readwrite');
+                tx.objectStore(STORE_NAME).put(data, key);
+            } catch (e) { console.error('IDB Save Error:', e); }
+        };
+
+        const loadFromDB = async (key) => {
+            try {
+                const db = await initDB();
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction(STORE_NAME, 'readonly');
+                    const req = tx.objectStore(STORE_NAME).get(key);
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+            } catch (e) { return null; }
+        };
+
+        const getTodayStr = () => new Date().toISOString().split('T')[0];
+        const getTomorrowStr = () => {
+            const d = new Date();
+            d.setDate(d.getDate() + 1);
+            return d.toISOString().split('T')[0];
+        };
+        const addDays = (dateStr, days) => {
+            const d = new Date(dateStr);
+            d.setUTCDate(d.getUTCDate() + days);
+            return d.toISOString().split('T')[0];
+        };
+
+        // Reward scales with how much a quest actually involves — a Boss quest always pays the
+        // top rate; otherwise more subtasks means more work means a bigger payout.
+        const calculateTaskReward = (task) => {
+            if (task.isBoss) return { xp: 100, gold: 25 };
+            const subtaskCount = (task.subtasks || []).length;
+            if (subtaskCount >= 4) return { xp: 90, gold: 20 };
+            if (subtaskCount >= 2) return { xp: 70, gold: 15 };
+            return { xp: 50, gold: 10 };
+        };
+
+        // --- Firebase Realtime Database sync (no email account needed on Tyler's end — just the
+        // Database URL + a shared Room Code that both devices use). Uses plain REST + Server-Sent
+        // Events so no Firebase SDK/build step is needed; the database's rules must allow open
+        // read/write (fine for non-sensitive data like a household task list).
+        const SYNC_CONFIG_KEY = 'tyquest_sync_config'; // holds { databaseURL, roomCode }
+
+        const loadSyncConfig = () => {
+            try {
+                const raw = localStorage.getItem(SYNC_CONFIG_KEY);
+                return raw ? JSON.parse(raw) : null;
+            } catch (e) { return null; }
+        };
+
+        const saveSyncConfig = (config) => {
+            try {
+                if (config) localStorage.setItem(SYNC_CONFIG_KEY, JSON.stringify(config));
+                else localStorage.removeItem(SYNC_CONFIG_KEY);
+            } catch (e) { /* ignore */ }
+        };
+
+        // All sync calls go through this so a slow/dead connection times out fast instead of hanging —
+        // the app already has your data locally (IndexedDB), sync is a background bonus, never a blocker.
+        const fetchWithTimeout = (url, options = {}, timeoutMs = 6000) => {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), timeoutMs);
+            return fetch(url, { ...options, signal: controller.signal }).finally(() => clearTimeout(timer));
+        };
+
+        const firebaseNodeUrl = (config) => `${config.databaseURL.replace(/\/$/, '')}/tyquest/${encodeURIComponent(config.roomCode)}.json`;
+
+        const firebaseFetch = async (config) => {
+            const res = await fetchWithTimeout(firebaseNodeUrl(config));
+            if (!res.ok) throw new Error('Fetch failed: ' + res.status);
+            return res.json(); // null if this room has no data saved yet
+        };
+
+        const firebasePush = async (config, snapshot) => {
+            const res = await fetchWithTimeout(firebaseNodeUrl(config), {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(snapshot)
+            });
+            if (!res.ok) throw new Error('Push failed: ' + res.status);
+        };
+
+        const generateRoomCode = () => Math.random().toString(36).slice(2, 8).toUpperCase();
+
+        // Seed data — defined once at module scope instead of being rebuilt on every render
+        const initialTasks = [
+            { id: 't1', text: 'Slay the laundry dragon', status: 'todo', boardId: 'house', dueDate: getTodayStr(), subtasks: [{id: 's1', text: 'Wash clothes', done: true}, {id: 's2', text: 'Fold and put away', done: false}] },
+            { id: 't2', text: 'Visit Potion Master (Dentist)', status: 'todo', boardId: 'general', dueDate: getTomorrowStr(), subtasks: [] },
+            { id: 't3', text: 'Cook HP Ration Meals for week', status: 'doing', boardId: 'house', dueDate: getTodayStr(), subtasks: [] },
+            { id: 't4', text: 'Pay the troll toll (Electric bill)', status: 'done', boardId: 'general', dueDate: getTodayStr(), completedAt: getTodayStr(), subtasks: [] }
+        ];
+
+        const initialBoards = [
+            { id: 'all', name: 'ALL QUESTS' },
+            { id: 'house', name: 'HOUSEKEEPING' },
+            { id: 'fitness', name: 'TRAINING' }
+        ];
+
+        const initialLibraryCategories = [
+            { id: 'all', name: 'ALL', emoji: '📚' },
+            { id: 'games', name: 'GAMES TO PLAY', emoji: '🎮', markerStyle: 'check' },
+            { id: 'books', name: 'BOOKS TO READ', emoji: '📖', markerStyle: 'check' }
+        ];
+
+        // Encyclopedia list-item markers — a list isn't always a checklist, so each category can
+        // pick its own style: a checkbox, a colored dot, an auto-numbered badge, or a star.
+        const MARKER_STYLES = ['check', 'number', 'emoji', 'none'];
+        const MARKER_STYLE_ICONS = { check: '✓', number: '①', emoji: '⭐', none: '—' };
+
+        const initialLibraryItems = [
+            { id: 'l1', title: 'Stardew Valley 1.6 Update', description: '', categoryId: 'games', done: false },
+            { id: 'l2', title: 'Dune Messiah', description: '', categoryId: 'books', done: false }
+        ];
+
+        function App() {
+            const [isDataLoaded, setIsDataLoaded] = useState(false);
+            
+            const [tasks, setTasks] = useState([]);
+            const [boards, setBoards] = useState([]);
+            const [activeBoardId, setActiveBoardId] = useState('all');
+            
+            const [libraryCategories, setLibraryCategories] = useState([]);
+            const [libraryItems, setLibraryItems] = useState([]);
+            const [activeLibCat, setActiveLibCat] = useState('all');
+            const [editingLibField, setEditingLibField] = useState(null); // { itemId, field: 'title' | 'description' }
+            const [libFieldDraft, setLibFieldDraft] = useState('');
+            const [showNoteSheet, setShowNoteSheet] = useState(false);
+            const [noteTitle, setNoteTitle] = useState('');
+            const [noteDescription, setNoteDescription] = useState('');
+
+            const [activeTab, setActiveTab] = useState('tasks'); // 'tasks' | 'archive' — Kanban/List are now one page, toggled via taskViewMode
+            const [taskViewMode, setTaskViewMode] = useState('kanban'); // 'kanban' | 'list'
+            
+            const [xp, setXp] = useState(0);
+            const [level, setLevel] = useState(1);
+            const [gold, setGold] = useState(0);
+            const [totalGoldEarned, setTotalGoldEarned] = useState(0); // lifetime total, never decreases when gold is spent
+            const [characterName, setCharacterName] = useState('TYLER');
+            const [isEditingName, setIsEditingName] = useState(false);
+            const [nameDraft, setNameDraft] = useState('');
+            
+            const [themeKey, setThemeKey] = useState('snes16bit');
+            const [unlockedThemes, setUnlockedThemes] = useState(['snes16bit']);
+
+            const [isNavVisible, setIsNavVisible] = useState(true);
+            const [showStatsModal, setShowStatsModal] = useState(false);
+
+            // Tavern & Activity are full-screen overlays now, separate from the main board/list/archive tabs
+            const [showTavern, setShowTavern] = useState(false);
+            const [showEncyclopediaNav, setShowEncyclopediaNav] = useState(false);
+            const [tavernClosing, setTavernClosing] = useState(false);
+            const [showActivity, setShowActivity] = useState(false);
+            const [activityClosing, setActivityClosing] = useState(false);
+
+            const openTavern = () => { setTavernClosing(false); setShowTavern(true); sound.playMagic(); };
+            const closeTavern = () => { setTavernClosing(true); sound.playBlip(300); };
+            const openActivity = () => { setActivityClosing(false); setShowActivity(true); sound.playBlip(500); };
+            const closeActivity = () => { setActivityClosing(true); sound.playBlip(300); };
+            const toggleActivity = () => { if (showActivity) closeActivity(); else openActivity(); };
+            
+            const [isAddingQuest, setIsAddingQuest] = useState(false);
+            const [editingTaskId, setEditingTaskId] = useState(null);
+            const [editForm, setEditForm] = useState(null); // { text, dueDate, subtasks, boardId, recurrenceType, customValue, customUnit, isBoss }
+            const [showSubtasksInput, setShowSubtasksInput] = useState(false);
+            const [questDateChoice, setQuestDateChoice] = useState(null); // null | 'today' | 'tomorrow' | 'custom'
+            const [questDateValue, setQuestDateValue] = useState(''); // empty means no deadline
+            const [questRecurrenceType, setQuestRecurrenceType] = useState(null); // null | 'daily' | 'weekly' | 'custom'
+            const [questCustomValue, setQuestCustomValue] = useState(2);
+            const [questCustomUnit, setQuestCustomUnit] = useState('days'); // 'days' | 'weeks'
+            const [questIsBoss, setQuestIsBoss] = useState(false);
+
+            // Reset the quick-pick date + recurrence choice each time the New Quest form opens.
+            // No date is the default — a deadline should be something you choose to add, not something every quest is stuck with.
+            useEffect(() => {
+                if (isAddingQuest) {
+                    setQuestDateChoice(null);
+                    setQuestDateValue('');
+                    setQuestRecurrenceType(null);
+                    setQuestCustomValue(2);
+                    setQuestCustomUnit('days');
+                    setQuestIsBoss(false);
+                }
+            }, [isAddingQuest]);
+
+            useEffect(() => {
+                if (showNoteSheet) {
+                    setNoteTitle('');
+                    setNoteDescription('');
+                }
+            }, [showNoteSheet]);
+
+            // Turns a repeat-picker choice into the { type, intervalDays } shape stored on the task —
+            // pulled out as a pure function so both the New Quest form and the Edit Quest form can use it.
+            const buildRecurrenceObj = (type, customValue, customUnit) => {
+                if (!type) return null;
+                if (type === 'daily') return { type: 'daily', intervalDays: 1 };
+                if (type === 'weekly') return { type: 'weekly', intervalDays: 7 };
+                const n = Math.max(1, parseInt(customValue, 10) || 1);
+                return { type: 'custom', value: n, unit: customUnit, intervalDays: customUnit === 'weeks' ? n * 7 : n };
+            };
+            const buildRecurrence = () => buildRecurrenceObj(questRecurrenceType, questCustomValue, questCustomUnit);
+            
+            const [isManagingBoard, setIsManagingBoard] = useState(false);
+            const [isAddingLibCat, setIsAddingLibCat] = useState(false);
+            
+            const [focusTaskId, setFocusTaskId] = useState(null);
+            
+            // Delete Dialog State
+            const [deleteConfirm, setDeleteConfirm] = useState({ show: false, type: '', id: '', name: '' });
+
+            // Custom pointer-based drag state (replaces native HTML5 DnD, which is unreliable on touch)
+            const [dragState, setDragState] = useState(null); // { taskId, x, y, offsetX, offsetY, width, hoverColId }
+            const [holdingTaskId, setHoldingTaskId] = useState(null); // card mid-hold, pulsing, before the drag actually engages
+            const dragCandidateRef = useRef(null); // pending drag before the hold threshold clears
+            const dragEdgeStepTimeRef = useRef(0); // timestamp of the last edge-triggered column step, gates how fast it can advance
+            const justDraggedRef = useRef(false); // true briefly after a hold-drag engages, to suppress a stray click-to-edit
+            const activityContainerRef = useRef(null);
+            const dragTimerRef = useRef(null);
+
+            // Cross-device sync (Firebase Realtime Database) state
+            const [syncConfig, setSyncConfig] = useState(null); // { databaseURL, roomCode }
+            const [syncStatus, setSyncStatus] = useState('offline'); // offline | syncing | synced | error
+            const [syncFormUrl, setSyncFormUrl] = useState('');
+            const [syncFormRoom, setSyncFormRoom] = useState('');
+            const [syncError, setSyncError] = useState('');
+            const [justCreatedRoom, setJustCreatedRoom] = useState(null);
+            const pushTimerRef = useRef(null);
+            const pendingPushRef = useRef(false);
+            const isRemoteApplyRef = useRef(false);
+            const hasSyncedOnceRef = useRef(false);
+            const eventSourceRef = useRef(null);
+
+            // Level calculation
+            useEffect(() => {
+                setLevel(Math.floor(xp / 100) + 1);
+            }, [xp]);
+
+            // Data Loading
+            useEffect(() => {
+                const loadData = async () => {
+                    const savedTasks = await loadFromDB('tq_tasks');
+                    const savedBoards = await loadFromDB('tq_boards');
+                    const savedLibCats = await loadFromDB('tq_libCats');
+                    const savedLibItems = await loadFromDB('tq_libItems');
+                    
+                    const savedXp = await loadFromDB('tq_xp');
+                    const savedGold = await loadFromDB('tq_gold');
+                    const savedTotalGoldEarned = await loadFromDB('tq_total_gold_earned');
+                    const savedCharacterName = await loadFromDB('tq_character_name');
+                    const savedTheme = await loadFromDB('tq_theme');
+                    const savedUnlockedThemes = await loadFromDB('tq_unlocked_themes');
+
+                    if (savedTasks && savedTasks.length > 0) setTasks(savedTasks); else setTasks(initialTasks);
+                    if (savedBoards && savedBoards.length > 0) setBoards(savedBoards); else setBoards(initialBoards);
+                    if (savedLibCats && savedLibCats.length > 0) setLibraryCategories(savedLibCats); else setLibraryCategories(initialLibraryCategories);
+                    if (savedLibItems && savedLibItems.length > 0) setLibraryItems(savedLibItems); else setLibraryItems(initialLibraryItems);
+                    
+                    if (savedXp !== null && !isNaN(parseInt(savedXp, 10))) setXp(parseInt(savedXp, 10)); else setXp(0);
+                    if (savedGold !== null && !isNaN(parseInt(savedGold, 10))) setGold(parseInt(savedGold, 10)); else setGold(0);
+                    if (savedTotalGoldEarned !== null && !isNaN(parseInt(savedTotalGoldEarned, 10))) setTotalGoldEarned(parseInt(savedTotalGoldEarned, 10));
+                    if (savedCharacterName) setCharacterName(savedCharacterName);
+                    
+                    if (savedTheme) setThemeKey(savedTheme);
+                    if (savedUnlockedThemes) setUnlockedThemes(savedUnlockedThemes);
+
+                    setIsDataLoaded(true);
+                };
+                loadData();
+
+                const cfg = loadSyncConfig();
+                if (cfg) setSyncConfig(cfg);
+            }, []);
+
+            const applySnapshotToState = (snap) => {
+                if (!snap) return;
+                if (snap.tasks) setTasks(snap.tasks);
+                if (snap.boards) setBoards(snap.boards);
+                if (snap.libraryCategories) setLibraryCategories(snap.libraryCategories);
+                if (snap.libraryItems) setLibraryItems(snap.libraryItems);
+                if (typeof snap.xp === 'number') setXp(snap.xp);
+                if (typeof snap.gold === 'number') setGold(snap.gold);
+                if (typeof snap.totalGoldEarned === 'number') setTotalGoldEarned(snap.totalGoldEarned);
+                if (snap.characterName) setCharacterName(snap.characterName);
+                if (snap.themeKey) setThemeKey(snap.themeKey);
+                if (snap.unlockedThemes) setUnlockedThemes(snap.unlockedThemes);
+            };
+
+            const pullNow = async (cfgOverride) => {
+                const cfg = cfgOverride || syncConfig;
+                if (!cfg || pendingPushRef.current) return;
+                try {
+                    setSyncStatus('syncing');
+                    const snap = await firebaseFetch(cfg);
+                    isRemoteApplyRef.current = true;
+                    if (snap) applySnapshotToState(snap);
+                    hasSyncedOnceRef.current = true;
+                    setSyncStatus('synced');
+                } catch (e) {
+                    setSyncStatus('error');
+                }
+            };
+
+            // Live sync via Server-Sent Events — Firebase Realtime Database streams changes to
+            // this exact URL the moment either device writes, so both apps stay in sync without
+            // any polling. Falls back to an initial one-shot fetch as a safety net.
+            useEffect(() => {
+                if (!syncConfig || !isDataLoaded) return;
+
+                pullNow();
+
+                const es = new EventSource(firebaseNodeUrl(syncConfig));
+                eventSourceRef.current = es;
+
+                const handleStreamEvent = (e) => {
+                    if (pendingPushRef.current) return; // don't let an incoming update clobber an unsaved local edit
+                    try {
+                        const { data } = JSON.parse(e.data);
+                        if (!data) return;
+                        isRemoteApplyRef.current = true;
+                        applySnapshotToState(data);
+                        hasSyncedOnceRef.current = true;
+                        setSyncStatus('synced');
+                    } catch (err) { /* ignore malformed event */ }
+                };
+
+                es.addEventListener('put', handleStreamEvent);
+                es.addEventListener('patch', handleStreamEvent);
+                es.onerror = () => setSyncStatus('error'); // EventSource retries connecting on its own
+
+                return () => { es.close(); eventSourceRef.current = null; };
+            }, [syncConfig, isDataLoaded]);
+
+            const connectToRoom = async (databaseURL, roomCode) => {
+                setSyncError('');
+                setSyncStatus('syncing');
+                try {
+                    const cfg = { databaseURL: databaseURL.trim().replace(/\/$/, ''), roomCode: roomCode.trim() };
+                    const snap = await firebaseFetch(cfg);
+                    isRemoteApplyRef.current = true;
+                    if (snap) applySnapshotToState(snap);
+                    hasSyncedOnceRef.current = true;
+                    saveSyncConfig(cfg);
+                    setSyncConfig(cfg);
+                    setSyncStatus('synced');
+                    setShowStatsModal(false);
+                } catch (e) {
+                    setSyncError('Could not connect — check the Database URL and Room Code.');
+                    setSyncStatus('error');
+                }
+            };
+
+            const createNewRoom = async (databaseURL) => {
+                setSyncError('');
+                setSyncStatus('syncing');
+                try {
+                    const url = databaseURL.trim().replace(/\/$/, '');
+                    const roomCode = generateRoomCode();
+                    const cfg = { databaseURL: url, roomCode };
+                    const snapshot = { tasks, boards, libraryCategories, libraryItems, xp, gold, totalGoldEarned, characterName, themeKey, unlockedThemes };
+                    await firebasePush(cfg, snapshot);
+                    hasSyncedOnceRef.current = true;
+                    saveSyncConfig(cfg);
+                    setSyncConfig(cfg);
+                    setSyncStatus('synced');
+                    setJustCreatedRoom(roomCode);
+                } catch (e) {
+                    setSyncError('Could not create a sync room — check the Database URL and that its rules allow read/write.');
+                    setSyncStatus('error');
+                }
+            };
+
+            const disconnectSync = () => {
+                if (eventSourceRef.current) { eventSourceRef.current.close(); eventSourceRef.current = null; }
+                saveSyncConfig(null);
+                setSyncConfig(null);
+                setJustCreatedRoom(null);
+                hasSyncedOnceRef.current = false;
+                setSyncStatus('offline');
+            };
+
+            // Data Saving
+            useEffect(() => {
+                if (!isDataLoaded) return;
+                saveToDB('tq_tasks', tasks);
+                saveToDB('tq_boards', boards);
+                saveToDB('tq_libCats', libraryCategories);
+                saveToDB('tq_libItems', libraryItems);
+                saveToDB('tq_xp', xp.toString());
+                saveToDB('tq_gold', gold.toString());
+                saveToDB('tq_total_gold_earned', totalGoldEarned.toString());
+                saveToDB('tq_character_name', characterName);
+                saveToDB('tq_theme', themeKey);
+                saveToDB('tq_unlocked_themes', unlockedThemes);
+
+                if (!syncConfig || !hasSyncedOnceRef.current) return;
+                if (isRemoteApplyRef.current) { isRemoteApplyRef.current = false; return; }
+
+                pendingPushRef.current = true;
+                clearTimeout(pushTimerRef.current);
+                pushTimerRef.current = setTimeout(async () => {
+                    try {
+                        setSyncStatus('syncing');
+                        await firebasePush(syncConfig, { tasks, boards, libraryCategories, libraryItems, xp, gold, totalGoldEarned, characterName, themeKey, unlockedThemes });
+                        setSyncStatus('synced');
+                    } catch (e) {
+                        setSyncStatus('error');
+                    } finally {
+                        pendingPushRef.current = false;
+                    }
+                }, 1500);
+            }, [tasks, boards, libraryCategories, libraryItems, xp, gold, totalGoldEarned, characterName, themeKey, unlockedThemes, isDataLoaded, syncConfig]);
+
+            const activeTheme = RETRO_THEMES[themeKey] || RETRO_THEMES.snes16bit;
+
+            const triggerConfetti = () => {
+                if (!window.confetti) return;
+                const colors = ['#FFD700', '#FF6B6B', '#4ECDC4', '#95E06C', '#A78BFA', '#FF9F1C', '#5DA9E9', '#F472B6', activeTheme.primary];
+                const bursts = 7;
+                // Fire several small bursts spread across the top edge, each falling straight down —
+                // reads as pixel confetti raining across the screen instead of exploding from one point.
+                for (let i = 0; i < bursts; i++) {
+                    window.confetti({
+                        particleCount: 9,
+                        angle: 270,
+                        spread: 60,
+                        startVelocity: 9,
+                        gravity: 0.55,
+                        drift: (Math.random() - 0.5) * 2,
+                        ticks: 220,
+                        origin: { x: (i + 0.5) / bursts, y: -0.05 },
+                        colors,
+                        shapes: ['square'],
+                        scalar: 0.85,
+                        disableForReducedMotion: true
+                    });
+                }
+            };
+
+            const handleAddTask = (text, date, boardId, subtasksArr, recurrence, isBoss) => {
+                const newTask = {
+                    id: Date.now().toString(),
+                    text,
+                    status: 'todo',
+                    boardId: boardId === 'all' ? 'general' : boardId,
+                    dueDate: date || null,
+                    subtasks: subtasksArr || [],
+                    recurrence: recurrence || null,
+                    isBoss: !!isBoss,
+                    streak: 0
+                };
+                setTasks([newTask, ...tasks]);
+                sound.playBlip(600);
+                setIsAddingQuest(false);
+                setShowSubtasksInput(false);
+
+                // Snap the view to whichever board this quest was assigned to, so it's visible right away
+                if (boardId && boardId !== 'all') setActiveBoardId(boardId);
+            };
+
+            const openEditTask = (task) => {
+                sound.playBlip(500);
+                setEditingTaskId(task.id);
+                setEditForm({
+                    text: task.text,
+                    dueDate: task.dueDate || '',
+                    subtasks: (task.subtasks || []).map(s => ({ ...s })),
+                    boardId: task.boardId === 'general' ? 'all' : task.boardId,
+                    recurrenceType: task.recurrence ? task.recurrence.type : null,
+                    customValue: task.recurrence && task.recurrence.type === 'custom' ? task.recurrence.value : 2,
+                    customUnit: task.recurrence && task.recurrence.type === 'custom' ? task.recurrence.unit : 'days',
+                    isBoss: !!task.isBoss
+                });
+            };
+
+            const closeEditTask = () => {
+                setEditingTaskId(null);
+                setEditForm(null);
+            };
+
+            const saveTaskEdit = () => {
+                if (!editingTaskId || !editForm) return;
+                const text = editForm.text.trim();
+                if (!text) return;
+
+                const recurrence = buildRecurrenceObj(editForm.recurrenceType, editForm.customValue, editForm.customUnit);
+                const resolvedBoardId = editForm.boardId === 'all' ? 'general' : editForm.boardId;
+
+                setTasks(prev => prev.map(t => t.id === editingTaskId ? {
+                    ...t,
+                    text,
+                    dueDate: editForm.dueDate || null,
+                    subtasks: editForm.subtasks.filter(s => s.text && s.text.trim()).map(s => ({ ...s, text: s.text.trim() })),
+                    boardId: resolvedBoardId,
+                    recurrence,
+                    isBoss: editForm.isBoss
+                } : t));
+
+                sound.playBlip(600);
+                if (resolvedBoardId && resolvedBoardId !== 'general') setActiveBoardId(resolvedBoardId);
+                closeEditTask();
+            };
+
+            // Shared by the checkbox toggle, the boss-defeat screen, and drag-to-Victory —
+            // marks a task done, pays out XP/Gold (scaled to difficulty + streak), and spawns
+            // the next occurrence if it repeats.
+            const completeTask = (task) => {
+                if (!task || task.status === 'done') return;
+
+                const reward = calculateTaskReward(task);
+
+                // On-time completion extends the streak; finishing it late (after its due date) breaks it.
+                // Computed up front (not inside the setTasks updater) since setXp/setGold below need it now.
+                let newStreak = 0;
+                let streakBonusXp = 0;
+                let streakBonusGold = 0;
+                if (task.recurrence) {
+                    const completedOnTime = !task.dueDate || getTodayStr() <= task.dueDate;
+                    newStreak = completedOnTime ? (task.streak || 0) + 1 : 1;
+                    streakBonusXp = Math.min(newStreak * 2, 50);
+                    streakBonusGold = Math.min(newStreak, 25);
+                }
+
+                setTasks(prevTasks => {
+                    const updated = prevTasks.map(t => t.id === task.id ? { ...t, status: 'done', completedAt: getTodayStr() } : t);
+                    if (!task.recurrence) return updated;
+
+                    const nextDue = addDays(getTodayStr(), task.recurrence.intervalDays);
+                    const clone = {
+                        ...task,
+                        id: Date.now().toString() + '_r',
+                        status: 'todo',
+                        completedAt: null,
+                        dueDate: nextDue,
+                        streak: newStreak,
+                        subtasks: (task.subtasks || []).map(s => ({ ...s, done: false }))
+                    };
+                    return [clone, ...updated];
+                });
+
+                sound.playCoin();
+                triggerConfetti();
+                setXp(prev => prev + reward.xp + streakBonusXp);
+                setGold(prev => prev + reward.gold + streakBonusGold);
+                setTotalGoldEarned(prev => prev + reward.gold + streakBonusGold);
+
+                if (focusTaskId === task.id) setFocusTaskId(null);
+            };
+
+            const handleToggleTaskStatus = (task) => {
+                if (task.status === 'done') return;
+
+                if (task.status === 'todo') {
+                    setTasks(tasks.map(t => t.id === task.id ? { ...t, status: 'doing' } : t));
+                    sound.playBlip(300);
+                } else if (task.status === 'doing') {
+                    completeTask(task);
+                }
+            };
+
+            const handleDefeatBoss = (task) => completeTask(task);
+
+            const handleToggleSubtask = (taskId, subIdx) => {
+                setTasks(tasks.map(t => {
+                    if (t.id !== taskId || t.status === 'done') return t;
+                    const newSubs = [...t.subtasks];
+                    const wasDone = newSubs[subIdx].done;
+                    newSubs[subIdx].done = !wasDone;
+                    
+                    if (!wasDone) {
+                        sound.playBlip(700);
+                        setXp(prev => prev + 5);
+                        setGold(prev => prev + 1);
+                        setTotalGoldEarned(prev => prev + 1);
+                    }
+                    
+                    return { ...t, subtasks: newSubs };
+                }));
+            };
+
+            const handleDeleteTask = (id) => {
+                sound.playError();
+                setTasks(tasks.filter(t => t.id !== id));
+            };
+
+            const handleRerollTask = (id) => {
+                if (gold < 5) {
+                    sound.playError();
+                    alert("Not enough Gold!");
+                    return;
+                }
+                setGold(prev => prev - 5);
+                sound.playMagic();
+                setTasks(tasks.map(t => t.id === id ? { ...t, dueDate: getTomorrowStr() } : t));
+            };
+
+            const moveTaskToStatus = (task, nextStatus) => {
+                if (!task || task.status === nextStatus || task.status === 'done') return;
+
+                if (nextStatus === 'done') {
+                    completeTask(task);
+                    return;
+                }
+
+                setTasks(prevTasks => prevTasks.map(t => t.id === task.id ? { ...t, status: nextStatus } : t));
+                sound.playBlip(300);
+            };
+
+            // Hold-to-drag: works the same for mouse and touch via the Pointer Events API.
+            // A short hold-and-still window disambiguates "starting a drag" from "scrolling the column".
+            const handleCardPointerDown = (e, task) => {
+                if (task.status === 'done') return;
+                if (e.pointerType === 'mouse' && e.button !== 0) return;
+
+                const rect = e.currentTarget.getBoundingClientRect();
+                const candidate = {
+                    taskId: task.id,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    offsetX: e.clientX - rect.left,
+                    offsetY: e.clientY - rect.top,
+                    width: rect.width,
+                    sourceStatus: task.status
+                };
+                dragCandidateRef.current = candidate;
+                setHoldingTaskId(task.id);
+
+                clearTimeout(dragTimerRef.current);
+                dragTimerRef.current = setTimeout(() => {
+                    if (dragCandidateRef.current !== candidate) return;
+                    setDragState({ ...candidate, x: candidate.startX, y: candidate.startY, hoverColId: candidate.sourceStatus });
+                    justDraggedRef.current = true;
+                    setHoldingTaskId(null); // drag is live now — the ghost/dim treatment takes over from here
+                    if (navigator.vibrate) navigator.vibrate(10);
+                }, 260);
+            };
+
+            // Window-level listeners drive the drag once it's live (or cancel the candidate on early scroll movement)
+            useEffect(() => {
+                const handleMove = (e) => {
+                    const candidate = dragCandidateRef.current;
+                    if (!candidate) return;
+
+                    if (!dragState) {
+                        const dx = Math.abs(e.clientX - candidate.startX);
+                        const dy = Math.abs(e.clientY - candidate.startY);
+                        if (dx > 8 || dy > 8) {
+                            clearTimeout(dragTimerRef.current);
+                            dragCandidateRef.current = null;
+                            setHoldingTaskId(null);
+                        }
+                        return;
+                    }
+
+                    e.preventDefault();
+
+                    const order = ['todo', 'doing', 'done'];
+                    const baseColId = dragState.hoverColId || dragState.sourceStatus;
+                    const currentIdx = order.indexOf(baseColId);
+                    const EDGE_ZONE = 60; // px from the screen edge that counts as "aim for the next column"
+                    const EDGE_STEP_COOLDOWN = 500; // ms to hold at the edge before it advances another column
+
+                    const inLeftEdge = e.clientX <= EDGE_ZONE && currentIdx > 0;
+                    const inRightEdge = e.clientX >= window.innerWidth - EDGE_ZONE && currentIdx !== -1 && currentIdx < order.length - 1;
+
+                    let targetColId;
+                    if (inLeftEdge || inRightEdge) {
+                        const now = Date.now();
+                        if (now - dragEdgeStepTimeRef.current > EDGE_STEP_COOLDOWN) {
+                            dragEdgeStepTimeRef.current = now;
+                            targetColId = inLeftEdge ? order[currentIdx - 1] : order[currentIdx + 1];
+                            document.querySelector(`[data-colid="${targetColId}"]`)?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+                        } else {
+                            targetColId = baseColId; // still cooling down — hold here, don't skip ahead
+                        }
+                    } else {
+                        dragEdgeStepTimeRef.current = 0; // reset so the next edge approach can act right away
+                        const el = document.elementFromPoint(e.clientX, e.clientY);
+                        const colEl = el && el.closest('[data-colid]');
+                        targetColId = colEl ? colEl.dataset.colid : baseColId;
+                    }
+
+                    setDragState(prev => prev ? { ...prev, x: e.clientX, y: e.clientY, hoverColId: targetColId || prev.hoverColId } : prev);
+                };
+
+                const handleUp = () => {
+                    clearTimeout(dragTimerRef.current);
+                    dragEdgeStepTimeRef.current = 0;
+                    setHoldingTaskId(null);
+                    setDragState(prev => {
+                        if (prev) {
+                            const task = tasks.find(t => t.id === prev.taskId);
+                            if (task && prev.hoverColId) moveTaskToStatus(task, prev.hoverColId);
+                        }
+                        return null;
+                    });
+                    dragCandidateRef.current = null;
+                    if (justDraggedRef.current) setTimeout(() => { justDraggedRef.current = false; }, 50);
+                };
+
+                window.addEventListener('pointermove', handleMove, { passive: false });
+                window.addEventListener('pointerup', handleUp);
+                window.addEventListener('pointercancel', handleUp);
+                return () => {
+                    window.removeEventListener('pointermove', handleMove);
+                    window.removeEventListener('pointerup', handleUp);
+                    window.removeEventListener('pointercancel', handleUp);
+                };
+            }, [dragState, tasks]);
+
+            const handleBuyTheme = (themeId, cost) => {
+                if (gold >= cost) {
+                    setGold(prev => prev - cost);
+                    setUnlockedThemes([...unlockedThemes, themeId]);
+                    setThemeKey(themeId);
+                    sound.playCoin();
+                } else {
+                    sound.playError();
+                }
+            };
+
+            const handleDeleteBoard = (boardId) => {
+                if (boardId === 'all') return;
+                setTasks(tasks.map(t => t.boardId === boardId ? { ...t, boardId: 'general' } : t));
+                setBoards(boards.filter(b => b.id !== boardId));
+                setActiveBoardId('all');
+                sound.playError();
+            };
+
+            const saveNoteEntry = () => {
+                const title = noteTitle.trim();
+                if (!title) return;
+                const newItem = {
+                    id: 'l_' + Date.now(),
+                    title,
+                    description: noteDescription.trim().slice(0, 350),
+                    categoryId: activeLibCat === 'all' ? (libraryCategories[1]?.id || 'misc') : activeLibCat,
+                    done: false
+                };
+                setLibraryItems([newItem, ...libraryItems]);
+                sound.playBlip(600);
+                setShowNoteSheet(false);
+            };
+
+            const handleToggleLibraryItem = (itemId) => {
+                setLibraryItems(libraryItems.map(i => i.id === itemId ? { ...i, done: !i.done } : i));
+                sound.playBlip(650);
+            };
+
+            const cycleCategoryMarkerStyle = (catId) => {
+                setLibraryCategories(prev => prev.map(c => {
+                    if (c.id !== catId) return c;
+                    const currentIdx = MARKER_STYLES.indexOf(c.markerStyle || 'check');
+                    return { ...c, markerStyle: MARKER_STYLES[(currentIdx + 1) % MARKER_STYLES.length] };
+                }));
+                sound.playBlip(500);
+            };
+
+            const renderLibraryMarker = (item, cat) => {
+                const style = cat?.markerStyle || 'check';
+                const base = "flex-shrink-0 active:scale-90";
+                if (style === 'none') return null;
+                if (style === 'number') {
+                    const itemsInCat = libraryItems.filter(i => i.categoryId === item.categoryId);
+                    const idx = itemsInCat.findIndex(i => i.id === item.id) + 1;
+                    return (
+                        <button
+                            onClick={() => handleToggleLibraryItem(item.id)}
+                            className={`${base} w-5 h-5 pixel-box-sm flex items-center justify-center text-[9px] font-arcade ${item.done ? 'bg-green-500 text-white' : 'bg-white text-black'}`}
+                        >
+                            {idx}
+                        </button>
+                    );
+                }
+                if (style === 'emoji') {
+                    return (
+                        <button
+                            onClick={() => handleToggleLibraryItem(item.id)}
+                            className={`${base} text-base ${item.done ? '' : 'grayscale opacity-30'}`}
+                        >
+                            ⭐
+                        </button>
+                    );
+                }
+                return (
+                    <button 
+                        onClick={() => handleToggleLibraryItem(item.id)}
+                        className={`${base} w-5 h-5 pixel-box-sm flex items-center justify-center text-xs ${item.done ? 'bg-green-600 text-white font-bold' : 'bg-white'}`}
+                    >
+                        {item.done ? '✓' : ''}
+                    </button>
+                );
+            };
+
+            const handleDeleteLibraryItem = (id) => {
+                setLibraryItems(libraryItems.filter(i => i.id !== id));
+                sound.playError();
+            };
+
+            const openLibFieldEdit = (item, field) => {
+                setEditingLibField({ itemId: item.id, field });
+                setLibFieldDraft(field === 'title' ? (item.title || item.text || '') : (item.description || ''));
+            };
+
+            const saveLibFieldEdit = () => {
+                if (!editingLibField) return;
+                const { itemId, field } = editingLibField;
+                const value = field === 'description' ? libFieldDraft.trim().slice(0, 350) : libFieldDraft.trim();
+                if (field === 'title' && !value) { setEditingLibField(null); return; } // titles can't be blanked out
+                setLibraryItems(prev => prev.map(i => i.id === itemId ? { ...i, [field]: value } : i));
+                setEditingLibField(null);
+            };
+
+            const handleDeleteLibCategory = (id) => {
+                if(id === 'all') return;
+                setLibraryCategories(libraryCategories.filter(c => c.id !== id));
+                setLibraryItems(libraryItems.filter(i => i.categoryId !== id));
+                setActiveLibCat('all');
+                sound.playError();
+            };
+
+            const executeDelete = () => {
+                if (deleteConfirm.type === 'board') {
+                    handleDeleteBoard(deleteConfirm.id);
+                } else if (deleteConfirm.type === 'libCat') {
+                    handleDeleteLibCategory(deleteConfirm.id);
+                }
+                setDeleteConfirm({ show: false, type: '', id: '', name: '' });
+            };
+
+            const filteredTasks = useMemo(() => {
+                if (activeBoardId === 'all') return tasks;
+                return tasks.filter(t => t.boardId === activeBoardId);
+            }, [tasks, activeBoardId]);
+
+            const filteredLibItems = useMemo(() => {
+                if (activeLibCat === 'all') return libraryItems;
+                return libraryItems.filter(i => i.categoryId === activeLibCat);
+            }, [libraryItems, activeLibCat]);
+
+            const activeBoardObj = boards.find(b => b.id === activeBoardId);
+            const oldestFocusTask = useMemo(() => {
+                const active = tasks.filter(t => t.status !== 'done');
+                if (active.length === 0) return null;
+                return active.sort((a, b) => new Date(a.dueDate || '2099-01-01') - new Date(b.dueDate || '2099-01-01'))[0];
+            }, [tasks]);
+
+            const achievementStats = useMemo(() => ({
+                completedCount: tasks.filter(t => t.status === 'done').length,
+                level,
+                gold,
+                unlockedThemesCount: unlockedThemes.length,
+                totalThemesCount: Object.keys(RETRO_THEMES).length
+            }), [tasks, level, gold, unlockedThemes]);
+
+            // Completions-per-day grid, GitHub-contributions style. Counts only tasks currently
+            // marked done — if a completed quest gets deleted later, its day no longer counts.
+            const activityWeeks = useMemo(() => {
+                const counts = {};
+                tasks.forEach(t => {
+                    if (t.status === 'done' && t.completedAt) {
+                        counts[t.completedAt] = (counts[t.completedAt] || 0) + 1;
+                    }
+                });
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+                const totalDays = 371; // 53 weeks, matches GitHub's span
+                const start = new Date(today);
+                start.setDate(start.getDate() - (totalDays - 1));
+                start.setDate(start.getDate() - start.getDay()); // snap back to the preceding Sunday
+
+                const days = [];
+                const cursor = new Date(start);
+                while (cursor <= today) {
+                    const dateStr = cursor.toISOString().split('T')[0];
+                    days.push({ date: dateStr, count: counts[dateStr] || 0, month: cursor.getMonth() });
+                    cursor.setDate(cursor.getDate() + 1);
+                }
+                while (days.length % 7 !== 0) days.push(null); // pad the final partial week
+
+                const weeks = [];
+                for (let i = 0; i < days.length; i += 7) weeks.push(days.slice(i, i + 7));
+
+                return { weeks, totalCompleted: Object.values(counts).reduce((a, b) => a + b, 0) };
+            }, [tasks]);
+
+            const activityIntensityStyle = (count) => {
+                if (!count) return { backgroundColor: activeTheme.border, opacity: 0.12 };
+                const opacityByLevel = [0, 0.4, 0.6, 0.8, 1];
+                return { backgroundColor: activeTheme.primary, opacity: opacityByLevel[Math.min(count, 4)] };
+            };
+
+            // Measure the actual space available for the heatmap so it can reflow into
+            // however many horizontal bands best fill THIS screen's shape — tall and narrow
+            // on a phone wraps into several stacked bands; wide gets fewer, larger ones.
+            const [activitySize, setActivitySize] = useState({ width: 0, height: 0 });
+            useEffect(() => {
+                if (!showActivity) return;
+                const el = activityContainerRef.current;
+                if (!el) return;
+                const measure = () => setActivitySize({ width: el.clientWidth, height: el.clientHeight });
+                measure();
+                const ro = new ResizeObserver(measure);
+                ro.observe(el);
+                return () => ro.disconnect();
+            }, [showActivity]);
+
+            const activityLayout = useMemo(() => {
+                const totalWeeks = activityWeeks.weeks.length;
+                const daysPerWeek = 7;
+                const { width, height } = activitySize;
+                if (!width || !height) return { bands: 1, weeksPerBand: totalWeeks, cellSize: 5 };
+
+                const availW = Math.max(width, 20);
+                const availH = Math.max(height, 20);
+
+                let best = { bands: 1, weeksPerBand: totalWeeks, cellSize: 0 };
+                for (let bands = 1; bands <= 8; bands++) {
+                    const weeksPerBand = Math.ceil(totalWeeks / bands);
+                    const cellFromWidth = (availW - ACTIVITY_GAP * (weeksPerBand - 1)) / weeksPerBand;
+                    const totalRows = bands * daysPerWeek;
+                    const cellFromHeight = (availH - ACTIVITY_GAP * (totalRows - 1) - ACTIVITY_BAND_GAP * (bands - 1) - ACTIVITY_MONTH_LABEL_H * bands) / totalRows;
+                    const cellSize = Math.min(cellFromWidth, cellFromHeight);
+                    if (cellSize > best.cellSize) best = { bands, weeksPerBand, cellSize };
+                }
+                best.cellSize = Math.max(2, Math.floor(best.cellSize));
+                return best;
+            }, [activitySize, activityWeeks.weeks.length]);
+
+            const activityBands = useMemo(() => {
+                const { weeksPerBand } = activityLayout;
+                const chunks = [];
+                for (let i = 0; i < activityWeeks.weeks.length; i += weeksPerBand) {
+                    chunks.push(activityWeeks.weeks.slice(i, i + weeksPerBand));
+                }
+                return chunks;
+            }, [activityLayout, activityWeeks.weeks]);
+
+            const activityMonthLabel = (week, prevWeek) => {
+                const firstDay = week.find(d => d);
+                if (!firstDay) return '';
+                const prevFirstDay = prevWeek ? prevWeek.find(d => d) : null;
+                if (!prevFirstDay || prevFirstDay.month !== firstDay.month) {
+                    return new Date(firstDay.date).toLocaleString('en-US', { month: 'short' });
+                }
+                return '';
+            };
+
+            if (!isDataLoaded) {
+                return (
+                    <div className="min-h-screen flex items-center justify-center font-arcade text-xl" style={{ backgroundColor: activeTheme.bg, color: activeTheme.border }}>
+                        <div className="animate-pulse">LOADING SAVE FILE...</div>
+                    </div>
+                );
+            }
+
+            return (
+                <div 
+                    className="min-h-screen h-screen flex flex-col overflow-hidden relative font-arcade" 
+                    style={{ 
+                        backgroundColor: activeTheme.bg, 
+                        color: activeTheme.border, 
+                        '--app-bg': activeTheme.bg, 
+                        '--app-border': activeTheme.border,
+                        '--app-hudBg': activeTheme.hudBg
+                    }}
+                >
+                    
+                    {/* --- HEADER --- */}
+                    <header className="flex-shrink-0 z-20 transition-all duration-300 relative" style={{ backgroundColor: activeTheme.hudBg, color: activeTheme.hudText, borderBottom: `4px solid ${activeTheme.border}` }}>
+                        
+                        {/* Top Bar (Collapsible) */}
+                        {isNavVisible && (
+                            <div className="px-4 py-3 flex justify-between items-center pt-safe border-b-4" style={{ borderColor: activeTheme.border }}>
+                                <div className="flex items-center gap-3">
+                                    <button onClick={() => { sound.playBlip(); setShowStatsModal(true); }} className="active:scale-95 transition-transform flex-shrink-0">
+                                        <HeroAvatar />
+                                    </button>
+                                    <div>
+                                        <h1 className="text-sm leading-tight">{activeTab === 'archive' ? NAV_TITLES.archive : (taskViewMode === 'kanban' ? 'Kanban' : 'List')}</h1>
+                                        <p className="text-[10px] opacity-80">LVL {level}</p>
+                                    </div>
+                                </div>
+
+                                <div className="flex items-center gap-4">
+                                    <div className="flex items-center gap-1.5 px-2">
+                                        {activeTab === 'tasks' && (
+                                            <button
+                                                onClick={() => { sound.playBlip(); setTaskViewMode(taskViewMode === 'kanban' ? 'list' : 'kanban'); }}
+                                                className="p-1 active:scale-95 mr-1"
+                                                style={{ color: activeTheme.hudText }}
+                                                title="Toggle Kanban/List view"
+                                            >
+                                                {taskViewMode === 'kanban' ? <IconList active={false} /> : <IconBoard active={false} />}
+                                            </button>
+                                        )}
+                                        <GoldBadge amount={Number.isNaN(gold) ? 0 : gold} />
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+
+                        {/* Persistent Header Secondary Bar + Toggle */}
+                        <div className={`flex justify-between items-center bg-black/10`}>
+                            
+                            {!isNavVisible && (
+                                <button 
+                                    onClick={() => { sound.playBlip(); setShowStatsModal(true); }} 
+                                    className="px-2 py-1 active:scale-95 flex items-center gap-2 border-r-4 flex-shrink-0"
+                                    style={{ borderColor: activeTheme.border }}
+                                    title="View Profile"
+                                >
+                                    <div className="flex-shrink-0"><HeroAvatar /></div>
+                                </button>
+                            )}
+
+                            {activeTab === 'tasks' && (
+                                <div className="flex overflow-x-auto hide-scrollbar px-2 py-2 gap-2 items-center flex-1">
+                                    {boards.map(b => (
+                                        <div key={b.id} className="flex items-center">
+                                            <button 
+                                                onClick={() => { sound.playBlip(); setActiveBoardId(b.id); }}
+                                                className={`px-3 py-2 pixel-box-sm text-[10px] whitespace-nowrap active:scale-95 ${activeBoardId === b.id ? 'bg-white text-black' : 'bg-transparent text-inherit'}`}
+                                                style={{ borderColor: activeTheme.hudText, color: activeBoardId !== b.id ? activeTheme.hudText : 'black' }}
+                                            >
+                                                {b.name}
+                                            </button>
+                                            {b.id !== 'all' && activeBoardId === b.id && (
+                                                <button 
+                                                    onClick={() => { sound.playBlip(); setDeleteConfirm({ show: true, type: 'board', id: b.id, name: b.name }); }}
+                                                    className="ml-1 p-2 text-red-400 hover:bg-red-500/20 rounded active:scale-90"
+                                                    title="Delete Board"
+                                                >
+                                                    <span className="text-[10px] font-bold">X</span>
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <button 
+                                        onClick={() => { sound.playBlip(); setIsManagingBoard(true); }}
+                                        className="px-3 py-2 pixel-box-sm text-[10px] whitespace-nowrap bg-black/40 text-white active:scale-95 border-dashed"
+                                        style={{ borderColor: activeTheme.hudText }}
+                                    >
+                                        + NEW BOARD
+                                    </button>
+                                </div>
+                            )}
+
+                            {activeTab === 'archive' && (
+                                <div className="flex items-center px-2 py-2 flex-1">
+                                    <button
+                                        onClick={() => { sound.playBlip(); setShowEncyclopediaNav(true); }}
+                                        className="flex items-center gap-2 pixel-box-sm px-3 py-2 text-[10px] active:scale-95"
+                                        style={{ backgroundColor: 'rgba(0,0,0,0.3)', color: activeTheme.hudText, borderColor: activeTheme.hudText }}
+                                    >
+                                        <span>☰</span>
+                                        <span>{libraryCategories.find(c => c.id === activeLibCat)?.emoji} {libraryCategories.find(c => c.id === activeLibCat)?.name}</span>
+                                    </button>
+                                </div>
+                            )}
+
+                            {/* Nav Toggle Button */}
+                            <button 
+                                onClick={() => { sound.playBlip(); setIsNavVisible(!isNavVisible); }}
+                                className="px-4 py-2.5 active:scale-95 border-l-4 flex items-center justify-center flex-shrink-0"
+                                style={{ borderColor: activeTheme.border, color: activeTheme.hudText }}
+                            >
+                                {isNavVisible ? <IconChevronUp /> : <IconChevronDown />}
+                            </button>
+                        </div>
+                    </header>
+
+                    {}
+                    <main className="flex-1 overflow-hidden relative flex flex-col min-h-0 h-full">
+                        
+                        {activeTab === 'tasks' && taskViewMode === 'kanban' && (
+                            <div className="flex-1 overflow-x-auto snap-x snap-mandatory hide-scrollbar p-4 flex gap-4 items-start h-full pb-8">
+                                {['todo', 'doing', 'done'].map(colId => {
+                                    const colTasks = filteredTasks.filter(t => t.status === colId);
+                                    const colLabel = colId === 'todo' 
+                                        ? (activeBoardId !== 'all' ? `${activeBoardObj.name}` : 'QUEST LOG')
+                                        : colId === 'doing' ? 'IN BATTLE' : 'VICTORY';
+                                    const colColor = activeTheme[`col${colId.charAt(0).toUpperCase() + colId.slice(1)}`];
+
+                                    const isDropTarget = dragState && dragState.hoverColId === colId && dragState.sourceStatus !== colId;
+
+                                    return (
+                                        <div 
+                                            key={colId} 
+                                            data-colid={colId}
+                                            className={`w-[88vw] max-w-[360px] h-full flex-shrink-0 snap-center flex flex-col pixel-box relative overflow-hidden transition-transform ${isDropTarget ? 'scale-[1.02] ring-4 ring-yellow-300' : ''}`} 
+                                            style={{ backgroundColor: colColor }}
+                                        >
+                                            {colId === 'done' ? (
+                                                <button
+                                                    onClick={toggleActivity}
+                                                    className="w-full p-3 border-b-4 border-black/50 bg-black/20 flex items-center justify-between text-white text-xs sticky top-0 z-10 backdrop-blur-sm active:bg-black/40 active:scale-[0.98]"
+                                                >
+                                                    <span className="truncate pr-2">{colLabel} <span className="opacity-50 text-[10px]">({colTasks.length})</span></span>
+                                                    <span className="text-[9px] pixel-box-sm px-2 py-1 bg-yellow-400 text-black flex-shrink-0 flex items-center gap-1">
+                                                        📊 ACTIVITY
+                                                    </span>
+                                                </button>
+                                            ) : (
+                                                <div className="p-3 border-b-4 border-black/50 bg-black/20 flex items-center justify-between text-white text-xs sticky top-0 z-10 backdrop-blur-sm">
+                                                    <span className="truncate pr-2">{colLabel} <span className="opacity-50 text-[10px]">({colTasks.length})</span></span>
+                                                    {colId === 'todo' && (
+                                                        <button onClick={() => { sound.playBlip(); setIsAddingQuest(true); }} className="bg-yellow-400 text-black px-2 py-1 pixel-box-sm active:scale-90 flex-shrink-0">
+                                                            + ADD
+                                                        </button>
+                                                    )}
+                                                </div>
+                                            )}
+                                            <div className="p-3 overflow-y-auto hide-scrollbar flex-1 flex flex-col gap-3 pb-safe">
+                                                {colTasks.length === 0 && (
+                                                    <div className="text-center opacity-50 text-[10px] py-8 text-black">
+                                                        {colId === 'todo' ? 'CLEAR!\n+ Add a task' : 'NO ACTIVE QUESTS'}
+                                                    </div>
+                                                )}
+                                                {colTasks.map(task => <TaskCard key={task.id} task={task} />)}
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+                        )}
+
+                        {activeTab === 'tasks' && taskViewMode === 'list' && (
+                            <div className="flex-1 overflow-x-auto snap-x snap-mandatory hide-scrollbar p-4 flex gap-4 items-start h-full pb-8">
+                                <div className="w-[100%] max-w-[500px] h-full mx-auto flex-shrink-0 snap-center flex flex-col pixel-box relative overflow-hidden" style={{ backgroundColor: activeTheme.windowBg }}>
+                                    
+                                    <div className="p-3 border-b-4 flex items-center justify-between sticky top-0 z-10 backdrop-blur-sm bg-white/50" style={{ borderColor: activeTheme.border }}>
+                                        <h2 className="text-sm text-black">{activeBoardId !== 'all' ? `${activeBoardObj.name}` : 'ALL QUESTS'}</h2>
+                                        <button onClick={() => { sound.playBlip(); setIsAddingQuest(true); }} className="bg-yellow-400 text-black px-2 py-1 pixel-box-sm text-[10px] active:scale-90">
+                                            + ADD QUEST
+                                        </button>
+                                    </div>
+                                    
+                                    <div className="p-4 overflow-y-auto hide-scrollbar flex-1 pb-safe">
+                                        {['Overdue', 'Today', 'Tomorrow', 'Upcoming', 'No Date'].map(group => {
+                                            const groupedTasks = filteredTasks.filter(t => t.status !== 'done' && getTaskGroup(t.dueDate) === group);
+                                            if (groupedTasks.length === 0) return null;
+                                            
+                                            return (
+                                                <div key={group} className="mb-6">
+                                                    <h3 className="text-[10px] opacity-60 mb-2 uppercase tracking-widest flex items-center gap-2 text-black">
+                                                        <span className="w-full h-0.5 bg-black/20 block"></span>
+                                                        <span className="whitespace-nowrap">{group}</span>
+                                                        <span className="w-full h-0.5 bg-black/20 block"></span>
+                                                    </h3>
+                                                    <div className="flex flex-col gap-2">
+                                                        {groupedTasks.map(t => <TaskCard key={t.id} task={t} compact={true} />)}
+                                                    </div>
+                                                </div>
+                                            );
+                                        })}
+
+                                        {filteredTasks.filter(t => t.status === 'done').length > 0 && (
+                                            <div className="mt-8 opacity-60">
+                                                <h3 className="text-[10px] mb-2 uppercase text-center text-black">VICTORY (DONE)</h3>
+                                                <div className="flex flex-col gap-2">
+                                                    {filteredTasks.filter(t => t.status === 'done').map(t => <TaskCard key={t.id} task={t} compact={true} />)}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                </div>
+                            </div>
+                        )}
+
+                        {activeTab === 'archive' && (
+                            <div className="flex-1 overflow-x-auto snap-x snap-mandatory hide-scrollbar p-4 flex gap-4 items-start h-full pb-8">
+                                <div className="w-[100%] max-w-[500px] md:max-w-[720px] lg:max-w-[960px] h-full mx-auto flex-shrink-0 snap-center flex flex-col pixel-box relative overflow-hidden" style={{ backgroundColor: activeTheme.windowBg }}>
+                                    
+                                    <div className="overflow-y-auto hide-scrollbar flex-1 pb-20">
+                                        {filteredLibItems.length === 0 && (
+                                            <div className="text-center opacity-50 text-[10px] py-8 text-black">
+                                                NO ITEMS SAVED
+                                            </div>
+                                        )}
+                                        {filteredLibItems.map((item, idx) => {
+                                            const cat = libraryCategories.find(c => c.id === item.categoryId);
+                                            const editingTitle = editingLibField?.itemId === item.id && editingLibField.field === 'title';
+                                            const editingDesc = editingLibField?.itemId === item.id && editingLibField.field === 'description';
+                                            return (
+                                                <div 
+                                                    key={item.id} 
+                                                    className={`px-4 py-3 flex justify-between items-center group transition-colors ${idx > 0 ? 'border-t-2' : ''}`}
+                                                    style={{ borderColor: activeTheme.border }}
+                                                >
+                                                    <div className="flex items-center gap-3 flex-1 min-w-0 pr-2">
+                                                        {renderLibraryMarker(item, cat)}
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="flex items-center gap-2">
+                                                                {editingTitle ? (
+                                                                    <input
+                                                                        type="text"
+                                                                        autoFocus
+                                                                        value={libFieldDraft}
+                                                                        onChange={(e) => setLibFieldDraft(e.target.value)}
+                                                                        onBlur={saveLibFieldEdit}
+                                                                        onKeyDown={(e) => {
+                                                                            if (e.key === 'Enter') saveLibFieldEdit();
+                                                                            if (e.key === 'Escape') setEditingLibField(null);
+                                                                        }}
+                                                                        className="font-readable text-[13px] font-bold leading-snug flex-1 min-w-0 bg-transparent border-b-2 focus:outline-none text-black"
+                                                                        style={{ borderColor: activeTheme.primary }}
+                                                                    />
+                                                                ) : (
+                                                                    <div 
+                                                                        onClick={() => !item.done && openLibFieldEdit(item, 'title')}
+                                                                        className={`font-readable text-[13px] font-bold leading-snug break-words text-black ${item.done ? 'line-through opacity-60' : 'cursor-pointer'}`}
+                                                                    >
+                                                                        {item.title || item.text}
+                                                                    </div>
+                                                                )}
+                                                                {!item.description && !item.done && !editingDesc && (
+                                                                    <button 
+                                                                        onClick={() => openLibFieldEdit(item, 'description')}
+                                                                        className="flex-shrink-0 text-gray-400 text-sm leading-none active:scale-90"
+                                                                        title="Add description"
+                                                                    >
+                                                                        +
+                                                                    </button>
+                                                                )}
+                                                            </div>
+
+                                                            {editingDesc ? (
+                                                                <textarea
+                                                                    autoFocus
+                                                                    rows={2}
+                                                                    maxLength={350}
+                                                                    value={libFieldDraft}
+                                                                    onChange={(e) => setLibFieldDraft(e.target.value.slice(0, 350))}
+                                                                    onBlur={saveLibFieldEdit}
+                                                                    onKeyDown={(e) => { if (e.key === 'Escape') setEditingLibField(null); }}
+                                                                    className="font-readable text-[12px] leading-snug w-full bg-transparent border-b-2 focus:outline-none resize-none mt-1 text-gray-500"
+                                                                    style={{ borderColor: activeTheme.primary }}
+                                                                ></textarea>
+                                                            ) : item.description ? (
+                                                                <div 
+                                                                    onClick={() => !item.done && openLibFieldEdit(item, 'description')}
+                                                                    className={`font-readable text-[12px] leading-snug break-words mt-0.5 text-gray-500 ${item.done ? '' : 'cursor-pointer'}`}
+                                                                >
+                                                                    {item.description}
+                                                                </div>
+                                                            ) : null}
+
+                                                            {activeLibCat === 'all' && cat && (
+                                                                <div className="text-[8px] opacity-60 mt-1 text-black">{cat.emoji} {cat.name}</div>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                    <button 
+                                                        onClick={() => handleDeleteLibraryItem(item.id)} 
+                                                        className="text-red-500 font-bold p-2 active:scale-90 text-[12px] opacity-50 hover:opacity-100 flex-shrink-0"
+                                                    >
+                                                        X
+                                                    </button>
+                                                </div>
+                                            );
+                                        })}
+                                    </div>
+
+                                    <button
+                                        onClick={() => { sound.playBlip(); setShowNoteSheet(true); }}
+                                        className="absolute w-14 h-14 rounded-full flex items-center justify-center text-white text-3xl font-bold active:scale-90 z-20"
+                                        style={{ 
+                                            backgroundColor: activeTheme.primary, 
+                                            border: `3px solid ${activeTheme.border}`,
+                                            boxShadow: '3px 3px 0px rgba(0,0,0,0.3)',
+                                            right: '1.25rem',
+                                            bottom: 'calc(1.25rem + env(safe-area-inset-bottom, 0px))'
+                                        }}
+                                        title="New entry"
+                                    >
+                                        +
+                                    </button>
+
+                                </div>
+                            </div>
+                        )}
+                        
+                    </main>
+
+                    {/* --- BOTTOM NAV DOCK (always available, independent of the header's collapse state) --- */}
+                    <nav 
+                        className="flex-shrink-0 flex items-stretch pb-safe z-20" 
+                        style={{ backgroundColor: activeTheme.hudBg, borderTop: `4px solid ${activeTheme.border}`, minHeight: '55px' }}
+                    >
+                        {[
+                            { id: 'tasks', Icon: IconBoard },
+                            { id: 'archive', Icon: IconArchive }
+                        ].map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => { sound.playBlip(); setActiveTab(tab.id); }}
+                                className="flex-1 flex items-center justify-center py-3 active:bg-black/20"
+                                style={{ color: activeTheme.hudText, opacity: activeTab === tab.id ? 1 : 0.5 }}
+                            >
+                                <tab.Icon active={activeTab === tab.id} />
+                            </button>
+                        ))}
+                    </nav>
+
+                    {/* --- NEW ENCYCLOPEDIA ENTRY (bottom sheet, ~half height, opened via the floating + button) --- */}
+                    {showNoteSheet && (
+                        <div className="fixed inset-0 z-[70] flex flex-col justify-end">
+                            <div className="absolute inset-0 bg-black/50" onClick={() => setShowNoteSheet(false)}></div>
+                            <div 
+                                className="relative pixel-box p-5 animate-slide-up-in flex flex-col"
+                                style={{ backgroundColor: activeTheme.windowBg, borderColor: activeTheme.border, height: '50vh', borderBottomLeftRadius: 0, borderBottomRightRadius: 0 }}
+                            >
+                                <h3 className="text-sm mb-4 text-black">NEW ENTRY</h3>
+                                <input
+                                    type="text"
+                                    autoFocus
+                                    value={noteTitle}
+                                    onChange={(e) => setNoteTitle(e.target.value)}
+                                    placeholder="Title"
+                                    className="font-readable w-full text-[15px] font-bold text-black bg-transparent border-b-2 pb-2 mb-3 focus:outline-none"
+                                    style={{ borderColor: activeTheme.border }}
+                                />
+                                <textarea
+                                    value={noteDescription}
+                                    onChange={(e) => setNoteDescription(e.target.value.slice(0, 350))}
+                                    maxLength={350}
+                                    placeholder="Description (optional)"
+                                    className="font-readable w-full text-[13px] text-gray-500 bg-transparent focus:outline-none resize-none flex-1"
+                                ></textarea>
+                                <div className="text-[9px] text-right opacity-50 mb-3 text-black">{noteDescription.length}/350</div>
+                                <div className="flex gap-3 pb-safe">
+                                    <button onClick={() => setShowNoteSheet(false)} className="flex-1 pixel-box-sm py-3 text-xs bg-gray-300 text-black active:scale-95">CANCEL</button>
+                                    <button 
+                                        onClick={saveNoteEntry} 
+                                        disabled={!noteTitle.trim()}
+                                        className={`flex-1 pixel-box-sm py-3 text-xs bg-green-500 text-white active:scale-95 ${!noteTitle.trim() ? 'opacity-50' : ''}`}
+                                    >
+                                        SAVE
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- TAVERN OVERLAY (slides down like a shop shutter, separate from the main tabs) --- */}
+                    {showTavern && (
+                        <div
+                            className={`fixed inset-0 z-[90] flex flex-col ${tavernClosing ? 'animate-shutter-up' : 'animate-shutter-down'}`}
+                            style={{ backgroundColor: activeTheme.bg }}
+                            onAnimationEnd={() => { if (tavernClosing) { setShowTavern(false); setTavernClosing(false); } }}
+                        >
+                            <div className="flex-shrink-0 relative overflow-hidden" style={{ backgroundColor: activeTheme.hudBg, borderBottom: `4px solid ${activeTheme.border}` }}>
+                                <div className="absolute inset-0 opacity-25 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.25) 0px, rgba(0,0,0,0.25) 3px, transparent 3px, transparent 10px)' }}></div>
+                                <div className="relative flex items-center justify-between px-4 py-3 pt-safe" style={{ color: activeTheme.hudText }}>
+                                    <span className="text-xs">🏪 Shop's open</span>
+                                    <button onClick={closeTavern} className="pixel-box-sm px-3 py-1.5 text-[10px] bg-red-500 text-white active:scale-95">CLOSE ▲</button>
+                                </div>
+                            </div>
+
+                            <div 
+                                className="flex-1 overflow-y-auto p-4 pb-safe hide-scrollbar tavern-rewards"
+                                style={{ backgroundImage: `repeating-linear-gradient(45deg, ${activeTheme.border}0d 0px, ${activeTheme.border}0d 2px, transparent 2px, transparent 14px)` }}
+                            >
+                                <style>{`
+                                    .tavern-rewards .pixel-box-sm {
+                                        background-color: ${activeTheme.bg} !important;
+                                        border-color: ${activeTheme.border} !important;
+                                        color: ${activeTheme.border} !important;
+                                    }
+                                    .tavern-rewards button.buy-btn {
+                                        background-color: ${activeTheme.primary} !important;
+                                        color: ${activeTheme.bg} !important;
+                                    }
+                                `}</style>
+
+                                <div className="max-w-[500px] md:max-w-[720px] lg:max-w-[960px] mx-auto">
+                                    {/* Signboard header */}
+                                    <div className="relative mb-6 pixel-box overflow-hidden" style={{ backgroundColor: activeTheme.hudBg, borderColor: activeTheme.border }}>
+                                        <div className="absolute inset-0 opacity-25 pointer-events-none" style={{ backgroundImage: 'repeating-linear-gradient(90deg, rgba(0,0,0,0.2) 0px, rgba(0,0,0,0.2) 2px, transparent 2px, transparent 16px)' }}></div>
+                                        <div className="relative p-5 text-center" style={{ color: activeTheme.hudText }}>
+                                            <div className="flex items-center justify-center gap-3 mb-1">
+                                                <span className="text-xl animate-flicker">🔥</span>
+                                                <h2 className="text-lg">THE TAVERN</h2>
+                                                <span className="text-xl animate-flicker" style={{ animationDelay: '0.4s' }}>🔥</span>
+                                            </div>
+                                            <p className="text-[9px] opacity-80 mb-3">Trade quests for glory, not just gold</p>
+                                            <div className="flex items-center justify-center flex-wrap gap-2">
+                                                <GoldBadge amount={Number.isNaN(gold) ? 0 : gold} />
+                                                <span className="text-[8px] opacity-90 pixel-box-sm px-2 py-1 bg-black/25">
+                                                    🏆 {ACHIEVEMENTS.filter(a => a.check(achievementStats)).length}/{ACHIEVEMENTS.length}
+                                                </span>
+                                                <span className="text-[8px] opacity-90 pixel-box-sm px-2 py-1 bg-black/25">
+                                                    🎨 {unlockedThemes.length}/{Object.keys(RETRO_THEMES).length}
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Achievements Section */}
+                                    <div className="pixel-box-sm p-4 mb-6" style={{ backgroundColor: activeTheme.windowBg }}>
+                                        <h3 className="text-[12px] mb-4" style={{ color: activeTheme.primary }}>🏆 TROPHY CASE</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            {ACHIEVEMENTS.map(a => {
+                                                const unlocked = a.check(achievementStats);
+                                                return (
+                                                    <div 
+                                                        key={a.id} 
+                                                        className={`flex items-center gap-3 p-3 pixel-box-sm border-l-4 ${unlocked ? 'bg-white/80' : 'bg-black/10 opacity-60'}`}
+                                                        style={{ borderLeftColor: unlocked ? activeTheme.primary : 'transparent' }}
+                                                    >
+                                                        <span className={`text-xl flex-shrink-0 ${unlocked ? '' : 'grayscale'}`}>{a.icon}</span>
+                                                        <div className="flex-1 min-w-0">
+                                                            <div className="text-[10px] leading-tight">{a.name}</div>
+                                                            <div className="text-[8px] opacity-70 mt-0.5 leading-tight">{a.desc}</div>
+                                                        </div>
+                                                        {unlocked && <span className="text-[8px] pixel-box-sm px-2 py-1 bg-green-500 text-white flex-shrink-0">DONE</span>}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+
+                                    {/* Themes Section */}
+                                    <div className="pixel-box-sm p-4 mb-6" style={{ backgroundColor: activeTheme.windowBg }}>
+                                        <h3 className="text-[12px] mb-4" style={{ color: activeTheme.primary }}>🎨 WARDROBE</h3>
+                                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+                                            {Object.values(RETRO_THEMES).map(t => {
+                                                const isUnlocked = unlockedThemes.includes(t.id);
+                                                const isActive = themeKey === t.id;
+                                                return (
+                                                    <div key={t.id} className={`flex justify-between items-center p-3 pixel-box-sm bg-white/50 ${isActive ? 'ring-2 ring-yellow-400' : ''}`}>
+                                                        <div className="flex items-center gap-2 min-w-0">
+                                                            <div className="flex flex-shrink-0 pixel-box-sm overflow-hidden" style={{ borderColor: t.border }}>
+                                                                <div className="w-3 h-6" style={{ backgroundColor: t.bg }}></div>
+                                                                <div className="w-3 h-6" style={{ backgroundColor: t.primary }}></div>
+                                                                <div className="w-3 h-6" style={{ backgroundColor: t.colDone }}></div>
+                                                            </div>
+                                                            <span className="text-[10px] truncate">{t.name}</span>
+                                                        </div>
+                                                        {isUnlocked ? (
+                                                            <button 
+                                                                onClick={() => { sound.playBlip(); setThemeKey(t.id); }}
+                                                                className={`pixel-box-sm px-3 py-2 text-[10px] active:scale-90 flex-shrink-0 ${isActive ? 'bg-green-500 text-white' : 'bg-gray-200 text-black'}`}
+                                                            >
+                                                                {isActive ? 'ACTIVE' : 'EQUIP'}
+                                                            </button>
+                                                        ) : (
+                                                            <button 
+                                                                onClick={() => handleBuyTheme(t.id, t.cost)}
+                                                                className={`buy-btn pixel-box-sm px-3 py-2 text-[10px] active:scale-90 flex-shrink-0 ${gold >= t.cost ? '' : 'opacity-50'}`}
+                                                            >
+                                                                {t.cost}G
+                                                            </button>
+                                                        )}
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- ACTIVITY OVERLAY (GitHub-style completions heatmap) --- */}
+                    {showActivity && (
+                        <div
+                            className={`fixed inset-0 z-[90] flex flex-col ${activityClosing ? 'animate-slide-down-out' : 'animate-slide-up-in'}`}
+                            style={{ backgroundColor: activeTheme.bg }}
+                            onAnimationEnd={() => { if (activityClosing) { setShowActivity(false); setActivityClosing(false); } }}
+                        >
+                            <div className="flex-shrink-0 flex items-center justify-between px-4 py-3 pt-safe" style={{ backgroundColor: activeTheme.hudBg, color: activeTheme.hudText, borderBottom: `4px solid ${activeTheme.border}` }}>
+                                <span className="text-xs">📊 ACTIVITY</span>
+                                <button onClick={closeActivity} className="pixel-box-sm px-3 py-1.5 text-[10px] bg-red-500 text-white active:scale-95">CLOSE ▼</button>
+                            </div>
+
+                            <div className="flex-1 flex flex-col p-4 pb-safe overflow-hidden">
+                                <p className="text-[11px] mb-3 flex-shrink-0" style={{ color: activeTheme.border }}>{activityWeeks.totalCompleted} quests completed in the last year</p>
+
+                                <div ref={activityContainerRef} className="flex-1 min-h-0 flex flex-col justify-center overflow-hidden" style={{ gap: `${ACTIVITY_BAND_GAP}px` }}>
+                                    {activityBands.map((bandWeeks, bandIndex) => (
+                                        <div key={bandIndex} className="flex-shrink-0 w-full">
+                                            <div className="flex w-full" style={{ gap: `${ACTIVITY_GAP}px`, height: `${ACTIVITY_MONTH_LABEL_H}px` }}>
+                                                {bandWeeks.map((week, wi) => (
+                                                    <div key={wi} className="flex-1 min-w-0 text-[6px] opacity-60 truncate leading-none" style={{ color: activeTheme.border }}>
+                                                        {activityMonthLabel(week, wi > 0 ? bandWeeks[wi - 1] : null)}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                            <div className="flex w-full" style={{ gap: `${ACTIVITY_GAP}px` }}>
+                                                {bandWeeks.map((week, wi) => (
+                                                    <div key={wi} className="flex-1 min-w-0 flex flex-col" style={{ gap: `${ACTIVITY_GAP}px` }}>
+                                                        {week.map((day, di) => (
+                                                            <div
+                                                                key={di}
+                                                                title={day ? `${day.date}: ${day.count} completed` : ''}
+                                                                className="w-full rounded-sm"
+                                                                style={{ height: `${activityLayout.cellSize}px`, ...(day ? activityIntensityStyle(day.count) : { backgroundColor: 'transparent' }) }}
+                                                            ></div>
+                                                        ))}
+                                                    </div>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
+
+                                <div className="flex items-center justify-end gap-1 mt-3 text-[8px] opacity-70 flex-shrink-0" style={{ color: activeTheme.border }}>
+                                    <span>Less</span>
+                                    {[0, 1, 2, 3, 4].map(lvl => (
+                                        <div key={lvl} className="rounded-sm" style={{ width: '9px', height: '9px', ...activityIntensityStyle(lvl) }}></div>
+                                    ))}
+                                    <span>More</span>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- ENCYCLOPEDIA CATEGORY DRAWER (slides in from the side, distinct from the Kanban board tabs) --- */}
+                    {showEncyclopediaNav && (
+                        <div className="fixed inset-0 z-[95] flex">
+                            <div className="absolute inset-0 bg-black/50" onClick={() => setShowEncyclopediaNav(false)}></div>
+                            <div 
+                                className="relative w-64 max-w-[80vw] h-full pixel-box animate-slide-in-left overflow-y-auto flex flex-col"
+                                style={{ backgroundColor: activeTheme.windowBg, borderColor: activeTheme.border }}
+                            >
+                                <div className="p-4 pt-safe flex-shrink-0" style={{ backgroundColor: activeTheme.hudBg, color: activeTheme.hudText, borderBottom: `4px solid ${activeTheme.border}` }}>
+                                    <h3 className="text-sm">📚 ENCYCLOPEDIA LISTS</h3>
+                                </div>
+                                <div className="p-3 flex flex-col gap-2 flex-1 overflow-y-auto hide-scrollbar">
+                                    {libraryCategories.map(cat => (
+                                        <div key={cat.id} className="flex items-center gap-1">
+                                            <button
+                                                onClick={() => { sound.playBlip(); setActiveLibCat(cat.id); setShowEncyclopediaNav(false); }}
+                                                className={`flex-1 flex items-center gap-2 pixel-box-sm px-3 py-2 text-[11px] text-left active:scale-95 ${activeLibCat === cat.id ? 'bg-yellow-400 text-black' : 'bg-white/60 text-black'}`}
+                                            >
+                                                <span>{cat.emoji}</span> <span>{cat.name}</span>
+                                            </button>
+                                            {cat.id !== 'all' && (
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); cycleCategoryMarkerStyle(cat.id); }}
+                                                    className="w-8 h-8 flex-shrink-0 pixel-box-sm flex items-center justify-center text-xs bg-white/60 text-black active:scale-90"
+                                                    title="Change how items in this list are marked"
+                                                >
+                                                    {MARKER_STYLE_ICONS[cat.markerStyle || 'check']}
+                                                </button>
+                                            )}
+                                            {cat.id !== 'all' && activeLibCat === cat.id && (
+                                                <button
+                                                    onClick={() => { sound.playBlip(); setDeleteConfirm({ show: true, type: 'libCat', id: cat.id, name: cat.name }); setShowEncyclopediaNav(false); }}
+                                                    className="p-2 text-red-500 active:scale-90 flex-shrink-0"
+                                                    title="Delete List"
+                                                >
+                                                    X
+                                                </button>
+                                            )}
+                                        </div>
+                                    ))}
+                                    <button
+                                        onClick={() => { sound.playBlip(); setIsAddingLibCat(true); setShowEncyclopediaNav(false); }}
+                                        className="pixel-box-sm px-3 py-2 text-[10px] bg-black/10 text-black border-dashed border-2 mt-2 active:scale-95"
+                                    >
+                                        + NEW LIST
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {showStatsModal && (
+                        <div className="fixed inset-0 z-[100] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="w-full max-w-xs pixel-box bg-white p-6 animate-pop relative max-h-[90vh] overflow-y-auto hide-scrollbar" style={{ backgroundColor: activeTheme.windowBg }}>
+                                <button 
+                                    onClick={() => { sound.playBlip(); setShowStatsModal(false); }}
+                                    className="absolute top-2 right-3 text-red-500 font-bold p-2 active:scale-90 text-sm"
+                                >
+                                    X
+                                </button>
+                                <div className="flex flex-col items-center mb-6">
+                                    <HeroAvatar />
+                                    {isEditingName ? (
+                                        <div className="flex items-center gap-2 mt-3">
+                                            <input
+                                                type="text"
+                                                value={nameDraft}
+                                                onChange={(e) => setNameDraft(e.target.value)}
+                                                maxLength={16}
+                                                autoFocus
+                                                className="pixel-box-sm p-1 text-sm text-black text-center w-28 focus:outline-none"
+                                            />
+                                            <button 
+                                                onClick={() => { const trimmed = nameDraft.trim(); if (trimmed) setCharacterName(trimmed.toUpperCase()); setIsEditingName(false); sound.playBlip(600); }} 
+                                                className="pixel-box-sm px-2 py-1 text-[10px] bg-green-500 text-white active:scale-95"
+                                            >
+                                                ✓
+                                            </button>
+                                        </div>
+                                    ) : (
+                                        <button 
+                                            onClick={() => { setNameDraft(characterName); setIsEditingName(true); sound.playBlip(500); }} 
+                                            className="flex items-center gap-1 mt-3 active:scale-95"
+                                        >
+                                            <h2 className="text-xl text-black">{characterName}</h2>
+                                            <span className="text-xs opacity-50">✏️</span>
+                                        </button>
+                                    )}
+                                    <p className="text-[10px] opacity-70 text-black">HERO RANK</p>
+                                </div>
+                                
+                                <div className="mb-6">
+                                    <div className="flex justify-between text-[10px] mb-2 text-black">
+                                        <span>LEVEL {level}</span>
+                                        <span className="text-yellow-600">{xp % 100} / 100 XP</span>
+                                    </div>
+                                    <div className="w-full h-4 pixel-box-sm bg-black/10 p-0.5">
+                                        <div className="h-full bg-green-500 transition-all duration-500" style={{ width: `${Math.max(5, xp % 100)}%` }}></div>
+                                    </div>
+                                </div>
+                                
+                                <div className="grid grid-cols-3 gap-2 text-center mb-6">
+                                    <div className="pixel-box-sm p-2 bg-black/5 text-black">
+                                        <div className="text-lg mb-1"><GoldBadge amount="" /></div>
+                                        <div className="text-xs">{Number.isNaN(gold) ? 0 : gold}</div>
+                                        <div className="text-[7px] opacity-70 mt-1">GOLD</div>
+                                        <div className="text-[6px] opacity-50 mt-0.5">EARNED: {totalGoldEarned}</div>
+                                    </div>
+                                    <button 
+                                        onClick={() => { setShowStatsModal(false); openActivity(); }}
+                                        className="pixel-box-sm p-2 bg-black/5 text-black active:scale-95"
+                                    >
+                                        <div className="text-lg text-blue-500 mb-1">⚔️</div>
+                                        <div className="text-xs">{tasks.filter(t => t.status === 'done').length}</div>
+                                        <div className="text-[7px] opacity-70 mt-1">DONE</div>
+                                    </button>
+                                    <div className="pixel-box-sm p-2 bg-yellow-100 text-black border-yellow-500">
+                                        <div className="text-lg mb-1">📅</div>
+                                        <div className="text-xs font-bold text-yellow-800">{tasks.filter(t => t.dueDate === getTodayStr() && t.status !== 'done').length}</div>
+                                        <div className="text-[7px] opacity-75 mt-1 font-bold">DUE TODAY</div>
+                                    </div>
+                                </div>
+
+                                {/* --- QUICK ACTIONS --- */}
+                                <div className="grid grid-cols-2 gap-2 mb-6">
+                                    <button
+                                        onClick={() => { setShowStatsModal(false); openTavern(); }}
+                                        className="pixel-box-sm p-2 flex flex-col items-center gap-1 bg-black/5 text-black active:scale-95"
+                                    >
+                                        <span className="text-lg">🏆</span>
+                                        <span className="text-[7px] leading-tight text-center">TAVERN</span>
+                                    </button>
+                                    <button
+                                        onClick={() => { if (!oldestFocusTask) return; setShowStatsModal(false); sound.playMagic(); setFocusTaskId(oldestFocusTask.id); }}
+                                        disabled={!oldestFocusTask}
+                                        className={`pixel-box-sm p-2 flex flex-col items-center gap-1 bg-black/5 text-black active:scale-95 ${!oldestFocusTask ? 'opacity-40' : ''}`}
+                                    >
+                                        <span className="w-5 h-5"><IconBoss /></span>
+                                        <span className="text-[7px] leading-tight text-center">BOSS FIGHT</span>
+                                    </button>
+                                </div>
+
+                                {/* --- API CONNECTION (cross-device sync) --- */}
+                                <div className="pt-4 border-t-2 border-black/10 text-black">
+                                    <h3 className="text-[10px] mb-3 uppercase tracking-widest opacity-70 flex items-center gap-1">
+                                        <span>
+                                            {!syncConfig ? '🔌' : syncStatus === 'syncing' ? '🔄' : syncStatus === 'error' ? '⚠️' : '☁️'}
+                                        </span>
+                                        API Connection
+                                    </h3>
+
+                                    {syncConfig ? (
+                                        <div>
+                                            {justCreatedRoom === syncConfig.roomCode && (
+                                                <div className="mb-3 p-3 pixel-box-sm bg-yellow-100 text-center">
+                                                    <p className="text-[8px] mb-1">🎉 NEW SYNC CREATED — SAVE THIS ROOM CODE FOR THE OTHER DEVICE:</p>
+                                                    <p className="text-sm font-bold break-all">{syncConfig.roomCode}</p>
+                                                </div>
+                                            )}
+                                            <p className="text-[8px] mb-1 opacity-60">DATABASE URL</p>
+                                            <input readOnly value={syncConfig.databaseURL} onFocus={(e) => e.target.select()} className="w-full pixel-box-sm p-2 text-[9px] bg-white text-black mb-2" />
+                                            <p className="text-[8px] mb-1 opacity-60">ROOM CODE</p>
+                                            <input readOnly value={syncConfig.roomCode} onFocus={(e) => e.target.select()} className="w-full pixel-box-sm p-2 text-[10px] bg-white text-black mb-3" />
+                                            <p className="text-[8px] mb-3 opacity-60">
+                                                Status: {syncStatus === 'syncing' ? 'Syncing…' : syncStatus === 'error' ? 'Connection error — will keep retrying' : 'Live — synced instantly'}
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <button type="button" onClick={() => { sound.playBlip(); pullNow(); }} className="flex-1 pixel-box-sm py-2 text-[10px] bg-blue-500 text-white active:scale-95">SYNC NOW</button>
+                                                <button type="button" onClick={() => { sound.playError(); disconnectSync(); }} className="flex-1 pixel-box-sm py-2 text-[10px] bg-red-500 text-white active:scale-95">DISCONNECT</button>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div>
+                                            <p className="text-[8px] mb-3 opacity-70 leading-relaxed">Free Firebase Realtime Database — no login for Tyler, just this project's Database URL. Set its rules to allow open read/write since this is non-sensitive data.</p>
+
+                                            <input
+                                                type="text" value={syncFormUrl} onChange={(e) => setSyncFormUrl(e.target.value)}
+                                                placeholder="https://your-project-default-rtdb.firebaseio.com"
+                                                className="w-full pixel-box-sm p-2 text-[9px] mb-2 bg-white text-black focus:outline-none"
+                                            />
+
+                                            <button
+                                                type="button"
+                                                onClick={() => syncFormUrl && createNewRoom(syncFormUrl)}
+                                                disabled={!syncFormUrl || syncStatus === 'syncing'}
+                                                className={`w-full pixel-box-sm py-2 text-[10px] bg-green-500 text-white active:scale-95 mb-3 ${(!syncFormUrl || syncStatus === 'syncing') ? 'opacity-50' : ''}`}
+                                            >
+                                                CREATE NEW SYNC
+                                            </button>
+
+                                            <div className="text-center text-[7px] opacity-50 mb-3">— OR, if the other device already made one —</div>
+
+                                            <input
+                                                type="text" value={syncFormRoom} onChange={(e) => setSyncFormRoom(e.target.value)}
+                                                placeholder="PASTE ROOM CODE HERE"
+                                                className="w-full pixel-box-sm p-2 text-[10px] mb-2 bg-white text-black focus:outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => syncFormUrl && syncFormRoom && connectToRoom(syncFormUrl, syncFormRoom)}
+                                                disabled={!syncFormUrl || !syncFormRoom || syncStatus === 'syncing'}
+                                                className={`w-full pixel-box-sm py-2 text-[10px] bg-blue-500 text-white active:scale-95 ${(!syncFormUrl || !syncFormRoom || syncStatus === 'syncing') ? 'opacity-50' : ''}`}
+                                            >
+                                                CONNECT TO EXISTING
+                                            </button>
+
+                                            {syncError && <p className="text-[9px] text-red-500 mt-2">{syncError}</p>}
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {focusTaskId && (
+                        <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-black/95 p-4 sm:p-6 text-white overflow-hidden">
+                            <style>{`
+                                @keyframes shake { 0% { transform: translate(1px, 1px) rotate(0deg); } 10% { transform: translate(-1px, -2px) rotate(-1deg); } 20% { transform: translate(-3px, 0px) rotate(1deg); } 30% { transform: translate(3px, 2px) rotate(0deg); } 40% { transform: translate(1px, -1px) rotate(1deg); } 50% { transform: translate(-1px, 2px) rotate(-1deg); } 60% { transform: translate(-3px, 1px) rotate(0deg); } 70% { transform: translate(3px, 1px) rotate(-1deg); } 80% { transform: translate(-1px, -1px) rotate(1deg); } 90% { transform: translate(1px, 2px) rotate(0deg); } 100% { transform: translate(1px, -2px) rotate(-1deg); } }
+                                .boss-shake { animation: shake 0.5s; animation-iteration-count: infinite; }
+                                .scanlines { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06)); background-size: 100% 4px, 3px 100%; pointer-events: none; z-index: 10; }
+                            `}</style>
+                            <div className="scanlines"></div>
+                            
+                            <div className="relative z-20 w-full max-w-sm flex flex-col items-center text-center">
+                                <h2 className="text-red-500 text-lg sm:text-xl mb-8 animate-pulse">WARNING! ENEMY APPROACHING</h2>
+                                
+                                {tasks.find(t => t.id === focusTaskId) && (
+                                    <div className="boss-shake pixel-box bg-red-900 border-red-500 p-6 sm:p-8 mb-8 w-full">
+                                        <div className="flex justify-center mb-6">
+                                            <svg width="48" height="48" viewBox="0 0 16 16" fill="white">
+                                                <rect x="4" y="2" width="8" height="8" />
+                                                <rect x="5" y="10" width="6" height="4" />
+                                                <rect x="5" y="5" width="2" height="2" fill="var(--app-hudBg, #000)"/>
+                                                <rect x="9" y="5" width="2" height="2" fill="var(--app-hudBg, #000)"/>
+                                                <rect x="7" y="8" width="2" height="1" fill="var(--app-hudBg, #000)"/>
+                                                <rect x="5" y="11" width="1" height="3" fill="var(--app-hudBg, #000)"/>
+                                                <rect x="7" y="11" width="2" height="3" fill="var(--app-hudBg, #000)"/>
+                                                <rect x="10" y="11" width="1" height="3" fill="var(--app-hudBg, #000)"/>
+                                            </svg>
+                                        </div>
+                                        <p className="text-sm leading-loose mb-6 break-words">{tasks.find(t => t.id === focusTaskId).text}</p>
+                                        
+                                        <div className="flex gap-4 mt-6">
+                                            <button 
+                                                onClick={() => handleDefeatBoss(tasks.find(t => t.id === focusTaskId))}
+                                                className="flex-1 bg-red-500 text-white pixel-box-sm py-4 active:bg-white active:text-red-500 text-xs"
+                                            >
+                                                DEFEAT
+                                            </button>
+                                            <button 
+                                                onClick={() => { sound.playError(); setFocusTaskId(null); }}
+                                                className="flex-1 bg-gray-700 text-white pixel-box-sm py-4 active:bg-gray-500 text-xs"
+                                            >
+                                                FLEE
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+                            </div>
+                        </div>
+                    )}
+
+                    {isAddingQuest && (
+                        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+                            <div className="w-full max-w-md pixel-box bg-white p-6 animate-pop pb-safe max-h-[90vh] overflow-y-auto hide-scrollbar" style={{ backgroundColor: activeTheme.windowBg }}>
+                                <h2 className="text-sm mb-4">NEW QUEST</h2>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    
+                                    const subs = [];
+                                    if(fd.get('sub1') && fd.get('sub1').trim()) subs.push({id: 's1_'+Date.now(), text: fd.get('sub1').trim(), done: false});
+                                    if(fd.get('sub2') && fd.get('sub2').trim()) subs.push({id: 's2_'+Date.now(), text: fd.get('sub2').trim(), done: false});
+                                    if(fd.get('sub3') && fd.get('sub3').trim()) subs.push({id: 's3_'+Date.now(), text: fd.get('sub3').trim(), done: false});
+
+                                    handleAddTask(fd.get('text'), questDateValue, fd.get('boardId'), subs, buildRecurrence(), questIsBoss);
+                                }}>
+                                    <textarea 
+                                        name="text" required autoFocus
+                                        placeholder="What needs doing?"
+                                        className="font-readable w-full pixel-box-sm p-3 text-[13px] mb-4 min-h-[80px] bg-white text-black focus:outline-none"
+                                    ></textarea>
+
+                                    {!showSubtasksInput ? (
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setShowSubtasksInput(true)} 
+                                            className="w-full pixel-box-sm py-3 text-[10px] bg-white/50 text-black mb-4 border-dashed border-2 active:bg-gray-100"
+                                        >
+                                            + ADD SUBTASKS
+                                        </button>
+                                    ) : (
+                                        <div className="mb-4 space-y-2">
+                                            <div className="flex justify-between items-center opacity-70">
+                                                <p className="text-[8px]">SUBTASKS (OPTIONAL)</p>
+                                                <button type="button" onClick={() => setShowSubtasksInput(false)} className="text-red-500 text-[10px]">X</button>
+                                            </div>
+                                            <input type="text" name="sub1" placeholder="- Subtask 1" className="font-readable w-full pixel-box-sm p-2 text-[13px] bg-white/70 text-black focus:outline-none" />
+                                            <input type="text" name="sub2" placeholder="- Subtask 2" className="font-readable w-full pixel-box-sm p-2 text-[13px] bg-white/70 text-black focus:outline-none" />
+                                            <input type="text" name="sub3" placeholder="- Subtask 3" className="font-readable w-full pixel-box-sm p-2 text-[13px] bg-white/70 text-black focus:outline-none" />
+                                        </div>
+                                    )}
+                                    
+                                    <p className="text-[8px] mb-2 opacity-70">DUE DATE (OPTIONAL)</p>
+                                    <div className="flex gap-2 mb-4">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => { setQuestDateChoice(null); setQuestDateValue(''); }} 
+                                            className={`flex-1 pixel-box-sm py-2 text-[10px] active:scale-95 ${questDateChoice === null ? 'bg-yellow-400 text-black' : 'bg-gray-200 text-black'}`}
+                                        >
+                                            NO DATE
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => { setQuestDateChoice('today'); setQuestDateValue(getTodayStr()); }} 
+                                            className={`flex-1 pixel-box-sm py-2 text-[10px] active:scale-95 ${questDateChoice === 'today' ? 'bg-yellow-400 text-black' : 'bg-gray-200 text-black'}`}
+                                        >
+                                            TODAY
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => { setQuestDateChoice('tomorrow'); setQuestDateValue(getTomorrowStr()); }} 
+                                            className={`flex-1 pixel-box-sm py-2 text-[10px] active:scale-95 ${questDateChoice === 'tomorrow' ? 'bg-yellow-400 text-black' : 'bg-gray-200 text-black'}`}
+                                        >
+                                            TMRW
+                                        </button>
+                                    </div>
+                                    <div className="w-full mb-4">
+                                        <input 
+                                            type="date" name="date" 
+                                            value={questDateValue} 
+                                            onChange={(e) => { setQuestDateValue(e.target.value); setQuestDateChoice(e.target.value ? 'custom' : null); }} 
+                                            className="w-full pixel-box-sm p-3 text-[10px] bg-white text-black block" 
+                                        />
+                                    </div>
+
+                                    <div className="mb-6">
+                                        <p className="text-[8px] mb-2 opacity-70">REPEAT (OPTIONAL)</p>
+                                        <div className="flex gap-2 mb-2">
+                                            {[{ key: null, label: 'NONE' }, { key: 'daily', label: 'DAILY' }, { key: 'weekly', label: 'WEEKLY' }, { key: 'custom', label: 'CUSTOM' }].map(opt => (
+                                                <button
+                                                    key={opt.label}
+                                                    type="button"
+                                                    onClick={() => setQuestRecurrenceType(opt.key)}
+                                                    className={`flex-1 pixel-box-sm py-2 text-[9px] active:scale-95 ${questRecurrenceType === opt.key ? 'bg-purple-400 text-white' : 'bg-gray-200 text-black'}`}
+                                                >
+                                                    {opt.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                        {questRecurrenceType === 'custom' && (
+                                            <div className="flex gap-2 items-center p-2 pixel-box-sm bg-purple-50">
+                                                <span className="text-[9px] text-black flex-shrink-0">EVERY</span>
+                                                <input
+                                                    type="number" min="1" max="365"
+                                                    value={questCustomValue}
+                                                    onChange={(e) => setQuestCustomValue(e.target.value)}
+                                                    className="w-14 pixel-box-sm p-1 text-[10px] text-black text-center"
+                                                />
+                                                <div className="flex gap-1 flex-1">
+                                                    {['days', 'weeks'].map(u => (
+                                                        <button
+                                                            key={u}
+                                                            type="button"
+                                                            onClick={() => setQuestCustomUnit(u)}
+                                                            className={`flex-1 pixel-box-sm py-1 text-[9px] active:scale-95 ${questCustomUnit === u ? 'bg-purple-400 text-white' : 'bg-gray-200 text-black'}`}
+                                                        >
+                                                            {u.toUpperCase()}
+                                                        </button>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </div>
+
+                                    <button
+                                        type="button"
+                                        onClick={() => setQuestIsBoss(!questIsBoss)}
+                                        className={`w-full mb-6 pixel-box-sm py-2 text-[10px] active:scale-95 flex items-center justify-center gap-2 ${questIsBoss ? 'bg-red-500 text-white' : 'bg-gray-200 text-black'}`}
+                                    >
+                                        👑 {questIsBoss ? 'BOSS QUEST — +100XP / +25G' : 'MARK AS BOSS QUEST'}
+                                    </button>
+                                    
+                                    <select name="boardId" defaultValue={activeBoardId} className="w-full pixel-box-sm p-3 text-[10px] mb-6 bg-white text-black">
+                                        {boards.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                    </select>
+                                    
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={() => { sound.playBlip(); setIsAddingQuest(false); setShowSubtasksInput(false); }} className="flex-1 pixel-box-sm py-3 text-xs bg-gray-300 text-black active:scale-95">CANCEL</button>
+                                        <button type="submit" className="flex-1 pixel-box-sm py-3 text-xs bg-green-500 text-white active:scale-95">SAVE</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {editingTaskId && editForm && (
+                        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-end sm:items-center justify-center p-4">
+                            <div className="w-full max-w-md pixel-box p-0 animate-pop pb-safe max-h-[90vh] overflow-y-auto hide-scrollbar" style={{ backgroundColor: activeTheme.windowBg }}>
+                                <div className="flex items-center justify-between px-6 py-3 mb-4" style={{ backgroundColor: '#1c7a91', color: '#ffffff' }}>
+                                    <h2 className="text-sm flex items-center gap-2">✏️ EDIT QUEST</h2>
+                                    {(() => {
+                                        const editingTask = tasks.find(t => t.id === editingTaskId);
+                                        const statusLabel = editingTask?.status === 'doing' ? '⚔️ IN BATTLE' : editingTask?.status === 'done' ? '✓ VICTORY' : '📜 QUEST LOG';
+                                        return <span className="text-[9px] pixel-box-sm px-2 py-1 bg-black/25">{statusLabel}</span>;
+                                    })()}
+                                </div>
+
+                                <div className="px-6">
+                                <textarea
+                                    value={editForm.text}
+                                    onChange={(e) => setEditForm({ ...editForm, text: e.target.value })}
+                                    className="font-readable w-full pixel-box-sm p-3 text-[13px] mb-4 min-h-[80px] bg-white text-black focus:outline-none"
+                                ></textarea>
+
+                                <div className="mb-4 space-y-2">
+                                    <p className="text-[8px] opacity-70">SUBTASKS</p>
+                                    {editForm.subtasks.map((sub, idx) => (
+                                        <div key={sub.id || idx} className="flex gap-2 items-center">
+                                            <input
+                                                type="text"
+                                                value={sub.text}
+                                                onChange={(e) => {
+                                                    const next = [...editForm.subtasks];
+                                                    next[idx] = { ...next[idx], text: e.target.value };
+                                                    setEditForm({ ...editForm, subtasks: next });
+                                                }}
+                                                className="font-readable flex-1 pixel-box-sm p-2 text-[13px] bg-white/70 text-black focus:outline-none"
+                                            />
+                                            <button
+                                                type="button"
+                                                onClick={() => setEditForm({ ...editForm, subtasks: editForm.subtasks.filter((_, i) => i !== idx) })}
+                                                className="text-red-500 text-[10px] px-2 flex-shrink-0"
+                                            >
+                                                X
+                                            </button>
+                                        </div>
+                                    ))}
+                                    <button
+                                        type="button"
+                                        onClick={() => setEditForm({ ...editForm, subtasks: [...editForm.subtasks, { id: 'e_' + Date.now() + Math.random(), text: '', done: false }] })}
+                                        className="w-full pixel-box-sm py-2 text-[10px] bg-white/50 text-black border-dashed border-2 active:bg-gray-100"
+                                    >
+                                        + ADD SUBTASK
+                                    </button>
+                                </div>
+
+                                <div className="w-full mb-4">
+                                    <p className="text-[8px] mb-2 opacity-70">DUE DATE (OPTIONAL)</p>
+                                    <div className="flex gap-2 mb-2">
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setEditForm({ ...editForm, dueDate: '' })} 
+                                            className={`flex-1 pixel-box-sm py-2 text-[10px] active:scale-95 ${!editForm.dueDate ? 'bg-yellow-400 text-black' : 'bg-gray-200 text-black'}`}
+                                        >
+                                            NO DATE
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setEditForm({ ...editForm, dueDate: getTodayStr() })} 
+                                            className={`flex-1 pixel-box-sm py-2 text-[10px] active:scale-95 ${editForm.dueDate === getTodayStr() ? 'bg-yellow-400 text-black' : 'bg-gray-200 text-black'}`}
+                                        >
+                                            TODAY
+                                        </button>
+                                        <button 
+                                            type="button" 
+                                            onClick={() => setEditForm({ ...editForm, dueDate: getTomorrowStr() })} 
+                                            className={`flex-1 pixel-box-sm py-2 text-[10px] active:scale-95 ${editForm.dueDate === getTomorrowStr() ? 'bg-yellow-400 text-black' : 'bg-gray-200 text-black'}`}
+                                        >
+                                            TMRW
+                                        </button>
+                                    </div>
+                                    <input
+                                        type="date"
+                                        value={editForm.dueDate}
+                                        onChange={(e) => setEditForm({ ...editForm, dueDate: e.target.value })}
+                                        className="w-full pixel-box-sm p-3 text-[10px] bg-white text-black block"
+                                    />
+                                </div>
+
+                                <div className="mb-6">
+                                    <p className="text-[8px] mb-2 opacity-70">REPEAT (OPTIONAL)</p>
+                                    <div className="flex gap-2 mb-2">
+                                        {[{ key: null, label: 'NONE' }, { key: 'daily', label: 'DAILY' }, { key: 'weekly', label: 'WEEKLY' }, { key: 'custom', label: 'CUSTOM' }].map(opt => (
+                                            <button
+                                                key={opt.label}
+                                                type="button"
+                                                onClick={() => setEditForm({ ...editForm, recurrenceType: opt.key })}
+                                                className={`flex-1 pixel-box-sm py-2 text-[9px] active:scale-95 ${editForm.recurrenceType === opt.key ? 'bg-purple-400 text-white' : 'bg-gray-200 text-black'}`}
+                                            >
+                                                {opt.label}
+                                            </button>
+                                        ))}
+                                    </div>
+                                    {editForm.recurrenceType === 'custom' && (
+                                        <div className="flex gap-2 items-center p-2 pixel-box-sm bg-purple-50">
+                                            <span className="text-[9px] text-black flex-shrink-0">EVERY</span>
+                                            <input
+                                                type="number" min="1" max="365"
+                                                value={editForm.customValue}
+                                                onChange={(e) => setEditForm({ ...editForm, customValue: e.target.value })}
+                                                className="w-14 pixel-box-sm p-1 text-[10px] text-black text-center"
+                                            />
+                                            <div className="flex gap-1 flex-1">
+                                                {['days', 'weeks'].map(u => (
+                                                    <button
+                                                        key={u}
+                                                        type="button"
+                                                        onClick={() => setEditForm({ ...editForm, customUnit: u })}
+                                                        className={`flex-1 pixel-box-sm py-1 text-[9px] active:scale-95 ${editForm.customUnit === u ? 'bg-purple-400 text-white' : 'bg-gray-200 text-black'}`}
+                                                    >
+                                                        {u.toUpperCase()}
+                                                    </button>
+                                                ))}
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => setEditForm({ ...editForm, isBoss: !editForm.isBoss })}
+                                    className={`w-full mb-6 pixel-box-sm py-2 text-[10px] active:scale-95 flex items-center justify-center gap-2 ${editForm.isBoss ? 'bg-red-500 text-white' : 'bg-gray-200 text-black'}`}
+                                >
+                                    👑 {editForm.isBoss ? 'BOSS QUEST — +100XP / +25G' : 'MARK AS BOSS QUEST'}
+                                </button>
+
+                                <select
+                                    value={editForm.boardId}
+                                    onChange={(e) => setEditForm({ ...editForm, boardId: e.target.value })}
+                                    className="w-full pixel-box-sm p-3 text-[10px] mb-6 bg-white text-black"
+                                >
+                                    {boards.map(b => <option key={b.id} value={b.id}>{b.name}</option>)}
+                                </select>
+
+                                <div className="flex gap-3 pb-6">
+                                    <button 
+                                        type="button" 
+                                        onClick={() => { handleDeleteTask(editingTaskId); closeEditTask(); }} 
+                                        className="pixel-box-sm px-4 py-3 text-xs bg-red-500 text-white active:scale-95"
+                                        title="Delete this quest"
+                                    >
+                                        🗑
+                                    </button>
+                                    <button type="button" onClick={closeEditTask} className="flex-1 pixel-box-sm py-3 text-xs bg-gray-300 text-black active:scale-95">CANCEL</button>
+                                    <button type="button" onClick={saveTaskEdit} className="flex-1 pixel-box-sm py-3 text-xs bg-green-500 text-white active:scale-95">SAVE CHANGES</button>
+                                </div>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {isManagingBoard && (
+                        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="w-full max-w-md pixel-box bg-white p-6 animate-pop" style={{ backgroundColor: activeTheme.windowBg }}>
+                                <h2 className="text-sm mb-4">CREATE BOARD</h2>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    const newBoard = { id: 'b_'+Date.now(), name: fd.get('name').toUpperCase() };
+                                    setBoards([...boards, newBoard]);
+                                    setActiveBoardId(newBoard.id);
+                                    sound.playCoin();
+                                    setIsManagingBoard(false);
+                                }}>
+                                    <input type="text" name="name" required placeholder="BOARD NAME" maxLength="15" className="w-full pixel-box-sm p-3 text-[10px] mb-6 bg-white text-black focus:outline-none" />
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={() => { sound.playBlip(); setIsManagingBoard(false); }} className="flex-1 pixel-box-sm py-3 text-xs bg-gray-300 text-black active:scale-95">CANCEL</button>
+                                        <button type="submit" className="flex-1 pixel-box-sm py-3 text-xs bg-blue-500 text-white active:scale-95">CREATE</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {isAddingLibCat && (
+                        <div className="fixed inset-0 z-[60] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="w-full max-w-md pixel-box bg-white p-6 animate-pop" style={{ backgroundColor: activeTheme.windowBg }}>
+                                <h2 className="text-sm mb-4">CREATE LIST</h2>
+                                <form onSubmit={(e) => {
+                                    e.preventDefault();
+                                    const fd = new FormData(e.target);
+                                    const newCat = { 
+                                        id: 'c_'+Date.now(), 
+                                        name: fd.get('name').toUpperCase(),
+                                        emoji: fd.get('emoji') || '📝',
+                                        markerStyle: 'check'
+                                    };
+                                    setLibraryCategories([...libraryCategories, newCat]);
+                                    setActiveLibCat(newCat.id);
+                                    sound.playCoin();
+                                    setIsAddingLibCat(false);
+                                }}>
+                                    <div className="flex gap-2 mb-6">
+                                        <input 
+                                            type="text" 
+                                            name="emoji" 
+                                            placeholder="Emoji" 
+                                            maxLength="2"
+                                            defaultValue="📝"
+                                            className="w-16 pixel-box-sm p-3 text-sm text-center bg-white text-black focus:outline-none" 
+                                        />
+                                        <input 
+                                            type="text" 
+                                            name="name" 
+                                            required 
+                                            placeholder="LIST NAME" 
+                                            maxLength="15" 
+                                            className="flex-1 pixel-box-sm p-3 text-[10px] bg-white text-black focus:outline-none" 
+                                        />
+                                    </div>
+                                    <div className="flex gap-3">
+                                        <button type="button" onClick={() => { sound.playBlip(); setIsAddingLibCat(false); }} className="flex-1 pixel-box-sm py-3 text-xs bg-gray-300 text-black active:scale-95">CANCEL</button>
+                                        <button type="submit" className="flex-1 pixel-box-sm py-3 text-xs bg-blue-500 text-white active:scale-95">CREATE</button>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- DELETE CONFIRMATION MODAL --- */}
+                    {deleteConfirm.show && (
+                        <div className="fixed inset-0 z-[110] bg-black/60 backdrop-blur-sm flex items-center justify-center p-4">
+                            <div className="w-full max-w-sm pixel-box bg-white p-6 animate-pop text-center" style={{ backgroundColor: activeTheme.windowBg }}>
+                                <h2 className="text-red-500 text-lg mb-4 animate-pulse font-bold">WARNING!</h2>
+                                <p className="text-sm mb-6 leading-relaxed">
+                                    Are you sure you want to delete <br/>
+                                    <span className="text-blue-500 font-bold">{deleteConfirm.name}</span>?
+                                </p>
+                                <div className="flex gap-4">
+                                    <button 
+                                        onClick={() => { sound.playBlip(); setDeleteConfirm({ show: false, type: '', id: '', name: '' }); }}
+                                        className="flex-1 bg-gray-500 text-white pixel-box-sm py-3 active:scale-95 text-xs"
+                                    >
+                                        CANCEL
+                                    </button>
+                                    <button 
+                                        onClick={() => { executeDelete(); }}
+                                        className="flex-1 bg-red-500 text-white pixel-box-sm py-3 active:scale-95 text-xs"
+                                    >
+                                        DELETE
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* --- DRAG GHOST (follows pointer while a quest is being dragged) --- */}
+                    {dragState && (() => {
+                        const draggedTask = tasks.find(t => t.id === dragState.taskId);
+                        if (!draggedTask) return null;
+                        return (
+                            <div
+                                className="fixed z-[200] pixel-box p-3 pointer-events-none"
+                                style={{
+                                    left: dragState.x - dragState.offsetX,
+                                    top: dragState.y - dragState.offsetY,
+                                    width: dragState.width,
+                                    backgroundColor: activeTheme.windowBg,
+                                    color: activeTheme.border,
+                                    transform: 'rotate(-2deg) scale(1.03)',
+                                    opacity: 0.95
+                                }}
+                            >
+                                <p className="text-sm break-words leading-tight">{draggedTask.text}</p>
+                            </div>
+                        );
+                    })()}
+                </div>
+            );
+
+            function TaskCard({ task, compact = false }) {
+                const isOverdue = task.dueDate && task.dueDate < getTodayStr() && task.status !== 'done';
+                const isDone = task.status === 'done';
+                const isBeingDragged = dragState && dragState.taskId === task.id;
+                const isHolding = holdingTaskId === task.id;
+                
+                return (
+                    <div 
+                        className={`pixel-box p-3 relative group transition-opacity ${isDone ? 'opacity-70' : 'bg-white text-black'} ${isBeingDragged ? 'opacity-30' : ''} ${isHolding ? 'animate-hold-pulse' : ''}`} 
+                        style={{ backgroundColor: isDone ? activeTheme.tagBg : activeTheme.windowBg, cursor: isDone ? 'default' : 'grab' }}
+                        onPointerDown={(e) => !isDone && handleCardPointerDown(e, task)}
+                    >
+                        
+                        <button 
+                            onClick={() => handleDeleteTask(task.id)} 
+                            onPointerDown={(e) => e.stopPropagation()}
+                            className="absolute top-2 right-2 text-red-500 font-bold px-1.5 py-0.5 pixel-box-sm bg-white/80 active:scale-90 text-[10px]"
+                            title="Delete Task"
+                        >
+                            X
+                        </button>
+
+                        <div className="flex items-start gap-3 pr-6">
+                            <button 
+                                onClick={() => handleToggleTaskStatus(task)}
+                                onPointerDown={(e) => e.stopPropagation()}
+                                disabled={isDone}
+                                className={`w-6 h-6 flex-shrink-0 pixel-box-sm flex items-center justify-center text-xs mt-0.5 ${isDone ? 'bg-black text-white cursor-not-allowed opacity-60' : 'bg-white active:scale-90'}`}
+                            >
+                                {task.status === 'doing' ? '⚔️' : task.status === 'done' ? '✓' : ''}
+                            </button>
+                            
+                            <div className="flex-1 min-w-0">
+                                <p 
+                                    onClick={(e) => { e.stopPropagation(); if (!isDone && !justDraggedRef.current) openEditTask(task); }}
+                                    className={`font-readable text-[13px] mb-2 break-words leading-snug ${isDone ? 'line-through opacity-70' : 'cursor-pointer'}`}
+                                >
+                                    {task.text}
+                                </p>
+                                
+                                {task.subtasks && task.subtasks.length > 0 && (
+                                    <div className="mb-3 space-y-1.5 border-l-2 pl-2" style={{ borderColor: activeTheme.border }}>
+                                        {task.subtasks.map((sub, idx) => (
+                                            <div key={sub.id} className="flex items-center gap-2">
+                                                <button
+                                                    onClick={(e) => { e.stopPropagation(); handleToggleSubtask(task.id, idx); }}
+                                                    onPointerDown={(e) => e.stopPropagation()}
+                                                    disabled={isDone}
+                                                    className={`w-3.5 h-3.5 flex-shrink-0 pixel-box-sm flex items-center justify-center ${sub.done ? 'bg-green-500 text-white' : 'bg-white'} ${isDone ? 'cursor-not-allowed opacity-70' : ''}`}
+                                                >
+                                                    {sub.done && <span className="text-[8px] leading-none">✓</span>}
+                                                </button>
+                                                <span className={`font-readable text-[13px] leading-snug ${sub.done ? 'line-through opacity-50' : ''}`}>{sub.text}</span>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
+                                
+                                <div className="flex flex-wrap gap-2 items-center">
+                                    {isDone && (
+                                        <span className="bg-yellow-200 text-black px-1.5 py-0.5 pixel-box-sm text-[8px]">
+                                            +{calculateTaskReward(task).xp}XP +{calculateTaskReward(task).gold}G
+                                        </span>
+                                    )}
+
+                                    {task.isBoss && (
+                                        <span className="px-1.5 py-0.5 pixel-box-sm text-[8px] bg-red-500 text-white">
+                                            👑 BOSS
+                                        </span>
+                                    )}
+                                    
+                                    {isDone && task.completedAt && (
+                                        <span className="px-1.5 py-0.5 pixel-box-sm text-[8px] bg-green-200 text-black">
+                                            ✓ {task.completedAt}
+                                        </span>
+                                    )}
+
+                                    {task.dueDate && !isDone && (
+                                        <span className={`px-1.5 py-0.5 pixel-box-sm text-[8px] flex items-center gap-1 ${isOverdue ? 'bg-amber-200 text-black' : 'bg-white text-black'}`}>
+                                            📅 {task.dueDate === getTodayStr() ? 'TODAY' : task.dueDate === getTomorrowStr() ? 'TMRW' : task.dueDate}
+                                        </span>
+                                    )}
+
+                                    {task.recurrence && !isDone && (
+                                        <span className="px-1.5 py-0.5 pixel-box-sm text-[8px] bg-purple-200 text-black">
+                                            🔁 {task.recurrence.type === 'daily' ? 'DAILY' : task.recurrence.type === 'weekly' ? 'WEEKLY' : `EVERY ${task.recurrence.value}${task.recurrence.unit === 'weeks' ? 'W' : 'D'}`}
+                                        </span>
+                                    )}
+
+                                    {task.recurrence && task.streak > 0 && !isDone && (
+                                        <span className="px-1.5 py-0.5 pixel-box-sm text-[8px] bg-orange-200 text-black">
+                                            🔥 {task.streak}-STREAK
+                                        </span>
+                                    )}
+
+                                    {!isDone && (
+                                        <select
+                                            value={task.boardId}
+                                            onChange={(e) => {
+                                                const newBoardId = e.target.value;
+                                                if (newBoardId === task.boardId) return;
+                                                setTasks(prevTasks => prevTasks.map(t => t.id === task.id ? { ...t, boardId: newBoardId } : t));
+                                                sound.playBlip(500);
+                                                if (newBoardId !== 'general') setActiveBoardId(newBoardId);
+                                            }}
+                                            onClick={(e) => e.stopPropagation()}
+                                            onPointerDown={(e) => e.stopPropagation()}
+                                            className="px-1 py-0.5 pixel-box-sm text-[8px] bg-blue-200 text-black"
+                                            title="Move to board"
+                                        >
+                                            <option value="general">General</option>
+                                            {boards.filter(b => b.id !== 'all').map(b => (
+                                                <option key={b.id} value={b.id}>{b.name}</option>
+                                            ))}
+                                        </select>
+                                    )}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Reroll Action */}
+                        {isOverdue && !isDone && (
+                            <div className="mt-3 pt-3 border-t-2 border-black/10 flex justify-start items-center">
+                                <button onClick={() => handleRerollTask(task.id)} onPointerDown={(e) => e.stopPropagation()} className="bg-purple-500 text-white px-2 py-1 pixel-box-sm text-[8px] active:scale-95 flex items-center gap-1">
+                                    🎲 REROLL (5G)
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                );
+            }
+
+            function getTaskGroup(dateStr) {
+                if (!dateStr) return 'No Date';
+                if (dateStr === getTodayStr()) return 'Today';
+                if (dateStr === getTomorrowStr()) return 'Tomorrow';
+                if (dateStr < getTodayStr()) return 'Overdue';
+                return 'Upcoming';
+            }
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>

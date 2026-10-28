@@ -1,0 +1,651 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Tamagotchi Password Generator</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --bg: #bfb895;
+    --bg-alt: #b8b08e;
+    --bezel: #8a8a7a;
+    --bezel-dark: #6a6a5e;
+    --bezel-light: #d0ccb8;
+    --screen-bg: #2a2a2e;
+    --screen-deep: #0e0e10;
+    --text: #c8c8a0;
+    --text-dim: #5a5a4e;
+    --input-bg: #1a1a1e;
+    --bar-red: #c14040;
+    --bar-yellow: #d4a830;
+    --bar-green: #7bac3e;
+  }
+
+  body {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: repeating-conic-gradient(var(--bg) 0% 25%, var(--bg-alt) 0% 50%) 0 0 / 8px 8px;
+    font-family: 'Press Start 2P', monospace;
+    padding: 20px;
+  }
+
+  /* CRT Monitor Shell */
+  .monitor {
+    width: 400px;
+    background: var(--bezel);
+    border-radius: 18px;
+    border: 3px solid var(--bezel-dark);
+    box-shadow:
+      inset 0 2px 0 var(--bezel-light),
+      inset 0 -2px 0 var(--bezel-dark),
+      0 10px 40px rgba(0,0,0,0.55);
+  }
+
+  .monitor-top { height: 16px; }
+
+  .screen-recess {
+    margin: 0 14px;
+    background: var(--screen-deep);
+    border-radius: 8px;
+    padding: 5px;
+    box-shadow: inset 0 0 16px rgba(0,0,0,0.9);
+  }
+
+  .screen {
+    background: var(--screen-bg);
+    border-radius: 4px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Scanlines */
+  .screen::before {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none; z-index: 10;
+    background: repeating-linear-gradient(
+      0deg, transparent, transparent 2px,
+      rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px
+    );
+    border-radius: 4px;
+  }
+
+  /* Vignette */
+  .screen::after {
+    content: '';
+    position: absolute; inset: 0;
+    pointer-events: none; z-index: 9;
+    border-radius: 4px;
+    box-shadow: inset 0 0 50px rgba(0,0,0,0.45);
+  }
+
+  /* Checkered header bar */
+  .dither-bar {
+    height: 20px;
+    background-image: repeating-conic-gradient(
+      rgba(90,90,78,0.33) 0% 25%, transparent 0% 50%
+    );
+    background-size: 6px 6px;
+    border-bottom: 1px solid var(--text-dim);
+  }
+
+  /* Title bar */
+  .title-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 10px;
+    border-bottom: 1px solid rgba(90,90,78,0.27);
+  }
+  .title-bar-text { font-size: 7px; color: var(--text); letter-spacing: 1px; }
+  .title-bar-btns { display: flex; gap: 4px; }
+  .title-bar-btn {
+    width: 10px; height: 10px;
+    border: 1px solid var(--text-dim);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 6px; color: var(--text-dim); line-height: 1;
+  }
+
+  /* Creature info */
+  .creature-info {
+    text-align: center;
+    padding: 12px 0 0 0;
+  }
+  .creature-name { font-size: 10px; color: var(--text); letter-spacing: 2px; }
+  .creature-level { font-size: 6px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
+
+  /* Pet viewport */
+  .pet-viewport {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 200px;
+    position: relative;
+    padding: 8px 0;
+  }
+
+  /* Dithered floor */
+  .pet-viewport::after {
+    content: '';
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 20px;
+    background-image: repeating-conic-gradient(
+      rgba(90,90,78,0.13) 0% 25%, transparent 0% 50%
+    );
+    background-size: 4px 4px;
+  }
+
+  /* Pixel grid for the pet */
+  .pixel-grid {
+    position: relative;
+    image-rendering: pixelated;
+    margin: 0 auto;
+    animation: petIdle 2.5s ease-in-out infinite;
+    z-index: 1;
+  }
+  .pixel-grid.bounce { animation: petBounce 0.6s ease-in-out; }
+  .pixel-grid .px {
+    position: absolute;
+  }
+
+  @keyframes petIdle {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+  }
+  @keyframes petBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-14px) scale(1.06); }
+    60% { transform: translateY(3px) scale(0.97); }
+  }
+
+  /* Evolution pips */
+  .pips {
+    display: flex;
+    justify-content: center;
+    gap: 5px;
+    padding: 6px 0;
+  }
+  .pip {
+    width: 8px; height: 8px;
+    border: 1px solid var(--text-dim);
+    background: transparent;
+    transition: all 0.3s;
+  }
+  .pip.active {
+    background: var(--text);
+    border-color: var(--text);
+  }
+
+  /* Controls panel */
+  .controls {
+    border-top: 1px solid rgba(90,90,78,0.27);
+    padding: 10px 12px 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  /* Entropy */
+  .entropy-header {
+    display: flex;
+    justify-content: space-between;
+    font-size: 6px;
+    color: var(--text-dim);
+    letter-spacing: 1px;
+    margin-bottom: 4px;
+  }
+  .entropy-track {
+    width: 100%;
+    height: 6px;
+    background: var(--input-bg);
+    border: 1px solid var(--text-dim);
+  }
+  .entropy-fill {
+    height: 100%;
+    background: var(--bar-red);
+    transition: width 0.3s, background 0.3s;
+    width: 0%;
+  }
+
+  /* Input */
+  .pw-input-wrap {
+    border: 2px solid var(--text-dim);
+    border-top-color: #3a3a2e;
+    border-left-color: #3a3a2e;
+    border-bottom-color: #7a7a6e;
+    border-right-color: #7a7a6e;
+    background: var(--input-bg);
+    padding: 6px 8px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  .pw-prompt { font-size: 7px; color: var(--text-dim); }
+  .pw-input {
+    flex: 1;
+    background: none;
+    border: none;
+    outline: none;
+    color: var(--text);
+    font-size: 8px;
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 1px;
+    padding: 0;
+  }
+  .pw-input::placeholder { color: var(--text-dim); }
+
+  /* Buttons */
+  .btn-row { display: flex; gap: 4px; }
+  .retro-btn {
+    flex: 1;
+    padding: 8px 0;
+    background: var(--input-bg);
+    border: 2px solid var(--text-dim);
+    border-top-color: #7a7a6e;
+    border-left-color: #7a7a6e;
+    color: var(--text);
+    font-size: 7px;
+    font-family: 'Press Start 2P', monospace;
+    letter-spacing: 1px;
+    cursor: pointer;
+    image-rendering: pixelated;
+  }
+  .retro-btn:active {
+    border-top-color: #3a3a2e;
+    border-left-color: #3a3a2e;
+    border-bottom-color: #7a7a6e;
+    border-right-color: #7a7a6e;
+    background: #3a3a3e;
+  }
+
+  /* Monitor bottom */
+  .monitor-bottom {
+    display: flex;
+    justify-content: center;
+    padding: 12px 0 10px 0;
+  }
+  .power-btn {
+    width: 26px; height: 26px;
+    border: 2px solid var(--bezel-dark);
+    border-radius: 4px;
+    display: flex; align-items: center; justify-content: center;
+    background: var(--bezel);
+    box-shadow: inset 0 1px 0 var(--bezel-light);
+  }
+  .power-icon {
+    width: 12px; height: 12px;
+    border: 2px solid var(--bezel-dark);
+    border-radius: 50%;
+    position: relative;
+  }
+  .power-icon::before {
+    content: '';
+    position: absolute;
+    top: -1px; left: 50%;
+    transform: translateX(-50%);
+    width: 2px; height: 5px;
+    background: var(--bezel-dark);
+  }
+  .brand {
+    text-align: center;
+    padding-bottom: 10px;
+    font-size: 5px;
+    color: var(--bezel-dark);
+    letter-spacing: 3px;
+  }
+</style>
+</head>
+<body>
+
+<div class="monitor">
+  <div class="monitor-top"></div>
+  <div class="screen-recess">
+    <div class="screen">
+      <div class="dither-bar"></div>
+
+      <div class="title-bar">
+        <span class="title-bar-text">TAMAGO.EXE</span>
+        <div class="title-bar-btns">
+          <div class="title-bar-btn">-</div>
+          <div class="title-bar-btn">x</div>
+        </div>
+      </div>
+
+      <div class="creature-info">
+        <div class="creature-name" id="creatureName">SAD BLOB</div>
+        <div class="creature-level" id="creatureLevel">LV.1 PATHETIC</div>
+      </div>
+
+      <div class="pet-viewport">
+        <div class="pixel-grid" id="pixelGrid"></div>
+      </div>
+
+      <div class="pips" id="pips"></div>
+
+      <div class="controls">
+        <div>
+          <div class="entropy-header">
+            <span>ENTROPY</span>
+            <span id="entropyBits">0 BITS</span>
+          </div>
+          <div class="entropy-track">
+            <div class="entropy-fill" id="entropyFill"></div>
+          </div>
+        </div>
+
+        <div class="pw-input-wrap">
+          <span class="pw-prompt">&gt;</span>
+          <input class="pw-input" id="pwInput" type="password" placeholder="TYPE PASSWORD..." autocomplete="off" spellcheck="false">
+        </div>
+
+        <div class="btn-row">
+          <button class="retro-btn" id="btnGenerate">GENERATE</button>
+          <button class="retro-btn" id="btnToggle">SHOW</button>
+          <button class="retro-btn" id="btnCopy">COPY</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="monitor-bottom">
+    <div class="power-btn"><div class="power-icon"></div></div>
+  </div>
+  <div class="brand">TAMAGO-OS v1.0</div>
+</div>
+
+<script>
+// --- DATA ---
+const C = null;
+const CREATURES = {
+  sadBlob: {
+    name: "SAD BLOB",
+    palette: { 1:"#7b8e3e",2:"#5a6e2e",3:"#3d4d1f",4:"#1a1a1a",5:"#c8c8a0" },
+    grid: [
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,1,1,1,1,C,C,C,C,C,C],
+      [C,C,C,C,C,1,1,1,1,1,1,C,C,C,C,C],
+      [C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],
+      [C,C,C,C,1,4,4,1,1,4,4,1,C,C,C,C],
+      [C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],
+      [C,C,C,1,1,1,1,4,4,1,1,1,1,C,C,C],
+      [C,C,C,1,2,2,2,2,2,2,2,2,1,C,C,C],
+      [C,C,C,C,3,3,3,3,3,3,3,3,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
+    ]
+  },
+  happySlime: {
+    name: "SLIMEY",
+    palette: { 1:"#54d654",2:"#3ab43a",3:"#228b22",4:"#1a1a1a",5:"#fff" },
+    grid: [
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,1,1,1,1,C,C,C,C,C,C],
+      [C,C,C,C,C,1,1,1,1,1,1,C,C,C,C,C],
+      [C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],
+      [C,C,C,1,1,1,1,1,1,1,1,1,1,C,C,C],
+      [C,C,C,1,1,4,4,1,1,4,4,1,1,C,C,C],
+      [C,C,C,1,1,4,5,1,1,4,5,1,1,C,C,C],
+      [C,C,C,1,1,1,1,1,1,1,1,1,1,C,C,C],
+      [C,C,1,1,1,1,4,4,4,1,1,1,1,1,C,C],
+      [C,C,1,2,2,2,2,2,2,2,2,2,2,1,C,C],
+      [C,C,C,3,3,3,3,3,3,3,3,3,3,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
+    ]
+  },
+  pixelCat: {
+    name: "BYTEKITTY",
+    palette: { 1:"#f5a623",2:"#d4851f",3:"#1a1a1a",4:"#fff",5:"#ff6b9d",6:"#e08a1e" },
+    grid: [
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,1,1,C,C,C,C,C,C,1,1,C,C,C,C],
+      [C,1,6,1,C,C,C,C,C,C,1,6,1,C,C,C],
+      [C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
+      [C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
+      [C,1,1,3,3,1,1,1,1,3,3,1,1,C,C,C],
+      [C,1,1,3,4,1,1,1,1,3,4,1,1,C,C,C],
+      [C,1,1,1,1,1,5,5,1,1,1,1,1,C,C,C],
+      [C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
+      [C,C,1,1,1,1,1,1,1,1,1,1,C,C,C,C],
+      [C,C,C,1,1,1,1,1,1,1,1,C,C,C,C,C],
+      [C,C,C,1,1,C,1,1,C,1,1,C,C,C,C,C],
+      [C,C,C,1,1,C,1,1,C,1,1,C,C,C,C,C],
+      [C,C,C,2,2,C,2,2,C,2,2,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
+    ]
+  },
+  wolf: {
+    name: "FENRIR",
+    palette: { 1:"#7788aa",2:"#556688",3:"#334466",4:"#1a1a1a",5:"#fff",6:"#ff4444",7:"#aabbcc" },
+    grid: [
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,1,1,C,C,C,C,C,C,1,1,C,C,C,C],
+      [C,1,7,1,1,C,C,C,C,1,7,1,C,C,C,C],
+      [C,1,7,1,1,1,1,1,1,1,1,7,1,C,C,C],
+      [C,C,1,1,1,1,1,1,1,1,1,1,C,C,C,C],
+      [C,C,1,4,5,1,1,1,4,5,1,1,C,C,C,C],
+      [C,C,1,4,6,1,1,1,4,6,1,1,C,C,C,C],
+      [C,C,1,1,1,1,4,1,1,1,1,1,C,C,C,C],
+      [C,C,1,1,1,4,4,4,1,1,1,1,C,C,C,C],
+      [C,C,C,2,1,1,1,1,1,1,2,C,C,C,C,C],
+      [C,C,C,2,2,1,1,1,1,2,2,C,C,C,C,C],
+      [C,C,C,2,C,2,2,2,C,2,C,C,C,C,C,C],
+      [C,C,C,3,C,3,C,3,C,3,C,C,C,C,C,C],
+      [C,C,C,3,C,3,C,3,C,3,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
+    ]
+  },
+  dragon: {
+    name: "PYROSCALE",
+    palette: { 1:"#e63946",2:"#c1121f",3:"#780000",4:"#1a1a1a",5:"#ffd60a",6:"#ff9500",7:"#fff" },
+    grid: [
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,5,5,C,C,C,C,C,C,C,5,5,C,C,C,C],
+      [C,6,5,1,C,C,C,C,C,1,5,6,C,C,C,C],
+      [C,C,1,1,1,1,1,1,1,1,1,C,C,C,C,C],
+      [C,C,1,1,1,1,1,1,1,1,1,C,C,5,C,C],
+      [C,C,1,4,7,1,1,1,4,7,1,C,5,5,C,C],
+      [C,C,1,4,5,1,1,1,4,5,1,1,5,C,C,C],
+      [C,C,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
+      [C,C,2,1,1,5,5,5,1,1,1,1,1,5,C,C],
+      [C,C,2,2,1,6,6,6,1,1,1,1,5,5,C,C],
+      [C,C,C,2,2,1,1,1,1,2,2,1,5,C,C,C],
+      [C,C,C,3,1,C,1,1,C,1,3,C,C,C,C,C],
+      [C,C,C,3,1,C,3,3,C,1,3,C,C,C,C,C],
+      [C,C,3,3,C,C,3,3,C,C,3,3,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
+    ]
+  },
+  mechaBeast: {
+    name: "MECH-X",
+    palette: { 1:"#00f0ff",2:"#0088cc",3:"#005577",4:"#1a1a1a",5:"#ff00ff",6:"#fff",7:"#00ff88",8:"#aaeeff" },
+    grid: [
+      [C,C,C,5,C,C,C,C,C,C,5,C,C,C,C,C],
+      [C,C,5,1,5,C,C,C,C,5,1,5,C,C,C,C],
+      [C,C,1,2,1,1,1,1,1,1,2,1,C,C,C,C],
+      [C,C,1,2,2,2,2,2,2,2,2,1,C,C,C,C],
+      [C,1,1,5,6,2,2,2,5,6,2,1,1,C,C,C],
+      [C,1,1,5,7,2,8,2,5,7,2,1,1,C,C,C],
+      [C,1,2,2,2,2,2,2,2,2,2,2,1,C,C,C],
+      [C,1,2,2,7,7,7,7,7,2,2,2,1,C,C,C],
+      [C,C,3,2,2,2,2,2,2,2,2,3,C,C,C,C],
+      [5,1,3,3,2,7,2,2,7,2,3,3,1,5,C,C],
+      [C,1,C,3,3,2,2,2,2,3,3,C,1,C,C,C],
+      [C,7,C,3,C,3,3,3,C,3,C,C,7,C,C,C],
+      [C,C,C,1,C,1,C,1,C,1,C,C,C,C,C,C],
+      [C,C,1,5,C,5,1,5,C,5,1,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
+    ]
+  }
+};
+
+const STAGES = [
+  { key:"sadBlob",    min:0,   label:"PATHETIC"  },
+  { key:"happySlime", min:20,  label:"WEAK"      },
+  { key:"pixelCat",   min:40,  label:"FAIR"      },
+  { key:"wolf",       min:60,  label:"STRONG"    },
+  { key:"dragon",     min:80,  label:"V.STRONG"  },
+  { key:"mechaBeast", min:100, label:"LEGENDARY" }
+];
+
+// --- LOGIC ---
+function calcEntropy(pw) {
+  if (!pw) return 0;
+  let pool = 0;
+  if (/[a-z]/.test(pw)) pool += 26;
+  if (/[A-Z]/.test(pw)) pool += 26;
+  if (/[0-9]/.test(pw)) pool += 10;
+  if (/[^a-zA-Z0-9]/.test(pw)) pool += 33;
+  return Math.floor(pw.length * Math.log2(pool || 1));
+}
+
+function getStage(entropy) {
+  let s = STAGES[0];
+  for (const stage of STAGES) {
+    if (entropy >= stage.min) s = stage;
+  }
+  return s;
+}
+
+function generatePassword(len = 20) {
+  const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
+  const arr = new Uint32Array(len);
+  crypto.getRandomValues(arr);
+  return Array.from(arr, v => chars[v % chars.length]).join("");
+}
+
+// --- RENDERING ---
+const GRID_SIZE = 16;
+const PX = Math.floor(176 / GRID_SIZE); // 11px per pixel
+
+const $ = id => document.getElementById(id);
+let currentStageKey = "sadBlob";
+let showPassword = false;
+let copyTimeout = null;
+
+function renderGrid(creatureKey) {
+  const creature = CREATURES[creatureKey];
+  const grid = $("pixelGrid");
+  grid.innerHTML = "";
+  grid.style.width = PX * GRID_SIZE + "px";
+  grid.style.height = PX * GRID_SIZE + "px";
+
+  for (let y = 0; y < GRID_SIZE; y++) {
+    for (let x = 0; x < GRID_SIZE; x++) {
+      const cell = creature.grid[y][x];
+      if (cell !== null) {
+        const el = document.createElement("div");
+        el.className = "px";
+        el.style.left = x * PX + "px";
+        el.style.top = y * PX + "px";
+        el.style.width = PX + "px";
+        el.style.height = PX + "px";
+        el.style.backgroundColor = creature.palette[cell];
+        grid.appendChild(el);
+      }
+    }
+  }
+}
+
+function renderPips(stageIndex) {
+  const pips = $("pips");
+  pips.innerHTML = "";
+  for (let i = 0; i < STAGES.length; i++) {
+    const pip = document.createElement("div");
+    pip.className = "pip" + (i <= stageIndex ? " active" : "");
+    pips.appendChild(pip);
+  }
+}
+
+function triggerBounce() {
+  const grid = $("pixelGrid");
+  grid.classList.add("bounce");
+  grid.addEventListener("animationend", () => {
+    grid.classList.remove("bounce");
+  }, { once: true });
+}
+
+function update() {
+  const pw = $("pwInput").value;
+  const entropy = calcEntropy(pw);
+  const stage = getStage(entropy);
+  const stageIndex = STAGES.findIndex(s => s.key === stage.key);
+  const creature = CREATURES[stage.key];
+  const barPercent = Math.min((entropy / 128) * 100, 100);
+
+  // Bar color
+  let barColor;
+  if (stageIndex <= 1) barColor = "var(--bar-red)";
+  else if (stageIndex <= 3) barColor = "var(--bar-yellow)";
+  else barColor = "var(--bar-green)";
+
+  $("creatureName").textContent = creature.name;
+  $("creatureLevel").textContent = "LV." + (stageIndex + 1) + " " + stage.label;
+  $("entropyBits").textContent = entropy + " BITS";
+  $("entropyFill").style.width = barPercent + "%";
+  $("entropyFill").style.background = barColor;
+
+  renderPips(stageIndex);
+
+  if (stage.key !== currentStageKey) {
+    currentStageKey = stage.key;
+    renderGrid(stage.key);
+    triggerBounce();
+  }
+}
+
+// --- INIT ---
+renderGrid("sadBlob");
+renderPips(0);
+
+$("pwInput").addEventListener("input", update);
+
+$("btnGenerate").addEventListener("click", () => {
+  const pw = generatePassword(20);
+  $("pwInput").value = pw;
+  showPassword = true;
+  $("pwInput").type = "text";
+  $("btnToggle").textContent = "HIDE";
+  update();
+});
+
+$("btnToggle").addEventListener("click", () => {
+  showPassword = !showPassword;
+  $("pwInput").type = showPassword ? "text" : "password";
+  $("btnToggle").textContent = showPassword ? "HIDE" : "SHOW";
+});
+
+$("btnCopy").addEventListener("click", () => {
+  const pw = $("pwInput").value;
+  if (!pw) return;
+  navigator.clipboard.writeText(pw);
+  $("btnCopy").textContent = "OK!";
+  clearTimeout(copyTimeout);
+  copyTimeout = setTimeout(() => {
+    $("btnCopy").textContent = "COPY";
+  }, 1500);
+});
+</script>
+
+</body>
+</html>

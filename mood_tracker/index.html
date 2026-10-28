@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Mood Tracker</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.development.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+    
+    <!-- Babel for JSX -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #0f172a;
+            border-left: 1px solid #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #334155;
+            border: 1px solid #0f172a;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        /* Diagonal lines pattern for empty days */
+        .pattern-diagonal-lines {
+            background-image: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 5px,
+                rgba(255, 255, 255, 0.03) 5px,
+                rgba(255, 255, 255, 0.03) 10px
+            );
+        }
+        body {
+            background-color: #0f172a;
+            overscroll-behavior: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useMemo } = React;
+
+        // --- Inline Icons to avoid dependency issues ---
+        const Icon = ({ path, size = 24, className = "", fill = "none" }) => (
+            <svg 
+                xmlns="http://www.w3.org/2000/svg" 
+                width={size} 
+                height={size} 
+                viewBox="0 0 24 24" 
+                fill={fill} 
+                stroke="currentColor" 
+                strokeWidth="2" 
+                strokeLinecap="round" 
+                strokeLinejoin="round" 
+                className={className}
+            >
+                {path}
+            </svg>
+        );
+
+        const Icons = {
+            ChevronLeft: (props) => <Icon path={<path d="m15 18-6-6 6-6"/>} {...props} />,
+            ChevronRight: (props) => <Icon path={<path d="m9 18 6-6-6-6"/>} {...props} />,
+            X: (props) => <Icon path={<><path d="M18 6 6 18"/><path d="m6 6 12 12"/></>} {...props} />,
+            BarChart2: (props) => <Icon path={<><path d="M18 20V10"/><path d="M12 20V4"/><path d="M6 20v-6"/></>} {...props} />,
+            Heart: (props) => <Icon path={<path d="M19 14c1.49-1.46 3-3.21 3-5.5A5.5 5.5 0 0 0 16.5 3c-1.76 0-3 .5-4.5 2-1.5-1.5-2.74-2-4.5-2A5.5 5.5 0 0 0 2 8.5c0 2.3 1.5 4.05 3 5.5l7 7Z"/>} {...props} />,
+            Copy: (props) => <Icon path={<><rect width="14" height="14" x="8" y="8" rx="2" ry="2"/><path d="M4 16c-1.1 0-2-.9-2-2V4c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/></>} {...props} />,
+            Check: (props) => <Icon path={<path d="M20 6 9 17l-5-5"/>} {...props} />,
+            Trash2: (props) => <Icon path={<><path d="M3 6h18"/><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"/><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"/><line x1="10" x2="10" y1="11" y2="17"/><line x1="14" x2="14" y1="11" y2="17"/></>} {...props} />
+        };
+
+        // --- Pixel Art Icon Component ---
+        const PixelIcon = ({ name, size = 24, className = "" }) => {
+            const icons = {
+                amazing: <path d="M4 4h4v4H4zM12 4h4v4h-4zM2 8h4v4H2zM14 8h4v4h-4zM2 12h16v4H2zM4 16h12v4H4zM6 20h8v4H6zM8 24h4v4H8z" transform="scale(0.5) translate(8,0)"/>,
+                good: <path d="M4 0h8v2H4zM2 2h2v4H2zM12 2h2v4h-2zM0 4h2v8H0zM14 4h2v8h-2zM2 12h2v2H2zM12 12h2v2h-2zM4 14h8v2H4z" transform="scale(0.8) translate(4,4)"/>,
+                okay: <path d="M4 0h8v2H4zM2 2h2v4H2zM12 2h2v4h-2zM0 4h2v8H0zM14 4h2v8h-2zM2 12h2v2H2zM12 12h2v2h-2zM4 12h8v2H4z" transform="scale(0.8) translate(4,4)"/>,
+                low: <path d="M4 0h8v2H4zM2 2h2v4H2zM12 2h2v4h-2zM0 4h2v8H0zM14 4h2v8h-2zM2 10h2v4H2zM12 10h2v4h-2zM4 10h8v2H4z" transform="scale(0.8) translate(4,4)"/>,
+                bad: <path d="M6 0h4v2H6zM4 2h2v2H4zM10 2h2v2h-2zM2 4h2v6H2zM12 4h2v6h-2zM4 10h2v2H4zM10 10h2v2h-2zM6 12h4v2H6zM4 14h2v2H4zM10 14h2v2h-2z" transform="scale(0.8) translate(4,4)"/>
+            };
+
+            return (
+                <svg 
+                viewBox="0 0 24 24" 
+                width={size} 
+                height={size} 
+                className={className} 
+                fill="currentColor"
+                shapeRendering="crispEdges" 
+                xmlns="http://www.w3.org/2000/svg"
+                >
+                {icons[name] || null}
+                </svg>
+            );
+        };
+
+        // --- Configuration & Constants ---
+        const MOODS = [
+            { id: 5, label: "Amazing", color: "bg-violet-500", text: "text-violet-400", pixelIcon: "amazing" },
+            { id: 4, label: "Good",    color: "bg-emerald-500", text: "text-emerald-400", pixelIcon: "good" },
+            { id: 3, label: "Okay",    color: "bg-amber-400",   text: "text-amber-400",   pixelIcon: "okay" },
+            { id: 2, label: "Low",     color: "bg-blue-400",    text: "text-blue-400",    pixelIcon: "low" },
+            { id: 1, label: "Bad",     color: "bg-rose-500",    text: "text-rose-500",    pixelIcon: "bad" },
+        ];
+
+        const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+        const DAYS = Array.from({ length: 31 }, (_, i) => i + 1);
+
+        // --- Components ---
+
+        const Modal = ({ isOpen, onClose, children, title }) => {
+            if (!isOpen) return null;
+            
+            return (
+                <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-sm animate-in fade-in duration-200">
+                <div className="bg-slate-900 border border-slate-700 rounded-none shadow-2xl w-full max-w-md p-6 relative animate-in zoom-in-95 duration-200 max-h-[90vh] overflow-y-auto custom-scrollbar ring-1 ring-slate-800">
+                    <div className="absolute top-0 left-0 w-2 h-2 bg-slate-700"></div>
+                    <div className="absolute top-0 right-0 w-2 h-2 bg-slate-700"></div>
+                    <div className="absolute bottom-0 left-0 w-2 h-2 bg-slate-700"></div>
+                    <div className="absolute bottom-0 right-0 w-2 h-2 bg-slate-700"></div>
+
+                    <div className="flex justify-between items-center mb-6 sticky top-0 bg-slate-900 z-10 pb-2 border-b-2 border-slate-800">
+                    <h3 className="text-lg font-bold text-slate-200 font-mono tracking-wider uppercase">{title}</h3>
+                    <button 
+                        onClick={onClose}
+                        className="p-1 hover:bg-slate-800 rounded-none transition-colors border border-transparent hover:border-slate-700 text-slate-400 hover:text-white"
+                    >
+                        <Icons.X size={20} />
+                    </button>
+                    </div>
+                    {children}
+                </div>
+                </div>
+            );
+        };
+
+        const MoodCell = ({ dateStr, moodId, onClick, isToday }) => {
+            const mood = MOODS.find(m => m.id === moodId);
+            
+            return (
+                <button
+                onClick={onClick}
+                className={`
+                    w-full h-10 transition-all duration-75 relative flex items-center justify-center
+                    border-r border-b border-slate-700/50
+                    ${mood ? mood.color : 'bg-slate-800/20 hover:bg-slate-700/40'}
+                    ${isToday ? 'ring-2 ring-indigo-400 z-10' : ''}
+                `}
+                title={dateStr}
+                >
+                {mood && (
+                    <div className="transform scale-75"></div>
+                )}
+                </button>
+            );
+        };
+
+        const StatCard = ({ label, value, colorClass, pixelIcon }) => (
+            <div className="bg-slate-800 p-3 sm:p-4 border border-slate-700 flex items-center space-x-4 relative overflow-hidden group">
+                <div className="absolute top-0 left-0 w-1 h-1 bg-slate-600"></div>
+                <div className="absolute bottom-0 right-0 w-1 h-1 bg-slate-600"></div>
+
+                <div className={`${colorClass} opacity-90 transform group-hover:scale-110 transition-transform duration-300`}>
+                <PixelIcon name={pixelIcon} size={32} />
+                </div>
+                <div>
+                <p className="text-[10px] sm:text-xs text-slate-500 font-mono uppercase tracking-widest mb-1">{label}</p>
+                <p className="text-base sm:text-lg font-bold text-slate-200 font-mono">{value}</p>
+                </div>
+            </div>
+        );
+
+        // --- Main Application ---
+        function YearlyMoodTracker() {
+            const [currentYear, setCurrentYear] = useState(2026);
+            const [moodData, setMoodData] = useState({});
+            const [selectedDate, setSelectedDate] = useState(null);
+            const [note, setNote] = useState("");
+            const [showStats, setShowStats] = useState(false);
+            const [copied, setCopied] = useState(false);
+
+            // Load data
+            useEffect(() => {
+                const savedData = localStorage.getItem(`mood_tracker_${currentYear}`);
+                if (savedData) {
+                    try {
+                        setMoodData(JSON.parse(savedData));
+                    } catch (e) {
+                        console.error("Failed to parse mood data", e);
+                    }
+                }
+            }, [currentYear]);
+
+            // Save data
+            useEffect(() => {
+                if (Object.keys(moodData).length > 0) {
+                    localStorage.setItem(`mood_tracker_${currentYear}`, JSON.stringify(moodData));
+                }
+            }, [moodData, currentYear]);
+
+            const handleDateClick = (monthIndex, day) => {
+                const dateStr = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                const dateObj = new Date(currentYear, monthIndex, day);
+                if (dateObj.getMonth() !== monthIndex) return;
+
+                setSelectedDate(dateStr);
+                setNote(moodData[dateStr]?.note || "");
+            };
+
+            const handleMoodSelect = (moodId) => {
+                if (!selectedDate) return;
+                
+                const newData = {
+                    ...moodData,
+                    [selectedDate]: {
+                        moodId,
+                        note,
+                        timestamp: new Date().toISOString()
+                    }
+                };
+                
+                setMoodData(newData);
+            };
+
+            const handleSaveEntry = () => {
+                if (!selectedDate) return;
+                if (moodData[selectedDate]) {
+                     setMoodData({
+                      ...moodData,
+                      [selectedDate]: { ...moodData[selectedDate], note }
+                    });
+                }
+                setSelectedDate(null);
+            };
+
+            const handleRemoveEntry = () => {
+                if (!selectedDate) return;
+                const { [selectedDate]: removed, ...rest } = moodData;
+                setMoodData(rest);
+                setSelectedDate(null);
+                setNote("");
+            };
+
+            const getDaysInMonth = (monthIndex) => {
+                return new Date(currentYear, monthIndex + 1, 0).getDate();
+            };
+
+            const isToday = (monthIndex, day) => {
+                const today = new Date();
+                return today.getFullYear() === currentYear && 
+                       today.getMonth() === monthIndex && 
+                       today.getDate() === day;
+            };
+
+            // Generate plain text export
+            const exportText = useMemo(() => {
+                const sortedDates = Object.keys(moodData).sort();
+                if (sortedDates.length === 0) return "No data recorded yet.";
+                
+                return sortedDates.map(dateStr => {
+                    const entry = moodData[dateStr];
+                    const mood = MOODS.find(m => m.id === entry.moodId);
+                    const moodLabel = mood ? mood.label : "Unknown";
+                    const noteText = entry.note ? ` - "${entry.note}"` : "";
+                    
+                    const dateObj = new Date(dateStr + 'T12:00:00');
+                    const month = dateObj.toLocaleDateString('en-US', { month: 'long' });
+                    const day = dateObj.getDate();
+                    const year = dateObj.getFullYear();
+                    
+                    const suffix = (day >= 11 && day <= 13) ? 'th' : 
+                        ['th', 'st', 'nd', 'rd'][day % 10] || 'th';
+
+                    const formattedDate = `${month} ${day}${suffix}, ${year}`;
+
+                    return `${formattedDate} | ${moodLabel}${noteText}`;
+                }).join('\n');
+            }, [moodData]);
+
+            const handleCopy = () => {
+                navigator.clipboard.writeText(exportText);
+                setCopied(true);
+                setTimeout(() => setCopied(false), 2000);
+            };
+
+            const stats = useMemo(() => {
+                const totalLogged = Object.keys(moodData).length;
+                const moodCounts = MOODS.map(m => ({
+                    ...m,
+                    count: Object.values(moodData).filter(d => d.moodId === m.id).length
+                }));
+                
+                const mostFrequent = moodCounts.reduce((prev, current) => 
+                    (prev.count > current.count) ? prev : current
+                , moodCounts[0]);
+
+                let streak = 0;
+                const today = new Date();
+                for (let i = 0; i < 365; i++) {
+                    const d = new Date(today);
+                    d.setDate(today.getDate() - i);
+                    if (d.getFullYear() !== currentYear) break;
+                    
+                    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                    if (moodData[dateStr]) streak++;
+                    else if (i > 0) break; 
+                }
+
+                return { totalLogged, moodCounts, mostFrequent, streak };
+            }, [moodData, currentYear]);
+
+            return (
+                <div className="fixed inset-0 flex flex-col font-sans text-slate-200 selection:bg-indigo-500/30 bg-slate-900">
+                    
+                    {/* --- Header --- */}
+                    <header className="bg-slate-900 border-b border-slate-700 z-50 flex-none shadow-lg">
+                        <div className="max-w-7xl mx-auto px-4 py-4 flex flex-col sm:flex-row justify-between items-center gap-4">
+                            
+                            {/* Title Area */}
+                            <div className="flex items-center space-x-3">
+                                <div className="w-10 h-10 bg-indigo-600 flex items-center justify-center border-2 border-indigo-400 shadow-[2px_2px_0px_rgba(0,0,0,0.5)]">
+                                    <Icons.Heart size={20} className="text-white" fill="rgba(255,255,255,0.2)" />
+                                </div>
+                                <div>
+                                    <h1 className="text-2xl font-bold text-white tracking-widest font-mono uppercase leading-none">
+                                    MOOD TRACKER
+                                    </h1>
+                                    <p className="text-[10px] text-slate-500 font-mono mt-1">YEARLY LOG // {currentYear}</p>
+                                </div>
+                            </div>
+
+                            <div className="flex items-center gap-3">
+                                <div className="flex items-center space-x-1 bg-slate-800 p-1 border border-slate-700">
+                                    <button 
+                                        onClick={() => setCurrentYear(y => y - 1)}
+                                        className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                                    >
+                                        <Icons.ChevronLeft size={18} />
+                                    </button>
+                                    <span className="font-mono font-bold px-3 w-16 text-center text-white text-base">{currentYear}</span>
+                                    <button 
+                                        onClick={() => setCurrentYear(y => y + 1)}
+                                        className="p-1.5 hover:bg-slate-700 text-slate-400 hover:text-white transition-colors"
+                                    >
+                                        <Icons.ChevronRight size={18} />
+                                    </button>
+                                </div>
+
+                                <button 
+                                    onClick={() => setShowStats(true)}
+                                    className="flex items-center justify-center h-9 px-4 bg-indigo-600 hover:bg-indigo-500 text-white border-2 border-indigo-400 shadow-[2px_2px_0px_#000] active:translate-y-[2px] active:shadow-none transition-all text-xs font-bold font-mono uppercase tracking-wide"
+                                >
+                                    <Icons.BarChart2 size={16} className="sm:mr-2" />
+                                    <span className="hidden sm:inline">Stats</span>
+                                </button>
+                            </div>
+                        </div>
+                    </header>
+
+                    {/* --- Main Content --- */}
+                    <main className="flex-1 relative flex flex-col overflow-hidden w-full max-w-7xl mx-auto">
+                        
+                        {/* Legend */}
+                        <div className="flex-none p-3 border-b border-slate-800 bg-slate-900/95 backdrop-blur-sm z-40">
+                            <div className="flex flex-wrap gap-4 justify-center">
+                                {MOODS.map(mood => (
+                                <div key={mood.id} className="flex items-center space-x-2 group cursor-default">
+                                    <div className={`${mood.text} transform group-hover:scale-110 transition-transform`}>
+                                        <PixelIcon name={mood.pixelIcon} size={16} />
+                                    </div>
+                                    <span className="text-[10px] sm:text-xs font-bold font-mono text-slate-400 uppercase tracking-wider">{mood.label}</span>
+                                </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* Grid Container */}
+                        <div className="flex-1 overflow-auto overscroll-contain custom-scrollbar relative bg-slate-900">
+                            
+                            {/* Grid Layout */}
+                            <div className="grid grid-cols-[3rem_repeat(12,_minmax(3rem,_1fr))] min-w-[max-content] pb-20">
+                                
+                                {/* Header Row (Months) - Sticky Top */}
+                                <div className="sticky top-0 z-40 bg-slate-900 border-b border-r border-slate-700 p-2 flex items-center justify-center font-mono text-[10px] text-slate-500 font-bold shadow-md">
+                                    #
+                                </div>
+                                {MONTHS.map(month => (
+                                    <div key={month} className="sticky top-0 z-40 bg-slate-900 border-b border-r border-slate-700 py-3 text-center text-xs font-bold font-mono text-slate-300 uppercase tracking-widest shadow-md">
+                                    {month}
+                                    </div>
+                                ))}
+
+                                {/* Data Rows (Days) */}
+                                {DAYS.map(day => (
+                                    <React.Fragment key={day}>
+                                    {/* Sticky Column (Day Number) - Sticky Left */}
+                                    <div className="sticky left-0 z-30 bg-slate-900 border-b border-r border-slate-700 flex items-center justify-center text-xs font-mono text-slate-400 font-bold shadow-[2px_0_5px_rgba(0,0,0,0.3)]">
+                                        {day}
+                                    </div>
+                                    
+                                    {/* Month Cells */}
+                                    {MONTHS.map((_, monthIndex) => {
+                                        const daysInMonth = getDaysInMonth(monthIndex);
+                                        const isValidDay = day <= daysInMonth;
+                                        
+                                        if (!isValidDay) {
+                                        return <div key={monthIndex} className="bg-black/20 border-b border-r border-slate-700/30 pattern-diagonal-lines" />;
+                                        }
+
+                                        const dateStr = `${currentYear}-${String(monthIndex + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                                        const entry = moodData[dateStr];
+
+                                        return (
+                                        <div key={monthIndex}>
+                                            <MoodCell 
+                                            dateStr={dateStr}
+                                            moodId={entry?.moodId}
+                                            onClick={() => handleDateClick(monthIndex, day)}
+                                            isToday={isToday(monthIndex, day)}
+                                            />
+                                        </div>
+                                        );
+                                    })}
+                                    </React.Fragment>
+                                ))}
+                            </div>
+                        </div>
+                    </main>
+
+                    {/* --- Mood Selection Modal --- */}
+                    <Modal 
+                        isOpen={!!selectedDate} 
+                        onClose={() => setSelectedDate(null)}
+                        title={selectedDate ? new Date(selectedDate + "T12:00:00").toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }).toUpperCase() : ''}
+                    >
+                        <div className="space-y-8">
+                            <div className="text-center">
+                                <h4 className="text-[10px] font-bold text-slate-500 mb-6 font-mono uppercase tracking-[0.2em]">Select Status</h4>
+                                
+                                <div className="flex flex-wrap justify-center items-center gap-6">
+                                {MOODS.map(mood => {
+                                    const isSelected = moodData[selectedDate]?.moodId === mood.id;
+                                    return (
+                                    <button
+                                        key={mood.id}
+                                        onClick={() => handleMoodSelect(mood.id)}
+                                        className={`
+                                        group flex flex-col items-center gap-3 transition-all duration-200 outline-none
+                                        ${isSelected ? 'transform scale-110' : 'opacity-50 hover:opacity-100'}
+                                        `}
+                                    >
+                                        <div className={`${mood.text} drop-shadow-[0_0_10px_rgba(255,255,255,0.1)]`}>
+                                        <PixelIcon name={mood.pixelIcon} size={42} />
+                                        </div>
+                                        <span className={`text-[10px] font-bold font-mono uppercase tracking-widest ${isSelected ? mood.text : 'text-slate-500'}`}>
+                                        {mood.label}
+                                        </span>
+                                    </button>
+                                    )
+                                })}
+                                </div>
+                            </div>
+
+                            <div className="pt-6 border-t-2 border-slate-800 border-dashed">
+                                <h4 className="text-[10px] font-bold text-slate-500 mb-3 font-mono uppercase tracking-[0.2em]">Log Data</h4>
+                                <textarea
+                                className="w-full p-4 bg-slate-950 border-2 border-slate-800 text-slate-300 rounded-none focus:border-indigo-500 focus:outline-none resize-none text-sm font-mono placeholder-slate-700"
+                                rows="3"
+                                placeholder="System log entry..."
+                                value={note}
+                                onChange={(e) => setNote(e.target.value)}
+                                />
+                                
+                                <div className="flex justify-between items-center mt-6">
+                                    {/* Delete Button (Only shows if entry exists) */}
+                                    {moodData[selectedDate] ? (
+                                    <button
+                                        onClick={handleRemoveEntry}
+                                        className="flex items-center gap-2 px-4 py-2 text-rose-500 hover:text-rose-400 text-xs font-bold font-mono uppercase tracking-wider hover:bg-rose-500/10 transition-colors rounded"
+                                    >
+                                        <Icons.Trash2 size={14} />
+                                        <span>Clear</span>
+                                    </button>
+                                    ) : (
+                                    <div></div> /* Spacer */
+                                    )}
+
+                                    <button 
+                                    onClick={handleSaveEntry}
+                                    className="px-6 py-2 bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold font-mono uppercase tracking-wider border-2 border-indigo-400 shadow-[4px_4px_0px_#000] active:translate-y-[2px] active:translate-x-[2px] active:shadow-[2px_2px_0px_#000] transition-all"
+                                    >
+                                    Save Entry
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </Modal>
+
+                    {/* --- Stats Modal --- */}
+                    <Modal
+                        isOpen={showStats}
+                        onClose={() => setShowStats(false)}
+                        title="DATA_ANALYSIS"
+                    >
+                        <div className="grid grid-cols-2 gap-4 mb-8">
+                            <StatCard 
+                                label="Entries" 
+                                value={stats.totalLogged} 
+                                colorClass="text-blue-400" 
+                                pixelIcon="good"
+                            />
+                            <StatCard 
+                                label="Streak" 
+                                value={`${stats.streak} DAYS`} 
+                                colorClass="text-amber-400" 
+                                pixelIcon="amazing"
+                            />
+                            <StatCard 
+                                label="Dominant" 
+                                value={stats.mostFrequent ? stats.mostFrequent.label : "-"} 
+                                colorClass={stats.mostFrequent ? stats.mostFrequent.text : "text-slate-500"} 
+                                pixelIcon={stats.mostFrequent ? stats.mostFrequent.pixelIcon : "okay"}
+                            />
+                            <StatCard 
+                                label="Progress" 
+                                value={`${Math.round((new Date().getMonth() / 11) * 100)}%`} 
+                                colorClass="text-indigo-400" 
+                                pixelIcon="good" 
+                            />
+                        </div>
+
+                        <h4 className="text-[10px] font-bold text-slate-500 mb-4 font-mono uppercase tracking-[0.2em]">Distribution</h4>
+                        <div className="space-y-4 mb-8">
+                            {stats.moodCounts.map(mood => (
+                                <div key={mood.id} className="flex items-center gap-4">
+                                <div className={`${mood.text}`}>
+                                    <PixelIcon name={mood.pixelIcon} size={20} />
+                                </div>
+                                <div className="flex-1">
+                                    <div className="flex justify-between text-[10px] mb-1 font-mono">
+                                    <span className="font-bold text-slate-400 uppercase tracking-wider">{mood.label}</span>
+                                    <span className="text-slate-500">{mood.count}</span>
+                                    </div>
+                                    <div className="w-full bg-slate-800 h-3 p-[2px]">
+                                    <div 
+                                        className={`h-full ${mood.color}`} 
+                                        style={{ width: `${stats.totalLogged > 0 ? (mood.count / stats.totalLogged) * 100 : 0}%` }} 
+                                    />
+                                    </div>
+                                </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        {/* --- Export Section --- */}
+                        <div className="pt-6 border-t-2 border-slate-800 border-dashed">
+                            <div className="flex justify-between items-end mb-3">
+                                <h4 className="text-[10px] font-bold text-slate-500 font-mono uppercase tracking-[0.2em]">Export Log</h4>
+                                <button
+                                onClick={handleCopy}
+                                className="flex items-center gap-2 px-3 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-[10px] font-mono uppercase border border-slate-600 transition-colors"
+                                >
+                                {copied ? <Icons.Check size={12} /> : <Icons.Copy size={12} />}
+                                <span>{copied ? "COPIED" : "COPY"}</span>
+                                </button>
+                            </div>
+                            <textarea 
+                                readOnly
+                                value={exportText}
+                                className="w-full h-32 p-3 bg-slate-950 border border-slate-800 text-[10px] font-mono text-slate-400 focus:outline-none resize-none leading-relaxed"
+                            />
+                        </div>
+                    </Modal>
+                </div>
+            );
+        }
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<YearlyMoodTracker />);
+    </script>
+</body>
+</html>

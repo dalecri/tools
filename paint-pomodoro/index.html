@@ -1,0 +1,1291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Paint Pomodoro — Natural Watercolor Studio</title>
+  
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  
+  <!-- Google Fonts: Playfair Display for fine-art serif feel & Plus Jakarta Sans -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+  
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+
+  <style>
+    body {
+      font-family: 'Playfair Display', Georgia, serif;
+      user-select: none;
+      -webkit-user-select: none;
+      -webkit-tap-highlight-color: transparent;
+    }
+    .font-sans-ui {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+    }
+    .font-mono-num {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    /* Custom paper grain overlay */
+    .paper-texture {
+      background-color: #edeae4;
+      background-image: radial-gradient(#d6cebe 0.75px, transparent 0.75px), radial-gradient(#d6cebe 0.75px, #edeae4 0.75px);
+      background-size: 30px 30px;
+      background-position: 0 0, 15px 15px;
+    }
+    /* Smooth custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: rgba(0, 0, 0, 0.03);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(120, 113, 108, 0.25);
+      border-radius: 8px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: rgba(120, 113, 108, 0.45);
+    }
+    /* Range input styling */
+    input[type=range] {
+      accent-color: #44403c;
+    }
+  </style>
+</head>
+
+<body class="relative h-screen w-full paper-texture overflow-hidden flex flex-col justify-between p-3 sm:p-5 md:p-7 text-stone-800">
+
+  <!-- Subtle canvas vignette backdrop -->
+  <div class="fixed inset-0 pointer-events-none opacity-40 mix-blend-multiply bg-[radial-gradient(circle_at_center,_transparent_40%,_rgba(120,113,108,0.18)_100%)]"></div>
+
+  <!-- Header Navigation Bar -->
+  <header class="relative w-full flex justify-between items-center z-10 max-w-6xl mx-auto shrink-0 py-1 md:py-2">
+    <div class="flex items-center gap-3">
+      <div class="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white/90 flex items-center justify-center border border-stone-200/80 shadow-sm transition-transform hover:scale-105">
+        <i data-lucide="sparkles" class="w-4 h-4 md:w-5 md:h-5 text-stone-700"></i>
+      </div>
+      <div>
+        <h1 class="text-xs sm:text-sm md:text-lg font-bold tracking-wider uppercase text-stone-800">Paint Pomodoro</h1>
+        <p class="text-[8px] sm:text-[9px] md:text-xs text-stone-500 font-sans-ui font-semibold uppercase tracking-widest">Natural Watercolor & Masterpieces</p>
+      </div>
+    </div>
+
+    <!-- Right Header Controls -->
+    <div class="flex items-center gap-2 md:gap-3">
+      <div id="quickModeBadge" class="hidden items-center gap-1.5 bg-[#f7ede8] border border-[#ebd2c9] text-[#a45344] text-[9px] md:text-xs font-sans-ui font-bold px-3 py-1 rounded-full tracking-wider shadow-inner">
+        <i data-lucide="zap" class="w-3 h-3 text-[#a45344]"></i>
+        <span>QUICK WASH ACTIVE</span>
+      </div>
+
+      <button 
+        id="openGalleryBtn"
+        class="flex items-center gap-1.5 bg-white/85 hover:bg-white border border-stone-200/80 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs font-semibold text-stone-700 transition-all font-sans-ui shadow-sm hover:shadow active:scale-95"
+        title="View unlocked art collection"
+      >
+        <i data-lucide="book-open" class="w-3.5 h-3.5 md:w-4 md:h-4 text-stone-600"></i>
+        <span>Collection</span>
+        <span id="collectionBadgeCount" class="ml-1 bg-stone-200 text-stone-700 text-[10px] px-1.5 py-0.2 rounded-full font-mono-num font-bold">0/5</span>
+      </button>
+      
+      <button 
+        id="openSettingsBtn"
+        class="p-2 md:p-2.5 rounded-full bg-white/85 hover:bg-white border border-stone-200/80 transition-all text-stone-700 shadow-sm hover:shadow active:scale-95"
+        title="Open Studio Configuration"
+      >
+        <i data-lucide="sliders" class="w-4 h-4 md:w-5 md:h-5"></i>
+      </button>
+    </div>
+  </header>
+
+  <!-- Main Canvas Studio Arena -->
+  <main class="relative flex-grow flex flex-col items-center justify-center w-full my-2 max-w-6xl mx-auto overflow-hidden">
+    
+    <!-- Floating Painting Canvas Centerpiece -->
+    <div class="relative w-[68vmin] h-[68vmin] max-w-[460px] max-h-[460px] flex items-center justify-center shrink-0">
+      
+      <!-- Radial Bloom Behind Canvas -->
+      <div class="absolute inset-4 rounded-full bg-stone-300/40 blur-3xl -z-10"></div>
+
+      <canvas
+        id="paintCanvas"
+        width="1200"
+        height="1200"
+        class="w-full h-full object-contain pointer-events-none drop-shadow-md rounded-2xl transition-all duration-500"
+      ></canvas>
+
+      <canvas
+        id="offscreenCanvas"
+        width="1200"
+        height="1200"
+        class="hidden"
+      ></canvas>
+
+      <!-- Empty State Guide -->
+      <div id="startPrompt" class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 transition-opacity duration-300">
+        <p class="text-xs md:text-sm font-bold tracking-widest text-stone-500 uppercase font-sans-ui">Click focus to start the wash</p>
+        <p class="text-[10px] md:text-xs text-stone-400 mt-1 max-w-[240px] font-sans-ui font-medium leading-relaxed">
+          Style: <span id="promptStyle" class="font-bold text-stone-600 underline">watercolor</span> &bull; Path: <span id="promptPattern" class="font-bold text-stone-600 underline">center</span>
+        </p>
+      </div>
+    </div>
+
+    <!-- Completed Artwork Details Panel -->
+    <div id="artMetadataPanel" class="mt-3 text-center max-w-sm md:max-w-md transition-all duration-700 shrink-0 opacity-0 translate-y-3 pointer-events-none h-0 overflow-hidden">
+      <h2 id="metaTitle" class="text-base md:text-lg lg:text-xl font-bold text-stone-900 leading-tight">Artwork Title</h2>
+      <p id="metaArtist" class="text-[11px] md:text-xs lg:text-sm text-stone-600 mt-0.5">Artist, Year (Medium)</p>
+      <p id="metaDesc" class="text-[10px] md:text-xs text-stone-500 mt-1.5 font-sans-ui font-medium leading-relaxed max-w-[320px] md:max-w-[380px] mx-auto">Description of the artwork.</p>
+      
+      <div class="mt-3.5 flex gap-2.5 justify-center font-sans-ui">
+        <button
+          id="metaBreakBtn"
+          class="py-1.5 px-4 rounded-full text-[10px] md:text-xs font-bold bg-stone-800 hover:bg-stone-900 text-white transition-all shadow-sm uppercase tracking-wider active:scale-95"
+        >
+          Start Break
+        </button>
+        <button
+          id="metaNextBtn"
+          class="py-1.5 px-4 rounded-full text-[10px] md:text-xs font-bold bg-stone-200 hover:bg-stone-300 text-stone-800 transition-all uppercase tracking-wider active:scale-95"
+        >
+          Next Masterpiece
+        </button>
+      </div>
+    </div>
+
+    <!-- Floating Control Panel Dock -->
+    <div id="controlDock" class="absolute bottom-2 right-2 md:bottom-4 md:right-4 w-[215px] sm:w-[250px] md:w-[270px] z-20 transition-all">
+      <div class="bg-white/85 backdrop-blur-md border border-stone-200/90 p-3.5 md:p-4 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
+        
+        <!-- Dock Header -->
+        <div class="flex justify-between items-center mb-1">
+          <span id="timerModeLabel" class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase text-stone-500 font-sans-ui">
+            Focus Block
+          </span>
+          <button 
+            id="toggleCollapseBtn"
+            class="text-stone-400 hover:text-stone-700 p-1 rounded-md transition-colors"
+            title="Toggle compact card view"
+          >
+            <i id="collapseChevron" data-lucide="chevron-down" class="w-4 h-4"></i>
+          </button>
+        </div>
+
+        <!-- Expanded Dock Body -->
+        <div id="dockExpandedContent" class="space-y-3 font-sans-ui transition-all">
+          <div class="text-center py-0.5">
+            <span id="timerDisplay" class="text-4xl sm:text-5xl font-extralight tracking-tight font-mono-num text-stone-900">
+              25:00
+            </span>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button
+              id="mainActionBtn"
+              class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-stone-850 bg-stone-900 hover:bg-black text-white transition-all uppercase tracking-wider shadow-sm active:scale-95"
+            >
+              <i id="mainActionIcon" data-lucide="play" class="w-3.5 h-3.5"></i>
+              <span id="mainActionLabel">Focus</span>
+            </button>
+
+            <button
+              id="resetPromptBtn"
+              class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-white hover:bg-stone-50 text-stone-700 border border-stone-200/90 transition-all uppercase tracking-wider active:scale-95"
+            >
+              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
+              <span>Reset</span>
+            </button>
+          </div>
+
+          <div class="pt-2.5 border-t border-stone-200/60 space-y-1.5">
+            <button
+              id="quickSketchBtn"
+              class="w-full py-2 rounded-xl text-[9px] md:text-[10px] font-bold bg-[#faf6f4] hover:bg-[#f5ece8] text-[#a45344] border border-[#e5cbc3] transition-all flex items-center justify-center gap-1.5 shadow-sm uppercase tracking-widest active:scale-95"
+            >
+              <i data-lucide="sparkles" class="w-3 h-3 text-[#a45344]"></i>
+              <span>Quick Sketch (15s)</span>
+            </button>
+
+            <button
+              id="skipBlockBtn"
+              class="w-full py-1.5 rounded-lg text-[9px] font-bold bg-white/70 text-stone-600 hover:text-stone-900 border border-stone-200/80 transition-all flex items-center justify-center gap-1 active:scale-95"
+            >
+              <i data-lucide="skip-forward" class="w-3 h-3"></i>
+              <span>Complete Wash Early</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Collapsed Mini Dock Content -->
+        <div id="dockCollapsedContent" class="hidden items-center justify-between mt-1 font-sans-ui">
+          <span id="miniTimerDisplay" class="text-lg md:text-xl font-mono-num font-semibold text-stone-800">25:00</span>
+          <div class="flex items-center gap-1.5">
+            <button 
+              id="miniQuickBtn"
+              class="p-1.5 rounded-lg bg-[#f5ebe8] text-[#a45344] hover:bg-[#ebd9d4] border border-[#d9b2a9]/50 transition-colors"
+              title="Quick Sketch Mode"
+            >
+              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
+            </button>
+            <button 
+              id="miniPlayBtn"
+              class="p-1.5 rounded-lg bg-stone-850 bg-stone-900 text-white hover:bg-black transition-colors"
+            >
+              <i id="miniPlayIcon" data-lucide="play" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <!-- Studio Status Footer -->
+  <footer class="relative w-full flex justify-between items-center text-[9px] sm:text-[10px] md:text-xs font-sans-ui font-bold text-stone-500 uppercase tracking-widest max-w-6xl mx-auto shrink-0 z-10 py-1">
+    <div id="progressStatus">Progress: 0% wash density</div>
+    <div class="flex items-center gap-3">
+      <span id="currentArtLabel">The Starry Night</span>
+      <span>&bull;</span>
+      <span id="unveiledFooterCount">Unveiled: 0/5</span>
+    </div>
+  </footer>
+
+  <!-- MODAL 1: Studio Configuration Panel -->
+  <div id="settingsModal" class="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-all">
+    <div class="bg-[#fcfaf7] border border-stone-200 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
+      
+      <!-- Modal Header -->
+      <div class="p-4 md:p-5 border-b border-stone-200 flex justify-between items-center bg-stone-50/70 shrink-0">
+        <h2 class="text-xs font-bold text-stone-700 uppercase tracking-widest flex items-center gap-2">
+          <i data-lucide="sliders" class="w-4 h-4 text-stone-600"></i>
+          <span>Studio Configuration</span>
+        </h2>
+        <button id="closeSettingsBtn" class="p-1.5 rounded-full hover:bg-stone-200 text-stone-500 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Navigation Tab Bar -->
+      <div class="flex bg-stone-100/80 p-1.5 gap-1 shrink-0 font-sans-ui border-b border-stone-200/50">
+        <button id="tabTimerBtn" class="flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all bg-white text-stone-900 shadow-sm">
+          <i data-lucide="clock" class="w-3.5 h-3.5"></i>
+          <span>Timer</span>
+        </button>
+        <button id="tabGrowthBtn" class="flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all text-stone-500 hover:text-stone-800">
+          <i data-lucide="palette" class="w-3.5 h-3.5"></i>
+          <span>Style</span>
+        </button>
+        <button id="tabPhysicsBtn" class="flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all text-stone-500 hover:text-stone-800">
+          <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
+          <span>Bleed Physics</span>
+        </button>
+      </div>
+
+      <!-- Tab Content Area -->
+      <div class="p-5 font-sans-ui overflow-y-auto flex-grow space-y-5">
+        
+        <!-- Tab 1: Timer Settings -->
+        <div id="panelTimer" class="space-y-4">
+          <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Interval Durations</span>
+          
+          <div>
+            <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1.5">
+              Focus Block (minutes)
+            </label>
+            <div class="flex items-center gap-3">
+              <input id="inputFocusMin" type="range" min="5" max="60" step="5" value="25" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
+              <span id="labelFocusMin" class="text-xs font-bold w-10 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">25m</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1.5">
+              Break Block (minutes)
+            </label>
+            <div class="flex items-center gap-3">
+              <input id="inputBreakMin" type="range" min="1" max="30" step="1" value="5" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
+              <span id="labelBreakMin" class="text-xs font-bold w-10 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">5m</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 2: Style & Growth Path -->
+        <div id="panelGrowth" class="hidden space-y-5">
+          <div>
+            <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-2">Growth Direction</span>
+            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="growthPatternGroup">
+              <button data-pattern="center" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-stone-900 text-white border-stone-900 shadow-sm">Center Bleed</button>
+              <button data-pattern="top-down" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Top-to-Bottom</button>
+              <button data-pattern="scatter" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Scatter Feed</button>
+              <button data-pattern="spiral" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Spiral Out</button>
+              <button data-pattern="inward" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Inward Squeeze</button>
+            </div>
+          </div>
+
+          <div>
+            <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-2">Render Mode</span>
+            <div class="space-y-2" id="renderStyleGroup">
+              <button data-style="watercolor" class="style-btn w-full text-left p-3 rounded-2xl border transition-all bg-stone-50 border-stone-800 ring-1 ring-stone-800/20">
+                <span class="text-xs font-bold text-stone-900 block">💧 Watercolor Bleed (Default)</span>
+                <span class="text-[9.5px] text-stone-500 mt-0.5 block leading-relaxed">Organic pigment saturation spreading outward with dark pooling rims and wet fluid diffusion.</span>
+              </button>
+              <button data-style="sharpness" class="style-btn w-full text-left p-3 rounded-2xl border transition-all bg-white border-stone-200 hover:bg-stone-50/50">
+                <span class="text-xs font-bold text-stone-800 block">🔍 Progressive Sharpness Decay</span>
+                <span class="text-[9.5px] text-stone-500 mt-0.5 block leading-relaxed">Atmospheric canvas haze and soft blur that clears progressively into high-definition sharpness.</span>
+              </button>
+              <button data-style="pointillism" class="style-btn w-full text-left p-3 rounded-2xl border transition-all bg-white border-stone-200 hover:bg-stone-50/50">
+                <span class="text-xs font-bold text-stone-800 block">🎨 Pointillism / Stipple Detailing</span>
+                <span class="text-[9.5px] text-stone-500 mt-0.5 block leading-relaxed">Pure stipple impressionism built dot-by-dot through separated microscopic pigment points.</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tab 3: Bleed Physics Parameters -->
+        <div id="panelPhysics" class="hidden space-y-5">
+          <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Fluid Dynamics</span>
+
+          <div>
+            <label class="block text-[9.5px] font-bold text-stone-500 uppercase tracking-wider mb-1">
+              Bleed Wetness (Pigment Opacity)
+            </label>
+            <div class="flex items-center gap-3">
+              <input id="inputBleedWetness" type="range" min="0.3" max="1.5" step="0.1" value="0.7" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
+              <span id="labelBleedWetness" class="text-xs font-bold w-12 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">70%</span>
+            </div>
+          </div>
+
+          <div>
+            <label class="block text-[9.5px] font-bold text-stone-500 uppercase tracking-wider mb-1">
+              Bleed Spread (Splat Radius Scale)
+            </label>
+            <div class="flex items-center gap-3">
+              <input id="inputBleedSpread" type="range" min="0.3" max="2.0" step="0.1" value="0.5" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
+              <span id="labelBleedSpread" class="text-xs font-bold w-12 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">0.5x</span>
+            </div>
+          </div>
+
+          <div class="flex items-center justify-between p-3 bg-stone-50 rounded-2xl border border-stone-200">
+            <div>
+              <span class="block text-xs font-bold text-stone-800">Dark rim fringe pooled edge</span>
+              <span class="block text-[9px] text-stone-500 mt-0.5">Simulate authentic pigment concentration at wet borders</span>
+            </div>
+            <input id="inputBleedFringe" type="checkbox" checked class="w-4 h-4 rounded border-stone-300 text-stone-800 focus:ring-stone-800 cursor-pointer">
+          </div>
+
+          <div>
+            <label class="block text-[9.5px] font-bold text-stone-500 uppercase tracking-wider mb-1">
+              Total Droplets (Density)
+            </label>
+            <div class="flex items-center gap-3">
+              <input id="inputMaxSplats" type="range" min="50000" max="200000" step="10000" value="120000" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
+              <span id="labelMaxSplats" class="text-xs font-bold w-12 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">120k</span>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- Modal Footer -->
+      <div class="p-4 md:p-5 border-t border-stone-200 bg-stone-50/70 shrink-0 flex gap-2 font-sans-ui">
+        <button id="cancelSettingsBtn" class="flex-1 py-2.5 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200 transition-all active:scale-95">
+          Cancel
+        </button>
+        <button id="saveSettingsBtn" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-stone-800 hover:bg-stone-900 transition-all shadow-sm active:scale-95">
+          Save & Apply
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 2: Art Collection Gallery -->
+  <div id="galleryModal" class="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-all">
+    <div class="bg-[#fcfaf7] border border-stone-200 w-full max-w-md md:max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
+      
+      <div class="p-4 md:p-5 border-b border-stone-200 flex justify-between items-center bg-stone-50/70 shrink-0">
+        <div>
+          <h2 class="text-xs font-bold text-stone-800 uppercase tracking-widest flex items-center gap-1.5">
+            <i data-lucide="award" class="w-4 h-4 text-stone-600"></i>
+            <span>Unveiled Masterpieces</span>
+          </h2>
+          <p class="text-[9px] text-stone-500 font-sans-ui mt-0.5">Complete focus sessions to unveil each historical masterpiece</p>
+        </div>
+        <button id="closeGalleryBtn" class="p-1.5 rounded-full hover:bg-stone-200 text-stone-500 transition-colors">
+          <i data-lucide="x" class="w-4 h-4"></i>
+        </button>
+      </div>
+
+      <!-- Gallery Grid of Works -->
+      <div class="p-4 md:p-5 overflow-y-auto flex-grow">
+        <div id="galleryGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
+          <!-- Populated dynamically via JS -->
+        </div>
+      </div>
+
+      <div class="p-3.5 border-t border-stone-200/70 bg-stone-50/50 text-center font-sans-ui">
+        <button id="dismissGalleryBtn" class="py-1.5 px-6 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200 transition-colors active:scale-95">
+          Close Gallery
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- MODAL 3: Reset Confirmation Dialog -->
+  <div id="resetModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
+    <div class="bg-[#fcfaf7] border border-stone-200 w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center font-sans-ui">
+      <div class="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3">
+        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
+      </div>
+      <h3 class="text-xs md:text-sm font-bold uppercase tracking-wider text-stone-800 mb-1">Reset Current Canvas?</h3>
+      <p class="text-[10.5px] text-stone-500 leading-relaxed mb-4">
+        This will clear existing watercolor wash layers and restart the countdown for this session.
+      </p>
+      <div class="flex gap-2">
+        <button id="cancelResetBtn" class="flex-1 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 transition-all active:scale-95">
+          Keep Painting
+        </button>
+        <button id="confirmResetBtn" class="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-all active:scale-95 shadow-sm">
+          Reset Now
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Script Logic -->
+  <script>
+    // Authentic artwork library with genuine Great Wave off Kanagawa (Hokusai)
+    const ART_COLLECTION = [
+      {
+        id: 'starry-night',
+        title: 'The Starry Night',
+        artist: 'Vincent van Gogh',
+        year: '1889',
+        medium: 'Oil on canvas',
+        url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ea/Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg/1280px-Van_Gogh_-_Starry_Night_-_Google_Art_Project.jpg',
+        theme: { bg: '#edeae4', accent: '#1e3d59', baseGrad: ['#1d3557', '#e9c46a', '#457b9d', '#0b132b'] },
+        desc: 'Painted from his asylum window at Saint-Rémy-de-Provence, this post-impressionist masterpiece captures turbulent emotional spirals across a glowing sky.'
+      },
+      {
+        id: 'great-wave',
+        title: 'The Great Wave off Kanagawa',
+        artist: 'Katsushika Hokusai',
+        year: 'c. 1831',
+        medium: 'Polychrome woodblock print',
+        url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0a/The_Great_Wave_off_Kanagawa.jpg/1280px-The_Great_Wave_off_Kanagawa.jpg',
+        theme: { bg: '#edeae4', accent: '#1b3a4b', baseGrad: ['#0f2b3e', '#f4f1de', '#3d5a80', '#e07a5f'] },
+        desc: 'The defining masterpiece of ukiyo-e printmaking, depicting a colossal clawing wave towering over oared fishing boats before Mount Fuji.'
+      },
+      {
+        id: 'water-lilies',
+        title: 'Water Lilies',
+        artist: 'Claude Monet',
+        year: '1919',
+        medium: 'Oil on canvas',
+        url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/Claude_Monet_-_Water_Lilies_-_1919%2C_Metropolitan_Museum_of_Art.jpg/1280px-Claude_Monet_-_Water_Lilies_-_1919%2C_Metropolitan_Museum_of_Art.jpg',
+        theme: { bg: '#edeae4', accent: '#2d6a4f', baseGrad: ['#2d6a4f', '#7209b7', '#52b788', '#1b4332'] },
+        desc: "Captures Monet's beloved water garden in Giverny, showing morning light and cloud reflections floating across serene blossom-dotted waters."
+      },
+      {
+        id: 'girl-pearl-earring',
+        title: 'Girl with a Pearl Earring',
+        artist: 'Johannes Vermeer',
+        year: 'c. 1665',
+        medium: 'Oil on canvas',
+        url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0f/1665_Girl_with_a_Pearl_Earring.jpg/1024px-1665_Girl_with_a_Pearl_Earring.jpg',
+        theme: { bg: '#edeae4', accent: '#0077b6', baseGrad: ['#03045e', '#d4a373', '#0077b6', '#14213d'] },
+        desc: 'A mesmerizing Dutch Golden Age tronie displaying radiant gaze, an exotic oriental turban, and the soft shimmer of a drop pearl.'
+      },
+      {
+        id: 'botanical-roses',
+        title: 'Rosa Centifolia (The Hundred-Leaved Rose)',
+        artist: 'Pierre-Joseph Redouté',
+        year: '1824',
+        medium: 'Color stipple engraving',
+        url: 'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Pierre-Joseph_Redout%C3%A9_-_Rosa_Centifolia_bipinnata.jpg/1024px-Pierre-Joseph_Redout%C3%A9_-_Rosa_Centifolia_bipinnata.jpg',
+        theme: { bg: '#f6f0ee', accent: '#e63946', baseGrad: ['#e63946', '#fdfbf7', '#40916c', '#f4a261'] },
+        desc: 'Exquisite botanical illustration by the official court painter to Marie Antoinette and Empress Joséphine, known for velvety botanical washes.'
+      }
+    ];
+
+    // State management
+    let mode = 'focus'; // 'focus' | 'break'
+    let focusDuration = 25 * 60;
+    let breakDuration = 5 * 60;
+    let timeRemaining = 25 * 60;
+    let isActive = false;
+    let isPaused = false;
+    let isTestMode = false;
+    let isUiCollapsed = false;
+
+    let currentArtIndex = 0;
+    let unlockedArtIds = [];
+    let isImgLoaded = false;
+    let isCompleted = false;
+
+    // Applied Physics & Style Settings
+    let growthPattern = 'center'; // 'center' | 'top-down' | 'scatter' | 'spiral' | 'inward'
+    let renderStyle = 'watercolor'; // 'watercolor' | 'sharpness' | 'pointillism'
+    let bleedWetness = 0.7;
+    let bleedSpread = 0.5;
+    let bleedFringe = true;
+    let stippleSize = 3.0;
+    let maxSplats = 120000;
+    let sporadicFactor = 0.35;
+    let boundaryFluctuation = 0.55;
+
+    // Staged temporary settings for modals
+    let tempSettings = {
+      focusMin: 25,
+      breakMin: 5,
+      growthPattern: 'center',
+      renderStyle: 'watercolor',
+      bleedWetness: 0.7,
+      bleedSpread: 0.5,
+      bleedFringe: true,
+      maxSplats: 120000
+    };
+
+    // Canvas references & render loop
+    const canvas = document.getElementById('paintCanvas');
+    const ctx = canvas.getContext('2d');
+    const offscreenCanvas = document.getElementById('offscreenCanvas');
+    const offscreenCtx = offscreenCanvas.getContext('2d');
+    
+    let drawnSplats = 0;
+    let animationFrameId = null;
+    let timerInterval = null;
+    let offscreenImg = new Image();
+
+    // Web Audio Sound Engine
+    function playTone(type) {
+      try {
+        const AudioContext = window.AudioContext || window.webkitAudioContext;
+        if (!AudioContext) return;
+        const audioCtx = new AudioContext();
+        
+        if (type === 'click') {
+          const osc = audioCtx.createOscillator();
+          const gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(360, audioCtx.currentTime);
+          osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.04);
+          gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
+          gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start();
+          osc.stop(audioCtx.currentTime + 0.045);
+        } else if (type === 'success') {
+          // Melodic chord for masterpiece reveal
+          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
+            const osc = audioCtx.createOscillator();
+            const gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.08);
+            gain.gain.setValueAtTime(0.05, audioCtx.currentTime + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.08 + 0.4);
+            osc.connect(gain);
+            gain.connect(audioCtx.destination);
+            osc.start(audioCtx.currentTime + i * 0.08);
+            osc.stop(audioCtx.currentTime + i * 0.08 + 0.42);
+          });
+        }
+      } catch (err) {
+        // Audio policy fallback
+      }
+    }
+
+    // Preload art image with guaranteed procedural gradient fallback
+    function loadCurrentArtwork() {
+      isImgLoaded = false;
+      const art = ART_COLLECTION[currentArtIndex];
+      document.getElementById('currentArtLabel').textContent = art.title;
+
+      offscreenImg = new Image();
+      offscreenImg.crossOrigin = 'anonymous';
+      offscreenImg.src = art.url;
+
+      offscreenImg.onload = () => {
+        offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        const scale = Math.max(offscreenCanvas.width / offscreenImg.width, offscreenCanvas.height / offscreenImg.height);
+        const x = (offscreenCanvas.width - offscreenImg.width * scale) / 2;
+        const y = (offscreenCanvas.height - offscreenImg.height * scale) / 2;
+        offscreenCtx.drawImage(offscreenImg, x, y, offscreenImg.width * scale, offscreenImg.height * scale);
+        isImgLoaded = true;
+      };
+
+      offscreenImg.onerror = () => {
+        // High fidelity procedural fallback gradient if offline or network blocks image
+        offscreenCtx.clearRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        const grad = offscreenCtx.createLinearGradient(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        const colors = art.theme.baseGrad || ['#1d3557', '#457b9d', '#e9c46a', '#f4a261'];
+        colors.forEach((c, idx) => grad.addColorStop(idx / (colors.length - 1), c));
+        offscreenCtx.fillStyle = grad;
+        offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        
+        // Add subtle radial light center
+        const radial = offscreenCtx.createRadialGradient(600, 500, 50, 600, 600, 600);
+        radial.addColorStop(0, 'rgba(255, 255, 255, 0.4)');
+        radial.addColorStop(1, 'rgba(0, 0, 0, 0.3)');
+        offscreenCtx.fillStyle = radial;
+        offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
+        isImgLoaded = true;
+      };
+    }
+
+    // Coordinate mapping engine based on user selected growth pattern
+    function getCoordinates(w, h, currentProgress) {
+      const cx = w / 2;
+      const cy = h / 2;
+      const maxRadius = Math.min(w, h) * 0.46;
+      let x, y;
+
+      switch (growthPattern) {
+        case 'top-down': {
+          const thresholdY = h * Math.min(1.0, currentProgress + 0.05);
+          y = Math.random() * thresholdY;
+          x = Math.random() * w;
+          break;
+        }
+        case 'scatter': {
+          const angle = Math.random() * Math.PI * 2;
+          const dist = Math.sqrt(Math.random()) * maxRadius;
+          x = cx + Math.cos(angle) * dist;
+          y = cy + Math.sin(angle) * dist;
+          break;
+        }
+        case 'spiral': {
+          const totalSpirals = 16;
+          const currentAngleLimit = currentProgress * Math.PI * 2 * totalSpirals;
+          const spiralAngle = Math.random() * currentAngleLimit;
+          const radialExpansion = maxRadius * (spiralAngle / (Math.PI * 2 * totalSpirals));
+          const dist = radialExpansion + (Math.random() - 0.5) * 45;
+          x = cx + Math.cos(spiralAngle) * dist;
+          y = cy + Math.sin(spiralAngle) * dist;
+          break;
+        }
+        case 'inward': {
+          const minRadialEdge = maxRadius * (1.0 - currentProgress);
+          const angle = Math.random() * Math.PI * 2;
+          const dist = minRadialEdge + Math.random() * (maxRadius - minRadialEdge);
+          x = cx + Math.cos(angle) * dist;
+          y = cy + Math.sin(angle) * dist;
+          break;
+        }
+        case 'center':
+        default: {
+          const angle = Math.random() * Math.PI * 2;
+          const noiseHarmonic1 = Math.sin(angle * 3.1 + currentProgress * 5.4);
+          const noiseHarmonic2 = Math.cos(angle * 6.7 - currentProgress * 3.2);
+          const noiseHarmonic3 = Math.sin(angle * 12.4 + currentProgress * 8.1);
+          
+          const edgeOffset = (noiseHarmonic1 * 0.5 + noiseHarmonic2 * 0.35 + noiseHarmonic3 * 0.15) * boundaryFluctuation * 0.22;
+          const currentLimit = maxRadius * Math.min(1.0, currentProgress + 0.05 + edgeOffset);
+
+          let targetDist;
+          if (Math.random() < sporadicFactor * (1 - currentProgress)) {
+            targetDist = Math.sqrt(Math.random()) * maxRadius * Math.min(1.0, currentProgress + 0.35);
+          } else {
+            targetDist = Math.sqrt(Math.random()) * currentLimit;
+          }
+
+          x = cx + Math.cos(angle) * targetDist;
+          y = cy + Math.sin(angle) * targetDist;
+          break;
+        }
+      }
+
+      return {
+        x: Math.max(0, Math.min(w - 1, x)),
+        y: Math.max(0, Math.min(h - 1, y))
+      };
+    }
+
+    // Paint droplet renderer
+    function drawSplatAt(x, y, currentProgress) {
+      let pixel;
+      try {
+        pixel = offscreenCtx.getImageData(Math.floor(x), Math.floor(y), 1, 1).data;
+        if (pixel[3] === 0) throw new Error("Blank pixel");
+      } catch (e) {
+        // Fallback color generation from theme
+        const activeArt = ART_COLLECTION[currentArtIndex];
+        const hex = activeArt.theme.accent.replace('#', '');
+        const r = parseInt(hex.substring(0, 2), 16) || 100;
+        const g = parseInt(hex.substring(2, 4), 16) || 120;
+        const b = parseInt(hex.substring(4, 6), 16) || 150;
+        pixel = [
+          Math.max(0, Math.min(255, r + (Math.random() - 0.5) * 50)),
+          Math.max(0, Math.min(255, g + (Math.random() - 0.5) * 50)),
+          Math.max(0, Math.min(255, b + (Math.random() - 0.5) * 50)),
+          255
+        ];
+      }
+
+      const color = `rgba(${pixel[0]}, ${pixel[1]}, ${pixel[2]}, 1)`;
+      ctx.save();
+
+      if (renderStyle === 'pointillism') {
+        const baseRadius = stippleSize * (0.65 + Math.random() * 0.7);
+        ctx.globalAlpha = 0.88;
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.arc(x, y, baseRadius, 0, Math.PI * 2);
+        ctx.fill();
+      } else if (renderStyle === 'sharpness') {
+        const earlyHugeSize = 25 * bleedSpread;
+        const lateSharpSize = 2.4 * bleedSpread;
+        const adaptiveRadius = earlyHugeSize - (earlyHugeSize - lateSharpSize) * currentProgress;
+
+        const softOpacity = 0.08 + currentProgress * 0.45;
+        const gradient = ctx.createRadialGradient(x, y, 0, x, y, adaptiveRadius);
+        gradient.addColorStop(0, color);
+        gradient.addColorStop(0.35, color);
+        gradient.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+        ctx.globalAlpha = softOpacity;
+        ctx.fillStyle = gradient;
+        ctx.beginPath();
+        ctx.arc(x, y, adaptiveRadius, 0, Math.PI * 2);
+        ctx.fill();
+      } else {
+        // Organic Watercolor Wash
+        const densityScaleFactor = Math.max(0.4, 120000 / maxSplats);
+        const baseSize = (Math.random() * 3.4 + 1.2) * densityScaleFactor * bleedSpread * 4.4;
+        const opacity = (Math.random() * 0.22 + 0.14) * bleedWetness;
+
+        for (let i = 0; i < 2; i++) {
+          const offsetAngle = (i / 2) * Math.PI * 2 + Math.random() * 0.5;
+          const offsetDist = Math.random() * (baseSize * 0.12);
+          const jx = x + Math.cos(offsetAngle) * offsetDist;
+          const jy = y + Math.sin(offsetAngle) * offsetDist;
+          const radius = baseSize * (0.85 + Math.random() * 0.35);
+
+          const grad = ctx.createRadialGradient(jx, jy, 0, jx, jy, radius);
+          grad.addColorStop(0, color);
+          grad.addColorStop(0.55, color);
+          
+          if (bleedFringe) {
+            const darkShift = 38;
+            const rimColor = `rgba(${Math.max(0, pixel[0] - darkShift)}, ${Math.max(0, pixel[1] - darkShift)}, ${Math.max(0, pixel[2] - darkShift)}, ${opacity * 1.6})`;
+            grad.addColorStop(0.84, rimColor);
+            grad.addColorStop(0.92, rimColor);
+          }
+          
+          grad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+
+          ctx.globalAlpha = opacity;
+          ctx.fillStyle = grad;
+          ctx.beginPath();
+          ctx.arc(jx, jy, radius, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+
+      ctx.restore();
+    }
+
+    // Continuous animation update loop
+    function updateCanvas() {
+      if (isImgLoaded) {
+        const totalDuration = mode === 'focus' ? focusDuration : breakDuration;
+        const progress = Math.min(1.0, Math.max(0, (totalDuration - timeRemaining) / totalDuration));
+
+        if (isActive && !isPaused) {
+          const expectedSplats = Math.floor(progress * maxSplats);
+
+          if (drawnSplats < expectedSplats) {
+            const remaining = expectedSplats - drawnSplats;
+            const batchLimit = isTestMode ? 4500 : (maxSplats > 150000 ? 1200 : 750);
+            const count = Math.min(remaining, batchLimit);
+
+            for (let i = 0; i < count; i++) {
+              const microProgress = (drawnSplats + i) / maxSplats;
+              const coords = getCoordinates(canvas.width, canvas.height, microProgress);
+              drawSplatAt(coords.x, coords.y, microProgress);
+            }
+            drawnSplats += count;
+          }
+        }
+
+        // Complete flush when time hits zero
+        if (timeRemaining === 0 && drawnSplats < maxSplats) {
+          const flushBatch = Math.min(3500, maxSplats - drawnSplats);
+          for (let i = 0; i < flushBatch; i++) {
+            const microProgress = (drawnSplats + i) / maxSplats;
+            const coords = getCoordinates(canvas.width, canvas.height, microProgress);
+            drawSplatAt(coords.x, coords.y, microProgress);
+          }
+          drawnSplats += flushBatch;
+        }
+
+        // Apply progressive canvas blur decay if sharpness mode is active
+        if (renderStyle === 'sharpness' && isActive) {
+          const blurVal = Math.max(0, (1 - progress) * 12);
+          canvas.style.filter = `blur(${blurVal}px) drop-shadow(0 4px 6px rgba(0,0,0,0.08))`;
+        } else {
+          canvas.style.filter = 'drop-shadow(0 4px 6px rgba(0,0,0,0.06))';
+        }
+
+        // Update progress badge
+        document.getElementById('progressStatus').textContent = `Progress: ${Math.round(progress * 100)}% wash density`;
+      }
+
+      animationFrameId = requestAnimationFrame(updateCanvas);
+    }
+
+    function formatTime(seconds) {
+      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+      const s = (seconds % 60).toString().padStart(2, '0');
+      return `${m}:${s}`;
+    }
+
+    function updateTimerUI() {
+      const formatted = formatTime(timeRemaining);
+      document.getElementById('timerDisplay').textContent = formatted;
+      document.getElementById('miniTimerDisplay').textContent = formatted;
+    }
+
+    function handleSessionCompleted() {
+      isActive = false;
+      isPaused = false;
+      isCompleted = true;
+      playTone('success');
+
+      const activeArt = ART_COLLECTION[currentArtIndex];
+      if (mode === 'focus') {
+        if (!unlockedArtIds.includes(activeArt.id)) {
+          unlockedArtIds.push(activeArt.id);
+          updateCollectionCount();
+        }
+      }
+
+      // Show art metadata panel
+      document.getElementById('metaTitle').textContent = activeArt.title;
+      document.getElementById('metaArtist').textContent = `${activeArt.artist}, ${activeArt.year} (${activeArt.medium})`;
+      document.getElementById('metaDesc').textContent = activeArt.desc;
+
+      const metaPanel = document.getElementById('artMetadataPanel');
+      metaPanel.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
+      metaPanel.classList.add('opacity-100', 'translate-y-0');
+
+      updateMainButtonUI();
+    }
+
+    function startTimerLoop() {
+      if (timerInterval) clearInterval(timerInterval);
+      timerInterval = setInterval(() => {
+        if (isActive && !isPaused && timeRemaining > 0) {
+          timeRemaining--;
+          updateTimerUI();
+          if (timeRemaining === 0) {
+            handleSessionCompleted();
+          }
+        }
+      }, 1000);
+    }
+
+    function updateMainButtonUI() {
+      const icon = document.getElementById('mainActionIcon');
+      const label = document.getElementById('mainActionLabel');
+      const miniIcon = document.getElementById('miniPlayIcon');
+
+      if (isActive && !isPaused) {
+        label.textContent = 'Pause';
+        icon.setAttribute('data-lucide', 'pause');
+        miniIcon.setAttribute('data-lucide', 'pause');
+      } else {
+        label.textContent = isPaused ? 'Resume' : (mode === 'focus' ? 'Focus' : 'Break');
+        icon.setAttribute('data-lucide', 'play');
+        miniIcon.setAttribute('data-lucide', 'play');
+      }
+
+      // Prompt overlay toggle
+      const prompt = document.getElementById('startPrompt');
+      if (isActive || drawnSplats > 0) {
+        prompt.classList.add('opacity-0', 'pointer-events-none');
+      } else {
+        prompt.classList.remove('opacity-0', 'pointer-events-none');
+      }
+
+      lucide.createIcons();
+    }
+
+    function toggleTimer() {
+      playTone('click');
+      if (!isActive) {
+        isActive = true;
+        isPaused = false;
+        isCompleted = false;
+      } else {
+        isPaused = !isPaused;
+      }
+      updateMainButtonUI();
+    }
+
+    function resetCurrentCanvas() {
+      playTone('click');
+      isActive = false;
+      isPaused = false;
+      isCompleted = false;
+      timeRemaining = isTestMode ? 15 : (mode === 'focus' ? focusDuration : breakDuration);
+      drawnSplats = 0;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      
+      const metaPanel = document.getElementById('artMetadataPanel');
+      metaPanel.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
+      metaPanel.classList.remove('opacity-100', 'translate-y-0');
+
+      updateTimerUI();
+      updateMainButtonUI();
+      document.getElementById('resetModal').classList.add('hidden');
+      document.getElementById('resetModal').classList.remove('flex');
+    }
+
+    function triggerQuickSketch() {
+      playTone('click');
+      isTestMode = true;
+      mode = 'focus';
+      focusDuration = 15;
+      breakDuration = 5;
+      timeRemaining = 15;
+      drawnSplats = 0;
+      isCompleted = false;
+      isActive = true;
+      isPaused = false;
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      document.getElementById('quickModeBadge').classList.remove('hidden');
+      document.getElementById('quickModeBadge').classList.add('flex');
+      document.getElementById('timerModeLabel').textContent = 'Quick Sketch (15s)';
+
+      const metaPanel = document.getElementById('artMetadataPanel');
+      metaPanel.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
+
+      updateTimerUI();
+      updateMainButtonUI();
+    }
+
+    function selectRandomArt() {
+      let nextIndex;
+      do {
+        nextIndex = Math.floor(Math.random() * ART_COLLECTION.length);
+      } while (nextIndex === currentArtIndex && ART_COLLECTION.length > 1);
+
+      currentArtIndex = nextIndex;
+      drawnSplats = 0;
+      isCompleted = false;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      loadCurrentArtwork();
+
+      const metaPanel = document.getElementById('artMetadataPanel');
+      metaPanel.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
+
+      timeRemaining = isTestMode ? 15 : (mode === 'focus' ? focusDuration : breakDuration);
+      updateTimerUI();
+      updateMainButtonUI();
+    }
+
+    function updateCollectionCount() {
+      const countStr = `${unlockedArtIds.length}/${ART_COLLECTION.length}`;
+      document.getElementById('collectionBadgeCount').textContent = countStr;
+      document.getElementById('unveiledFooterCount').textContent = `Unveiled: ${countStr}`;
+    }
+
+    function renderGalleryModal() {
+      const grid = document.getElementById('galleryGrid');
+      grid.innerHTML = '';
+
+      ART_COLLECTION.forEach((art) => {
+        const isUnlocked = unlockedArtIds.includes(art.id);
+        const card = document.createElement('div');
+        
+        if (isUnlocked) {
+          card.className = 'relative rounded-2xl overflow-hidden border border-stone-200/90 bg-white shadow-sm hover:shadow-md transition-all font-sans-ui';
+          card.innerHTML = `
+            <div class="aspect-[4/3] overflow-hidden bg-stone-100 relative">
+              <img src="${art.url}" alt="${art.title}" class="w-full h-full object-cover">
+              <span class="absolute top-1.5 right-1.5 bg-emerald-700/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Unveiled</span>
+            </div>
+            <div class="p-2.5">
+              <h3 class="text-[10px] md:text-[11px] font-bold text-stone-800 truncate">${art.title}</h3>
+              <p class="text-[8.5px] md:text-[9.5px] text-stone-500 truncate">${art.artist} (${art.year})</p>
+            </div>
+          `;
+        } else {
+          card.className = 'relative rounded-2xl overflow-hidden border border-stone-200/60 border-dashed bg-stone-100/60 flex flex-col items-center justify-center aspect-[4/3] p-3 text-center font-sans-ui';
+          card.innerHTML = `
+            <i data-lucide="sparkles" class="w-5 h-5 text-stone-400 mb-1"></i>
+            <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400">Locked</span>
+            <span class="text-[8px] text-stone-400 truncate max-w-[90px] mt-0.5">${art.title}</span>
+          `;
+        }
+        grid.appendChild(card);
+      });
+
+      lucide.createIcons();
+    }
+
+    // Settings Navigation & Tab Switcher
+    function switchSettingsTab(tabName) {
+      playTone('click');
+      const tabs = {
+        timer: { btn: 'tabTimerBtn', panel: 'panelTimer' },
+        growth: { btn: 'tabGrowthBtn', panel: 'panelGrowth' },
+        physics: { btn: 'tabPhysicsBtn', panel: 'panelPhysics' }
+      };
+
+      Object.keys(tabs).forEach(t => {
+        const btn = document.getElementById(tabs[t].btn);
+        const panel = document.getElementById(tabs[t].panel);
+        if (t === tabName) {
+          btn.className = 'flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all bg-white text-stone-900 shadow-sm';
+          panel.classList.remove('hidden');
+        } else {
+          btn.className = 'flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all text-stone-500 hover:text-stone-800';
+          panel.classList.add('hidden');
+        }
+      });
+    }
+
+    // Initialize interactive event listeners
+    function setupEventListeners() {
+      // Primary Controls
+      document.getElementById('mainActionBtn').addEventListener('click', toggleTimer);
+      document.getElementById('miniPlayBtn').addEventListener('click', toggleTimer);
+      
+      document.getElementById('resetPromptBtn').addEventListener('click', () => {
+        playTone('click');
+        document.getElementById('resetModal').classList.remove('hidden');
+        document.getElementById('resetModal').classList.add('flex');
+      });
+
+      document.getElementById('confirmResetBtn').addEventListener('click', resetCurrentCanvas);
+      document.getElementById('cancelResetBtn').addEventListener('click', () => {
+        playTone('click');
+        document.getElementById('resetModal').classList.add('hidden');
+        document.getElementById('resetModal').classList.remove('flex');
+      });
+
+      document.getElementById('quickSketchBtn').addEventListener('click', triggerQuickSketch);
+      document.getElementById('miniQuickBtn').addEventListener('click', triggerQuickSketch);
+
+      document.getElementById('skipBlockBtn').addEventListener('click', () => {
+        playTone('click');
+        handleSessionCompleted();
+      });
+
+      // Metadata panel buttons
+      document.getElementById('metaBreakBtn').addEventListener('click', () => {
+        playTone('click');
+        mode = 'break';
+        timeRemaining = isTestMode ? 5 : breakDuration;
+        document.getElementById('timerModeLabel').textContent = 'Relaxing Break';
+        document.getElementById('artMetadataPanel').classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
+        isActive = true;
+        isPaused = false;
+        updateTimerUI();
+        updateMainButtonUI();
+      });
+
+      document.getElementById('metaNextBtn').addEventListener('click', () => {
+        playTone('click');
+        selectRandomArt();
+      });
+
+      // Collapse / Expand Dock Card
+      document.getElementById('toggleCollapseBtn').addEventListener('click', () => {
+        playTone('click');
+        isUiCollapsed = !isUiCollapsed;
+        const chevron = document.getElementById('collapseChevron');
+        const expanded = document.getElementById('dockExpandedContent');
+        const collapsed = document.getElementById('dockCollapsedContent');
+
+        if (isUiCollapsed) {
+          expanded.classList.add('hidden');
+          collapsed.classList.remove('hidden');
+          collapsed.classList.add('flex');
+          chevron.setAttribute('data-lucide', 'chevron-up');
+        } else {
+          expanded.classList.remove('hidden');
+          collapsed.classList.add('hidden');
+          collapsed.classList.remove('flex');
+          chevron.setAttribute('data-lucide', 'chevron-down');
+        }
+        lucide.createIcons();
+      });
+
+      // Gallery Modal
+      document.getElementById('openGalleryBtn').addEventListener('click', () => {
+        playTone('click');
+        renderGalleryModal();
+        document.getElementById('galleryModal').classList.remove('hidden');
+        document.getElementById('galleryModal').classList.add('flex');
+      });
+
+      document.getElementById('closeGalleryBtn').addEventListener('click', () => {
+        playTone('click');
+        document.getElementById('galleryModal').classList.add('hidden');
+        document.getElementById('galleryModal').classList.remove('flex');
+      });
+
+      document.getElementById('dismissGalleryBtn').addEventListener('click', () => {
+        playTone('click');
+        document.getElementById('galleryModal').classList.add('hidden');
+        document.getElementById('galleryModal').classList.remove('flex');
+      });
+
+      // Settings Modal Tabs
+      document.getElementById('tabTimerBtn').addEventListener('click', () => switchSettingsTab('timer'));
+      document.getElementById('tabGrowthBtn').addEventListener('click', () => switchSettingsTab('growth'));
+      document.getElementById('tabPhysicsBtn').addEventListener('click', () => switchSettingsTab('physics'));
+
+      // Open Settings Modal
+      document.getElementById('openSettingsBtn').addEventListener('click', () => {
+        playTone('click');
+        // Preload existing settings into inputs
+        tempSettings.focusMin = Math.round(focusDuration / 60);
+        tempSettings.breakMin = Math.round(breakDuration / 60);
+        tempSettings.growthPattern = growthPattern;
+        tempSettings.renderStyle = renderStyle;
+        tempSettings.bleedWetness = bleedWetness;
+        tempSettings.bleedSpread = bleedSpread;
+        tempSettings.bleedFringe = bleedFringe;
+        tempSettings.maxSplats = maxSplats;
+
+        document.getElementById('inputFocusMin').value = tempSettings.focusMin;
+        document.getElementById('labelFocusMin').textContent = `${tempSettings.focusMin}m`;
+        document.getElementById('inputBreakMin').value = tempSettings.breakMin;
+        document.getElementById('labelBreakMin').textContent = `${tempSettings.breakMin}m`;
+
+        document.getElementById('inputBleedWetness').value = tempSettings.bleedWetness;
+        document.getElementById('labelBleedWetness').textContent = `${Math.round(tempSettings.bleedWetness * 100)}%`;
+        document.getElementById('inputBleedSpread').value = tempSettings.bleedSpread;
+        document.getElementById('labelBleedSpread').textContent = `${tempSettings.bleedSpread}x`;
+        document.getElementById('inputBleedFringe').checked = tempSettings.bleedFringe;
+        document.getElementById('inputMaxSplats').value = tempSettings.maxSplats;
+        document.getElementById('labelMaxSplats').textContent = `${Math.round(tempSettings.maxSplats / 1000)}k`;
+
+        document.getElementById('settingsModal').classList.remove('hidden');
+        document.getElementById('settingsModal').classList.add('flex');
+      });
+
+      document.getElementById('closeSettingsBtn').addEventListener('click', () => {
+        playTone('click');
+        document.getElementById('settingsModal').classList.add('hidden');
+        document.getElementById('settingsModal').classList.remove('flex');
+      });
+
+      document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
+        playTone('click');
+        document.getElementById('settingsModal').classList.add('hidden');
+        document.getElementById('settingsModal').classList.remove('flex');
+      });
+
+      // Live Range Listeners
+      document.getElementById('inputFocusMin').addEventListener('input', (e) => {
+        tempSettings.focusMin = parseInt(e.target.value);
+        document.getElementById('labelFocusMin').textContent = `${tempSettings.focusMin}m`;
+      });
+
+      document.getElementById('inputBreakMin').addEventListener('input', (e) => {
+        tempSettings.breakMin = parseInt(e.target.value);
+        document.getElementById('labelBreakMin').textContent = `${tempSettings.breakMin}m`;
+      });
+
+      document.getElementById('inputBleedWetness').addEventListener('input', (e) => {
+        tempSettings.bleedWetness = parseFloat(e.target.value);
+        document.getElementById('labelBleedWetness').textContent = `${Math.round(tempSettings.bleedWetness * 100)}%`;
+      });
+
+      document.getElementById('inputBleedSpread').addEventListener('input', (e) => {
+        tempSettings.bleedSpread = parseFloat(e.target.value);
+        document.getElementById('labelBleedSpread').textContent = `${tempSettings.bleedSpread}x`;
+      });
+
+      document.getElementById('inputMaxSplats').addEventListener('input', (e) => {
+        tempSettings.maxSplats = parseInt(e.target.value);
+        document.getElementById('labelMaxSplats').textContent = `${Math.round(tempSettings.maxSplats / 1000)}k`;
+      });
+
+      // Growth pattern selection
+      document.querySelectorAll('.pattern-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          tempSettings.growthPattern = btn.dataset.pattern;
+          document.querySelectorAll('.pattern-btn').forEach(b => {
+            b.className = 'pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50';
+          });
+          btn.className = 'pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-stone-900 text-white border-stone-900 shadow-sm';
+        });
+      });
+
+      // Render mode selection
+      document.querySelectorAll('.style-btn').forEach(btn => {
+        btn.addEventListener('click', () => {
+          tempSettings.renderStyle = btn.dataset.style;
+          document.querySelectorAll('.style-btn').forEach(b => {
+            b.className = 'style-btn w-full text-left p-3 rounded-2xl border transition-all bg-white border-stone-200 hover:bg-stone-50/50';
+          });
+          btn.className = 'style-btn w-full text-left p-3 rounded-2xl border transition-all bg-stone-50 border-stone-800 ring-1 ring-stone-800/20';
+        });
+      });
+
+      // Save & Apply Settings
+      document.getElementById('saveSettingsBtn').addEventListener('click', () => {
+        playTone('click');
+        isTestMode = false;
+        document.getElementById('quickModeBadge').classList.add('hidden');
+        document.getElementById('quickModeBadge').classList.remove('flex');
+
+        focusDuration = tempSettings.focusMin * 60;
+        breakDuration = tempSettings.breakMin * 60;
+        timeRemaining = mode === 'focus' ? focusDuration : breakDuration;
+
+        growthPattern = tempSettings.growthPattern;
+        renderStyle = tempSettings.renderStyle;
+        bleedWetness = tempSettings.bleedWetness;
+        bleedSpread = tempSettings.bleedSpread;
+        bleedFringe = document.getElementById('inputBleedFringe').checked;
+        maxSplats = tempSettings.maxSplats;
+
+        document.getElementById('promptStyle').textContent = renderStyle;
+        document.getElementById('promptPattern').textContent = growthPattern;
+
+        resetCurrentCanvas();
+        document.getElementById('settingsModal').classList.add('hidden');
+        document.getElementById('settingsModal').classList.remove('flex');
+      });
+
+      // Keyboard Shortcuts
+      window.addEventListener('keydown', (e) => {
+        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
+          e.preventDefault();
+          toggleTimer();
+        } else if (e.code === 'Escape') {
+          document.getElementById('settingsModal').classList.add('hidden');
+          document.getElementById('galleryModal').classList.add('hidden');
+          document.getElementById('resetModal').classList.add('hidden');
+        }
+      });
+    }
+
+    // Initialize application on window load
+    window.addEventListener('DOMContentLoaded', () => {
+      lucide.createIcons();
+      setupEventListeners();
+      loadCurrentArtwork();
+      startTimerLoop();
+      updateTimerUI();
+      updateCollectionCount();
+      animationFrameId = requestAnimationFrame(updateCanvas);
+    });
+  </script>
+</body>
+</html>

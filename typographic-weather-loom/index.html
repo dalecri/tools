@@ -1,0 +1,509 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Typographic Weather Loom</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;600&family=Inter:wght@300;400;500&display=swap');
+        
+        body { 
+            margin: 0; 
+            overflow: hidden; 
+            touch-action: none;
+            overscroll-behavior: none;
+            background: #f8f9fa;
+            font-family: 'Inter', sans-serif;
+        }
+        
+        .font-serif { font-family: 'Playfair Display', serif; }
+        .font-mono { font-family: 'JetBrains Mono', monospace; }
+
+        canvas { 
+            display: block; 
+            position: fixed; 
+            top: 0; 
+            left: 0; 
+            z-index: -1; 
+            outline: none;
+        }
+        
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.8);
+            box-shadow: 0 10px 40px -10px rgba(0,0,0,0.08);
+        }
+    </style>
+</head>
+<body class="antialiased text-slate-800">
+
+    <!-- Top Left Title -->
+    <div class="fixed top-8 left-8 md:top-12 md:left-12 pointer-events-none z-40">
+        <h1 class="text-3xl md:text-5xl font-serif text-slate-900 tracking-tight">Weather Loom</h1>
+        <p class="font-mono text-[10px] md:text-xs text-slate-500 uppercase tracking-[0.3em] mt-2 font-semibold">A 7-Day Tapestry</p>
+    </div>
+
+    <!-- Scroll Hint -->
+    <div id="scroll-prompt" class="fixed bottom-10 right-10 flex flex-col items-center gap-3 transition-opacity duration-700 z-40 pointer-events-none opacity-80">
+        <div class="w-5 h-8 border-2 border-slate-400 rounded-full flex justify-center p-1 relative">
+            <div class="w-1 h-1.5 bg-slate-400 rounded-full animate-bounce"></div>
+        </div>
+        <span class="font-mono text-[10px] tracking-widest uppercase text-slate-500 text-center">Swipe<br>To Weave</span>
+    </div>
+
+    <!-- Active Weather Card -->
+    <div id="ui-card" onclick="if(window.innerWidth < 768) toggleCardMobile()" class="fixed bottom-6 left-6 md:bottom-12 md:left-12 w-[90vw] max-w-[280px] md:max-w-[340px] glass-panel rounded-[1.5rem] md:rounded-[2rem] p-5 md:p-8 z-50 transition-all duration-500 ease-out translate-y-4 opacity-0 cursor-pointer md:cursor-auto">
+        <div class="flex items-center justify-between mb-3 md:mb-6">
+            <span id="ui-date" class="font-mono text-[10px] md:text-[11px] font-bold tracking-[0.2em] text-slate-400">---</span>
+            <div id="ui-icon" class="text-slate-700 transition-transform duration-500 w-5 h-5 md:w-6 md:h-6 flex items-center justify-center"></div>
+        </div>
+        
+        <h2 id="ui-day" class="text-3xl md:text-5xl font-serif text-slate-800 mb-1 md:mb-2">---</h2>
+        
+        <div class="flex items-baseline gap-2 md:gap-3">
+            <div class="flex items-baseline gap-1 md:gap-1.5">
+                <span id="ui-temp-max" class="text-3xl md:text-4xl font-light text-slate-900 tracking-tighter">--°</span>
+                <span class="text-lg md:text-xl font-light text-slate-300">/</span>
+                <span id="ui-temp-min" class="text-xl md:text-2xl font-light text-slate-400 tracking-tighter">--°</span>
+            </div>
+            <span id="ui-type" class="text-sm md:text-lg font-serif italic text-slate-500 tracking-wide ml-1">---</span>
+        </div>
+        
+        <div id="ui-details-wrapper" class="grid grid-rows-[0fr] md:grid-rows-[1fr] transition-[grid-template-rows] duration-500 ease-out">
+            <div class="overflow-hidden">
+                <div class="h-px w-full bg-gradient-to-r from-slate-200 to-transparent mb-4 mt-4 md:mt-6"></div>
+                <p id="ui-desc" class="text-xs md:text-sm text-slate-600 leading-relaxed min-h-[36px] md:min-h-[40px] font-light">
+                    Fetching local forecast...
+                </p>
+            </div>
+        </div>
+        
+        <!-- Progress Indicators & Expand -->
+        <div class="flex justify-between items-center mt-4 md:mt-6">
+            <div id="dots-container" class="flex gap-2 md:gap-2.5 items-center"></div>
+            <svg id="expand-icon" class="w-5 h-5 text-slate-400 transition-transform duration-500 md:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"></path></svg>
+        </div>
+    </div>
+
+    <canvas id="loom-canvas"></canvas>
+
+    <script>
+        // --- 1. DATA & CONTENT ---
+        let weatherData = [];
+
+        const icons = {
+            sunny: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>`,
+            windy: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12.8 19.6A2 2 0 1 0 14 16H2"/><path d="M17.5 8a2.5 2.5 0 1 1 2 4H2"/><path d="M9.8 4.4A2 2 0 1 1 11 8H2"/></svg>`,
+            rainy: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"/><path d="M16 14v6"/><path d="M8 14v6"/><path d="M12 16v6"/></svg>`,
+            cloudy: `<svg xmlns="http://www.w3.org/2000/svg" width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M17.5 19H9a7 7 0 1 1 6.71-9h1.79a4.5 4.5 0 1 1 0 9Z"/></svg>`
+        };
+
+        // --- 2. THREE.JS SETUP ---
+        const canvas = document.getElementById('loom-canvas');
+        const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.shadowMap.enabled = true;
+        renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+        renderer.localClippingEnabled = true; // Crucial for the unspooling effect
+
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0xf8f9fa, 0.004);
+
+        // Isometric Camera Setup
+        const camera = new THREE.OrthographicCamera(-1, 1, 1, -1, 1, 1000);
+        
+        function updateCameraLayout() {
+            const aspect = window.innerWidth / window.innerHeight;
+            const isMobile = window.innerWidth < 768;
+            const d = isMobile ? 55 : 35; // Zoom out on mobile
+
+            camera.left = -d * aspect;
+            camera.right = d * aspect;
+            camera.top = d;
+            camera.bottom = -d;
+
+            if (isMobile) {
+                // Push object up and right to avoid the UI card
+                camera.position.set(40, 50, 40);
+                camera.lookAt(-10, -15, 10);
+            } else {
+                camera.position.set(40, 50, 40);
+                camera.lookAt(0, 0, 0);
+            }
+            camera.updateProjectionMatrix();
+        }
+        updateCameraLayout();
+
+        // Lighting
+        const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+        scene.add(ambientLight);
+
+        const dirLight = new THREE.DirectionalLight(0xfff5e6, 1.2);
+        dirLight.position.set(20, 60, 30);
+        dirLight.castShadow = true;
+        dirLight.shadow.mapSize.width = 2048;
+        dirLight.shadow.mapSize.height = 2048;
+        dirLight.shadow.camera.left = -40;
+        dirLight.shadow.camera.right = 40;
+        dirLight.shadow.camera.top = 40;
+        dirLight.shadow.camera.bottom = -40;
+        dirLight.shadow.bias = -0.001;
+        scene.add(dirLight);
+
+        const rimLight = new THREE.PointLight(0xffffff, 0.5, 100);
+        rimLight.position.set(-20, 20, -20);
+        scene.add(rimLight);
+
+        // --- 3. MATERIALS ---
+        // Clipping planes slice the fabric exactly at the rollers
+        const clipX = 30;
+        const clipLeft = new THREE.Plane(new THREE.Vector3(1, 0, 0), clipX);
+        const clipRight = new THREE.Plane(new THREE.Vector3(-1, 0, 0), clipX);
+        const clippingPlanes = [clipLeft, clipRight];
+
+        const matConfig = { clippingPlanes, clipShadows: true };
+
+        const materials = {
+            sunny: new THREE.MeshStandardMaterial({ color: '#f59e0b', roughness: 1.0, metalness: 0.0, ...matConfig }),
+            rainy: new THREE.MeshPhysicalMaterial({ color: '#0ea5e9', roughness: 0.2, metalness: 0.1, clearcoat: 1.0, clearcoatRoughness: 0.2, ...matConfig }),
+            windy: new THREE.MeshStandardMaterial({ color: '#94a3b8', roughness: 0.8, metalness: 0.1, ...matConfig }),
+            cloudy: new THREE.MeshStandardMaterial({ color: '#f1f5f9', roughness: 1.0, metalness: 0.0, ...matConfig }),
+            warp: new THREE.MeshStandardMaterial({ color: '#fefce8', roughness: 0.9, ...matConfig }),
+            wood: new THREE.MeshStandardMaterial({ color: '#291810', roughness: 0.9, metalness: 0.1 }),
+            brass: new THREE.MeshStandardMaterial({ color: '#d97706', roughness: 0.3, metalness: 0.8 })
+        };
+
+        // --- 4. BUILD THE LOOM ---
+        const loomGroup = new THREE.Group();
+        scene.add(loomGroup);
+
+        const fabricDepth = 44; 
+        
+        // Ground shadow catcher
+        const ground = new THREE.Mesh(new THREE.PlaneGeometry(200, 200), new THREE.ShadowMaterial({ opacity: 0.06 }));
+        ground.rotation.x = -Math.PI / 2;
+        ground.position.y = -12;
+        ground.receiveShadow = true;
+        scene.add(ground);
+
+        // Loom Cheeks (Front & Back Frame)
+        const cheekGeo = new THREE.BoxGeometry(70, 10, 4);
+        const frontCheek = new THREE.Mesh(cheekGeo, materials.wood);
+        frontCheek.position.set(0, -6, fabricDepth/2 + 3);
+        frontCheek.castShadow = true; frontCheek.receiveShadow = true;
+        
+        const backCheek = new THREE.Mesh(cheekGeo, materials.wood);
+        backCheek.position.set(0, -6, -fabricDepth/2 - 3);
+        backCheek.castShadow = true; backCheek.receiveShadow = true;
+        loomGroup.add(frontCheek, backCheek);
+
+        // Rollers
+        const rollerGeo = new THREE.CylinderGeometry(4, 4, fabricDepth + 6, 32);
+        rollerGeo.rotateX(Math.PI / 2); // Length along Z
+        
+        const leftRollerGroup = new THREE.Group();
+        leftRollerGroup.position.set(-clipX, -4, 0);
+        const leftRoller = new THREE.Mesh(rollerGeo, materials.wood);
+        leftRoller.receiveShadow = true; leftRoller.castShadow = true;
+        leftRollerGroup.add(leftRoller);
+
+        const rightRollerGroup = new THREE.Group();
+        rightRollerGroup.position.set(clipX, -4, 0);
+        const rightRoller = new THREE.Mesh(rollerGeo, materials.wood);
+        rightRoller.receiveShadow = true; rightRoller.castShadow = true;
+        rightRollerGroup.add(rightRoller);
+
+        // Brass Caps
+        const capGeo = new THREE.CylinderGeometry(4.2, 4.2, 1.5, 32);
+        capGeo.rotateX(Math.PI / 2);
+        [-fabricDepth/2 - 3, fabricDepth/2 + 3].forEach(zPos => {
+            const lCap = new THREE.Mesh(capGeo, materials.brass); lCap.position.set(0, 0, zPos);
+            const rCap = new THREE.Mesh(capGeo, materials.brass); rCap.position.set(0, 0, zPos);
+            leftRollerGroup.add(lCap);
+            rightRollerGroup.add(rCap);
+        });
+
+        loomGroup.add(leftRollerGroup, rightRollerGroup);
+
+        // --- 5. BUILD THE FABRIC TAPESTRY ---
+        const fabricGroup = new THREE.Group();
+        scene.add(fabricGroup);
+
+        const dayWidth = 24;
+        let totalDays = 7; // Will be dynamically updated
+        const frays = []; // Store windy loose threads for physics simulation
+
+        // Pre-baked Geometries
+        const weftGeo = new THREE.CylinderGeometry(1, 1, fabricDepth, 12);
+        weftGeo.rotateX(Math.PI / 2); // Length along Z
+
+        const frayGeo = new THREE.CylinderGeometry(0.12, 0.02, 6, 8);
+        frayGeo.translate(0, 3, 0); // Origin at base
+
+        let currentDayIndex = -1;
+
+        async function fetchAndBuildLoom() {
+            try {
+                // Free Open-Meteo API (No Key Required) for Gatineau, Quebec
+                const res = await fetch(`https://api.open-meteo.com/v1/forecast?latitude=45.4287&longitude=-75.7134&daily=weather_code,temperature_2m_max,temperature_2m_min,wind_speed_10m_max&timezone=auto`);
+                const data = await res.json();
+                
+                weatherData = data.daily.time.map((timeStr, i) => {
+                    // Prevent timezone offset issues by splitting exactly
+                    const [year, month, day] = timeStr.split('-');
+                    const dateObj = new Date(year, month - 1, day);
+                    const code = data.daily.weather_code[i];
+                    const wind = data.daily.wind_speed_10m_max[i];
+                    
+                    let type = 'rainy';
+                    if (wind > 25) type = 'windy';
+                    else if (code <= 1) type = 'sunny';
+                    else if (code <= 3 || code === 45 || code === 48) type = 'cloudy';
+
+                    const descs = {
+                        sunny: 'Clear and sunny skies expected today.',
+                        cloudy: 'Mostly overcast with cloudy skies.',
+                        rainy: 'Rain showers expected throughout the day.',
+                        windy: 'High winds and breezy conditions.'
+                    };
+                    
+                    return {
+                        day: dateObj.toLocaleDateString('en-US', { weekday: 'long' }),
+                        date: dateObj.toLocaleDateString('en-US', { month: 'short', day: '2-digit' }).toUpperCase(),
+                        tempMax: Math.round(data.daily.temperature_2m_max[i]),
+                        tempMin: Math.round(data.daily.temperature_2m_min[i]),
+                        type: type,
+                        icon: type,
+                        desc: descs[type]
+                    };
+                });
+            } catch (e) {
+                console.error("Failed to fetch weather, using fallback data.");
+                weatherData = [
+                    { day: 'Monday', date: 'NOV 04', tempMax: 22, tempMin: 12, type: 'sunny', icon: 'sunny', desc: 'Clear and sunny skies expected today.' },
+                    { day: 'Tuesday', date: 'NOV 05', tempMax: 16, tempMin: 8, type: 'windy', icon: 'windy', desc: 'High winds and breezy conditions.' },
+                    { day: 'Wednesday', date: 'NOV 06', tempMax: 14, tempMin: 6, type: 'rainy', icon: 'rainy', desc: 'Rain showers expected throughout the day.' },
+                    { day: 'Thursday', date: 'NOV 07', tempMax: 13, tempMin: 5, type: 'rainy', icon: 'rainy', desc: 'Rain showers expected throughout the day.' },
+                    { day: 'Friday', date: 'NOV 08', tempMax: 18, tempMin: 9, type: 'cloudy', icon: 'cloudy', desc: 'Mostly overcast with cloudy skies.' },
+                    { day: 'Saturday', date: 'NOV 09', tempMax: 24, tempMin: 14, type: 'sunny', icon: 'sunny', desc: 'Clear and sunny skies expected today.' },
+                    { day: 'Sunday', date: 'NOV 10', tempMax: 19, tempMin: 10, type: 'windy', icon: 'windy', desc: 'High winds and breezy conditions.' }
+                ];
+            }
+
+            totalDays = weatherData.length;
+
+            weatherData.forEach((dayData, dayIndex) => {
+                const startX = dayIndex * dayWidth;
+                const numThreads = 28; 
+                const spacing = dayWidth / numThreads;
+                const mat = materials[dayData.type];
+                
+                let radiusScale = 0.45;
+                if (dayData.type === 'sunny') radiusScale = 0.65;
+                if (dayData.type === 'rainy') radiusScale = 0.35;
+                if (dayData.type === 'cloudy') radiusScale = 0.55;
+
+                for(let i = 0; i < numThreads; i++) {
+                    const localX = (startX - dayWidth/2) + (i * spacing) + (spacing/2);
+                    
+                    const weft = new THREE.Mesh(weftGeo, mat);
+                    weft.scale.set(radiusScale, radiusScale, 1);
+                    
+                    const yOffset = (i % 2 === 0 ? 0.3 : -0.3) + (Math.random() * 0.05);
+                    weft.position.set(localX, yOffset, 0);
+                    
+                    weft.rotation.z = (Math.random() - 0.5) * 0.04;
+                    weft.castShadow = true;
+                    weft.receiveShadow = true;
+                    fabricGroup.add(weft);
+
+                    if (dayData.type === 'windy' && i % 2 === 0) {
+                        [-1, 1].forEach(dir => {
+                            const frayGroup = new THREE.Group();
+                            frayGroup.position.set(localX, yOffset, dir * (fabricDepth/2));
+                            
+                            const frayMesh = new THREE.Mesh(frayGeo, mat);
+                            frayMesh.rotation.x = dir * (Math.PI / 2);
+                            frayMesh.rotation.z = (Math.random() - 0.5) * 0.5;
+                            
+                            frayGroup.add(frayMesh);
+                            fabricGroup.add(frayGroup);
+                            
+                            frays.push({
+                                group: frayGroup,
+                                phase: Math.random() * Math.PI * 2,
+                                speed: 1.5 + Math.random() * 1.5
+                            });
+                        });
+                    }
+                }
+            });
+
+            // Warp Threads (The underlying white structural strings)
+            const warpLength = (totalDays - 1) * dayWidth + 100;
+            const warpGeo = new THREE.CylinderGeometry(0.15, 0.15, warpLength, 8);
+            warpGeo.rotateZ(Math.PI / 2);
+            const warpCenterX = ((totalDays - 1) * dayWidth) / 2;
+
+            for(let j = 0; j < 18; j++) {
+                const zPos = -fabricDepth/2 + 1 + (j * (fabricDepth - 2) / 17);
+                const warp = new THREE.Mesh(warpGeo, materials.warp);
+                warp.position.set(warpCenterX, 0, zPos);
+                warp.receiveShadow = true;
+                warp.castShadow = true;
+                fabricGroup.add(warp);
+            }
+
+            // --- 6. UI & INTERACTION LOGIC ---
+            const dotsContainer = document.getElementById('dots-container');
+            dotsContainer.innerHTML = '';
+            weatherData.forEach((_, i) => {
+                const dot = document.createElement('div');
+                dot.className = `w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-500 ease-out ${i === 0 ? 'bg-slate-800 scale-125' : 'bg-slate-300'}`;
+                dot.id = `dot-${i}`;
+                dotsContainer.appendChild(dot);
+            });
+
+            updateUI(0);
+        }
+
+        function updateUI(index) {
+            if (currentDayIndex === index || !weatherData[index]) return;
+            currentDayIndex = index;
+            
+            const data = weatherData[index];
+            const card = document.getElementById('ui-card');
+            const iconEl = document.getElementById('ui-icon');
+            
+            // Out transition
+            card.style.opacity = '0';
+            card.style.transform = 'translateY(15px)';
+            iconEl.style.transform = 'scale(0.8) rotate(-15deg)';
+            
+            setTimeout(() => {
+                document.getElementById('ui-date').innerText = data.date;
+                document.getElementById('ui-day').innerText = data.day;
+                document.getElementById('ui-temp-max').innerText = data.tempMax + '°';
+                document.getElementById('ui-temp-min').innerText = data.tempMin + '°';
+                document.getElementById('ui-type').innerText = data.type.charAt(0).toUpperCase() + data.type.slice(1);
+                document.getElementById('ui-desc').innerText = data.desc;
+                iconEl.innerHTML = icons[data.icon];
+                
+                // Update dots
+                weatherData.forEach((_, i) => {
+                    const dot = document.getElementById(`dot-${i}`);
+                    if (dot) {
+                        if(i === index) {
+                            dot.className = 'w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-500 bg-slate-800 scale-[1.3]';
+                        } else {
+                            dot.className = 'w-1.5 h-1.5 md:w-2 md:h-2 rounded-full transition-all duration-500 bg-slate-300 scale-100';
+                        }
+                    }
+                });
+                
+                // In transition
+                card.style.opacity = '1';
+                card.style.transform = 'translateY(0)';
+                setTimeout(() => iconEl.style.transform = 'scale(1) rotate(0deg)', 50);
+            }, 300);
+        }
+
+        // Kick off fetch and build
+        fetchAndBuildLoom();
+
+        // --- UI TOGGLE LOGIC ---
+        let cardExpanded = false;
+        window.toggleCardMobile = () => {
+            cardExpanded = !cardExpanded;
+            const details = document.getElementById('ui-details-wrapper');
+            const icon = document.getElementById('expand-icon');
+            
+            if (cardExpanded) {
+                details.classList.remove('grid-rows-[0fr]');
+                details.classList.add('grid-rows-[1fr]');
+                icon.style.transform = 'rotate(180deg)';
+            } else {
+                details.classList.remove('grid-rows-[1fr]');
+                details.classList.add('grid-rows-[0fr]');
+                icon.style.transform = 'rotate(0deg)';
+            }
+        };
+
+        // --- 7. ANIMATION & SCROLL LOOP ---
+        let currentScroll = 0;
+        let targetScroll = 0;
+        const clock = new THREE.Clock();
+
+        function hideScrollPrompt() {
+            const prompt = document.getElementById('scroll-prompt');
+            if(prompt.style.opacity !== '0') prompt.style.opacity = '0';
+        }
+
+        // Virtual Scroll / Touch handlers (Replaces native scrolling)
+        window.addEventListener('wheel', (e) => {
+            targetScroll += e.deltaY * 0.0006;
+            targetScroll = Math.max(0, Math.min(1, targetScroll));
+            hideScrollPrompt();
+        }, { passive: true });
+
+        let touchStartY = 0;
+        window.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        }, { passive: true });
+
+        window.addEventListener('touchmove', (e) => {
+            const touchY = e.touches[0].clientY;
+            const deltaY = touchStartY - touchY;
+            targetScroll += deltaY * 0.002;
+            targetScroll = Math.max(0, Math.min(1, targetScroll));
+            touchStartY = touchY;
+            hideScrollPrompt();
+        }, { passive: true });
+
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            // Smooth Scroll Easing
+            currentScroll += (targetScroll - currentScroll) * 0.08;
+
+            // 1. Move the Fabric Tape
+            // Monday (0) -> local X=0. Sunday (6) -> local X=144.
+            fabricGroup.position.x = -(currentScroll * (totalDays - 1) * dayWidth);
+
+            // 2. Rotate the wooden rollers based on movement distance
+            const rollAngle = currentScroll * 30; // approx distance ratio
+            leftRollerGroup.rotation.z = rollAngle;
+            rightRollerGroup.rotation.z = rollAngle;
+
+            // 3. Fray Physics for Windy Days
+            frays.forEach(f => {
+                f.group.rotation.z = Math.sin(time * f.speed + f.phase) * 0.25;
+                f.group.rotation.x = Math.cos(time * f.speed * 0.8 + f.phase) * 0.15;
+            });
+
+            // 4. Update UI context
+            if (weatherData.length > 0) {
+                const activeIndex = Math.min(totalDays - 1, Math.max(0, Math.round(currentScroll * (totalDays - 1))));
+                updateUI(activeIndex);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        animate();
+
+        // Handle Resize
+        window.addEventListener('resize', () => {
+            updateCameraLayout();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+    </script>
+</body>
+</html>

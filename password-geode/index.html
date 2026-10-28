@@ -1,0 +1,469 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<title>Password Geode</title>
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg: #0c0d0f;
+    --bg-2: #131418;
+    --panel: rgba(22,23,26,0.72);
+    --panel-stroke: rgba(255,255,255,0.06);
+    --ink: #e9e6df;
+    --ink-dim: #8a867e;
+    --ink-mute: #5a574f;
+    --rule: rgba(255,255,255,0.08);
+    --ok: #8ecf9a;
+    --warn: #e6b873;
+    --bad: #d97a6a;
+    --accent: #d9c7a0;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--ink); font-family:"Inter", system-ui, sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
+  body{
+    background:
+      radial-gradient(1200px 800px at 70% 30%, rgba(60,52,40,0.25), transparent 60%),
+      radial-gradient(900px 700px at 10% 90%, rgba(30,40,60,0.25), transparent 60%),
+      var(--bg);
+  }
+  canvas#gl{ display:block; position:fixed; inset:0; width:100vw; height:100vh; z-index:1; pointer-events:none; }
+  .serif{ font-family:"Instrument Serif", serif; font-weight:400; letter-spacing:-0.01em; }
+  .mono{ font-family:"JetBrains Mono", ui-monospace, monospace; }
+  #root{ position:fixed; inset:0; }
+
+  /* Top bar */
+  .topbar{
+    position:absolute; top:22px; left:28px; right:28px;
+    display:flex; align-items:center; justify-content:space-between;
+    pointer-events:none; z-index:10;
+  }
+  .brand{ display:flex; align-items:center; gap:14px; pointer-events:auto; }
+  .brand .mark{
+    width:26px; height:26px; border-radius:2px;
+    background: conic-gradient(from 210deg, #2a2723, #4a4036, #1a1917, #2a2723);
+    border:1px solid rgba(255,255,255,0.12);
+    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.4);
+    position:relative; overflow:hidden;
+  }
+  .brand .mark::after{
+    content:""; position:absolute; inset:3px; border-radius:1px;
+    background: radial-gradient(circle at 30% 30%, rgba(255,230,180,0.55), transparent 45%);
+    mix-blend-mode:screen;
+  }
+  .brand .wordmark{ display:flex; flex-direction:column; line-height:1; }
+  .brand .wordmark .t1{ font-size:18px; letter-spacing:0.02em; }
+  .brand .wordmark .t2{ font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-dim); margin-top:4px; }
+.crumbs { 
+  display: flex; 
+  gap: 18px; 
+  pointer-events: auto; 
+  margin-right: 90px; /* Adds space for the Forge button */
+}
+  .crumb{ font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-mute); }
+  .crumb.active{ color:var(--ink); }
+
+  /* Bottom readout */
+  .hud{
+    position:absolute; left:0; right:0; bottom:0; padding:0 28px 22px;
+    display:grid; grid-template-columns: 1fr minmax(420px, 560px) 1fr; gap:22px; align-items:end;
+    pointer-events:none; z-index:10;
+  }
+  .col{ pointer-events:auto; }
+  .col.left{ justify-self:start; max-width:340px; }
+  .col.right{ justify-self:end; max-width:340px; text-align:right; }
+
+  /* Password input */
+  .inputwrap{
+    background: var(--panel);
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    border:1px solid var(--panel-stroke);
+    border-radius:14px;
+    padding:14px 16px 12px;
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.03);
+  }
+  .inputwrap .label{
+    display:flex; justify-content:space-between; align-items:center;
+    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px;
+  }
+  .inputwrap .label .hint{ color:var(--ink-dim); letter-spacing:0.14em; }
+  .field{
+    display:flex; align-items:center; gap:10px;
+    border-bottom:1px solid var(--rule); padding:6px 0 10px;
+  }
+  .field input{
+    flex:1; background:transparent; border:0; outline:0; color:var(--ink);
+    font-family:"JetBrains Mono", monospace; font-size:20px; letter-spacing:0.05em;
+    caret-color:var(--accent);
+  }
+  .field input::placeholder{ color:var(--ink-mute); letter-spacing:0.08em; }
+  .iconbtn{
+    background:transparent; border:1px solid var(--rule); color:var(--ink-dim);
+    width:28px; height:28px; border-radius:7px; cursor:pointer;
+    display:inline-flex; align-items:center; justify-content:center;
+    transition: all 160ms ease;
+  }
+  .iconbtn:hover{ color:var(--ink); border-color:rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); }
+  .iconbtn.active{ color:var(--accent); border-color:rgba(217,199,160,0.4); }
+
+  .meter{
+    margin-top:12px; display:flex; gap:4px; height:6px;
+  }
+  .meter .seg{ flex:1; background:rgba(255,255,255,0.06); border-radius:2px; position:relative; overflow:hidden; }
+  .meter .seg .fill{
+    position:absolute; inset:0; width:0%;
+    background: linear-gradient(90deg, var(--segA, var(--accent)), var(--segB, var(--accent)));
+    transition: width 220ms ease, background 320ms ease;
+  }
+
+  .metarow{
+    display:flex; justify-content:space-between; margin-top:10px;
+    font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-dim);
+  }
+  .metarow .verdict{ color:var(--ink); }
+
+  /* Left column: stats */
+  .statblock{ margin-bottom:14px; }
+  .statblock .k{ font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:6px; }
+  .statblock .v{ font-family:"Instrument Serif", serif; font-size:34px; line-height:1; color:var(--ink); }
+  .statblock .sub{ font-family:"JetBrains Mono", monospace; font-size:11px; color:var(--ink-dim); margin-top:6px; letter-spacing:0.04em; }
+
+  .charset{
+    display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-top:8px;
+  }
+  .chip{
+    border:1px solid var(--rule); border-radius:6px; padding:6px 0;
+    text-align:center; font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:0.12em;
+    color:var(--ink-mute);
+    transition: all 260ms ease;
+  }
+  .chip.on{ color:var(--ink); border-color:rgba(217,199,160,0.35); background:rgba(217,199,160,0.06); box-shadow: 0 0 20px -8px rgba(217,199,160,0.45); }
+
+  /* Right column: crystal specimen card */
+  .specimen{
+    font-family:"JetBrains Mono", monospace; font-size:11px; color:var(--ink-dim);
+    letter-spacing:0.04em; line-height:1.65;
+  }
+  .specimen .hdr{
+    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px;
+  }
+  .specimen .name{
+    font-family:"Instrument Serif", serif; font-size:26px; color:var(--ink); letter-spacing:-0.01em;
+    line-height:1.1; margin-bottom:10px;
+  }
+  .specimen .row{ display:flex; justify-content:space-between; gap:12px; padding:3px 0; border-bottom:1px dashed var(--rule); }
+  .specimen .row:last-child{ border-bottom:0; }
+  .specimen .row .lbl{ color:var(--ink-mute); letter-spacing:0.14em; text-transform:uppercase; font-size:9px; }
+  .specimen .row .val{ color:var(--ink); }
+
+  /* Center hero title (top center) */
+  .hero{
+    position:absolute; top:18%; left:50%; transform:translateX(-50%);
+    text-align:center; z-index:5; pointer-events:none;
+    transition: opacity 400ms ease;
+  }
+  .hero .eyebrow{ font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px; }
+  .hero .title{ font-family:"Instrument Serif", serif; font-size:56px; line-height:1; color:var(--ink); }
+  .hero .title em{ font-style:italic; color:var(--accent); }
+  .hero.hidden{ opacity:0; }
+
+  /* Generator panel */
+  .gen{
+    position:absolute; right:28px; top:72px; width:300px;
+    background:var(--panel); border:1px solid var(--panel-stroke); border-radius:14px;
+    backdrop-filter: blur(16px) saturate(1.1);
+    -webkit-backdrop-filter: blur(16px) saturate(1.1);
+    padding:14px 16px; z-index:12;
+    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.7);
+    transform-origin: top right;
+    transition: opacity 200ms ease, transform 200ms ease;
+  }
+  .gen.closed{ opacity:0; transform: scale(0.96) translateY(-6px); pointer-events:none; }
+  .gen h3{
+    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute);
+    margin:0 0 10px; font-weight:500;
+  }
+  .gen .controls{ display:flex; flex-direction:column; gap:10px; }
+  .gen label{ display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--ink-dim); letter-spacing:0.08em; }
+  .gen label .v{ font-family:"JetBrains Mono", monospace; color:var(--ink); font-size:11px; }
+  .gen input[type="range"]{
+    -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--rule); border-radius:2px; outline:none;
+  }
+  .gen input[type="range"]::-webkit-slider-thumb{
+    -webkit-appearance:none; appearance:none; width:12px; height:12px; border-radius:50%;
+    background:var(--accent); cursor:pointer; box-shadow: 0 0 0 3px rgba(217,199,160,0.12);
+  }
+  .toggles{ display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; }
+  .toggle{
+    border:1px solid var(--rule); border-radius:6px; padding:7px 8px;
+    display:flex; justify-content:space-between; align-items:center; cursor:pointer;
+    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:0.1em; color:var(--ink-dim);
+    transition: all 160ms ease;
+    user-select:none;
+  }
+  .toggle .dot{ width:8px; height:8px; border-radius:50%; background:transparent; border:1px solid var(--ink-mute); transition: all 160ms ease; }
+  .toggle.on{ color:var(--ink); border-color:rgba(217,199,160,0.35); background:rgba(217,199,160,0.05); }
+  .toggle.on .dot{ background:var(--accent); border-color:var(--accent); box-shadow: 0 0 8px var(--accent); }
+  .gen .output{
+    margin-top:12px; padding:10px 12px; border:1px dashed var(--rule); border-radius:8px;
+    font-family:"JetBrains Mono", monospace; font-size:13px; color:var(--ink); word-break:break-all;
+    letter-spacing:0.04em; min-height:40px; display:flex; align-items:center;
+  }
+  .gen .actions{ display:flex; gap:6px; margin-top:10px; }
+  .btn{
+    flex:1; border:1px solid var(--rule); background:transparent; color:var(--ink-dim);
+    border-radius:7px; padding:8px 10px; font-family:"JetBrains Mono", monospace;
+    font-size:10px; letter-spacing:0.18em; text-transform:uppercase; cursor:pointer;
+    transition: all 160ms ease;
+  }
+  .btn:hover{ color:var(--ink); border-color:rgba(255,255,255,0.18); }
+  .btn.primary{ background:var(--accent); color:#1a1712; border-color:var(--accent); }
+  .btn.primary:hover{ filter:brightness(1.08); }
+
+  /* Toggle gen button */
+  .genToggle{
+    position:absolute; right:28px; top:22px; z-index:13;
+    display:flex; gap:6px; align-items:center;
+    background:var(--panel); border:1px solid var(--panel-stroke);
+    border-radius:10px; padding:6px 12px; cursor:pointer; pointer-events:auto;
+    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase;
+    color:var(--ink-dim); backdrop-filter: blur(12px);
+    transition: color 160ms ease;
+  }
+  .genToggle:hover{ color:var(--ink); }
+  .genToggle .plus{ display:inline-block; transition: transform 200ms ease; }
+  .genToggle.open .plus{ transform: rotate(45deg); }
+
+  /* Ticker scale on left */
+  .scale{
+    position:absolute; left:28px; top:50%; transform:translateY(-50%);
+    writing-mode: vertical-rl; transform-origin:center;
+    display:flex; gap:28px; font-family:"JetBrains Mono", monospace; font-size:9px; letter-spacing:0.3em; text-transform:uppercase;
+    color:var(--ink-mute); z-index:8; pointer-events:none;
+  }
+  .scale span.hot{ color:var(--accent); }
+
+  /* Tweaks panel */
+.tweaks {
+  position: absolute; 
+  right: 28px; 
+  top: 50%; /* Moves to the horizontal middle */
+  transform: translateY(-50%); /* Centers it exactly on the Y axis */
+  z-index: 15;
+  background: var(--panel); 
+  border: 1px solid var(--panel-stroke); 
+  border-radius: 14px;
+  backdrop-filter: blur(16px) saturate(1.1);
+  padding: 14px 16px; 
+  width: 260px;
+  box-shadow: none; /* Removes the black background circle */
+}
+  .tweaks.visible{ display:block; }
+  .tweaks h3{ font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin:0 0 10px; font-weight:500; }
+  .tweaks .controls{ display:flex; flex-direction:column; gap:10px; }
+  .tweaks .seg-group{ display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; }
+  .tweaks .seg-btn{
+    border:1px solid var(--rule); background:transparent; color:var(--ink-dim);
+    padding:6px; border-radius:6px; cursor:pointer;
+    font-family:"JetBrains Mono", monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase;
+  }
+  .tweaks .seg-btn.on{ color:var(--ink); background:rgba(217,199,160,0.08); border-color:rgba(217,199,160,0.35); }
+
+  /* cracked flash */
+  @keyframes flash { 0%{opacity:0} 30%{opacity:1} 100%{opacity:0} }
+  .flash{
+    position:absolute; inset:0; background: radial-gradient(circle at center, rgba(255,240,210,0.6), transparent 60%);
+    pointer-events:none; z-index:6; opacity:0;
+  }
+  .flash.go{ animation: flash 900ms ease-out; }
+
+  /* small utility */
+  .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+</style>
+</head>
+<body>
+  <div id="root">
+    <canvas id="gl"></canvas>
+    <div class="flash" id="flash"></div>
+
+    <!-- top bar -->
+    <div class="topbar">
+      <div class="brand">
+        <div class="mark" aria-hidden="true"></div>
+        <div class="wordmark">
+          <div class="t1 serif">Password Geode</div>
+          <div class="t2">Mineralogical Entropy Assay · Mk II</div>
+        </div>
+      </div>
+      <div class="crumbs">
+        <span class="crumb active">Assay</span>
+        <span class="crumb">Forge</span>
+        <span class="crumb">Archive</span>
+      </div>
+    </div>
+
+    <button class="genToggle" id="genToggle">
+      <span class="plus">+</span>
+      <span>Forge</span>
+    </button>
+
+    <!-- Scale -->
+    <div class="scale" aria-hidden="true">
+      <span>0</span><span>1</span><span>2</span><span>3</span><span class="hot">4</span><span class="hot">5</span>
+      <span style="color:var(--ink);">Mohs</span>
+    </div>
+
+    <!-- Hero title, hidden once user starts typing -->
+    <div class="hero" id="hero">
+      <div class="eyebrow">Specimen · Pending</div>
+      <div class="title serif">A password is a <em>rock</em>.<br/>A strong one is a <em>geode</em>.</div>
+    </div>
+
+    <!-- Generator panel (Forge) -->
+    <div class="gen closed" id="gen">
+      <h3>Forge · Procedural Password</h3>
+      <div class="controls">
+        <label>Length <span class="v" id="genLenV">20</span></label>
+        <input type="range" id="genLen" min="8" max="48" value="20" />
+        <div class="toggles">
+          <div class="toggle on" data-tog="lower"><span>a–z</span><span class="dot"></span></div>
+          <div class="toggle on" data-tog="upper"><span>A–Z</span><span class="dot"></span></div>
+          <div class="toggle on" data-tog="digit"><span>0–9</span><span class="dot"></span></div>
+          <div class="toggle on" data-tog="symbol"><span>! @ #</span><span class="dot"></span></div>
+        </div>
+      </div>
+      <div class="output mono" id="genOut">—</div>
+      <div class="actions">
+        <button class="btn" id="genForge">Forge</button>
+        <button class="btn primary" id="genUse">Use</button>
+      </div>
+    </div>
+
+    <!-- Bottom HUD -->
+    <div class="hud">
+      <div class="col left">
+        <div class="statblock">
+          <div class="k">Entropy</div>
+          <div class="v serif"><span id="entropyV">0.0</span> <span style="font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink-dim);">bits</span></div>
+          <div class="sub">charset · <span id="charsetSize">0</span></div>
+        </div>
+        <div class="statblock">
+          <div class="k">Crack Time</div>
+          <div class="v serif" id="crackV" style="font-size:22px;">—</div>
+          <div class="sub">@ 10¹⁰ guesses / sec</div>
+        </div>
+        <div class="charset">
+          <div class="chip" id="chLower">a–z</div>
+          <div class="chip" id="chUpper">A–Z</div>
+          <div class="chip" id="chDigit">0–9</div>
+          <div class="chip" id="chSym">sym</div>
+        </div>
+      </div>
+
+      <div class="col center">
+        <div class="inputwrap">
+          <div class="label">
+            <span>Specimen Input</span>
+            <span class="hint mono" id="lenLabel">0 chars</span>
+          </div>
+          <div class="field">
+            <input id="pw" type="password" autocomplete="off" spellcheck="false" placeholder="Strike the rock · type a password" />
+            <button class="iconbtn" id="eye" title="Reveal">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
+            </button>
+            <button class="iconbtn" id="clear" title="Clear">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
+            </button>
+          </div>
+          <div class="meter" id="meter">
+            <div class="seg"><div class="fill"></div></div>
+            <div class="seg"><div class="fill"></div></div>
+            <div class="seg"><div class="fill"></div></div>
+            <div class="seg"><div class="fill"></div></div>
+            <div class="seg"><div class="fill"></div></div>
+          </div>
+          <div class="metarow">
+            <span>Assay</span>
+            <span class="verdict" id="verdict">Untouched</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="col right">
+        <div class="specimen">
+          <div class="hdr">Specimen Report · № <span id="specNo">000</span></div>
+          <div class="name serif" id="specName">Greystone, unfractured</div>
+          <div class="row"><span class="lbl">Stage</span><span class="val" id="spStage">Intact</span></div>
+          <div class="row"><span class="lbl">Facets</span><span class="val" id="spFacets">0</span></div>
+          <div class="row"><span class="lbl">Hue</span><span class="val" id="spHue">—</span></div>
+          <div class="row"><span class="lbl">Luster</span><span class="val" id="spLust">dull</span></div>
+          <div class="row"><span class="lbl">Fracture</span><span class="val" id="spFrac">0%</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Tweaks panel (toggled by host) -->
+    <div class="tweaks" id="tweaks">
+      <h3>Tweaks</h3>
+      <div class="controls">
+        <label>Palette</label>
+        <div class="seg-group" id="tw-palette">
+          <button class="seg-btn on" data-val="amethyst">Amethyst</button>
+          <button class="seg-btn" data-val="citrine">Citrine</button>
+          <button class="seg-btn" data-val="emerald">Emerald</button>
+        </div>
+        <label>Voxel resolution</label>
+        <div class="seg-group" id="tw-res">
+          <button class="seg-btn" data-val="low">Low</button>
+          <button class="seg-btn on" data-val="med">Medium</button>
+          <button class="seg-btn" data-val="high">High</button>
+        </div>
+        <label>Animation</label>
+        <div class="seg-group" id="tw-spin">
+          <button class="seg-btn" data-val="off">Still</button>
+          <button class="seg-btn on" data-val="slow">Slow</button>
+          <button class="seg-btn" data-val="fast">Fast</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script id="tweak-defaults" type="application/json">
+{
+  "rock": "granite",
+  "palette": "amethyst",
+  "resolution": "med",
+  "spin": "slow"
+}
+</script>
+
+<!-- EDITMODE: persistable tweak state -->
+<script>
+const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
+  "rock": "granite",
+  "palette": "amethyst",
+  "resolution": "low",
+  "spin": "slow"
+}/*EDITMODE-END*/;
+</script>
+
+<script type="importmap">
+{
+  "imports": {
+    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+  }
+}
+</script>
+
+<script type="module">
+import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
+window.THREE = THREE;
+window.dispatchEvent(new Event('three-ready'));
+</script>
+<script src="geode-inline.js"></script>
+</body>
+</html>
