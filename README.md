@@ -1,6 +1,6 @@
 # Interactive Tools
 
-Nine small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
+Ten small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
 
 `heycristobal.com/interactive-tools/<folder>/`
 
@@ -16,6 +16,8 @@ Nine small interactive tools, trackers, and generators in one repo, each in its 
 | Tamagotchi Password Generator | [tamagotchi-password-gen/](tamagotchi-password-gen/) | A password generator raised like a virtual pet. |
 | Password Geode | [password-geode/](password-geode/) | A password strength assay that cracks open a crystal geode. |
 
+| Gameboy About Me | [Gameboy-about-me/](Gameboy-about-me/) | An about-me page living inside a Game Boy. |
+
 ## Adding a tool
 
 1. Create a folder named for the tool and put the tool in it (entry point as `index.html`, plus any files it references).
@@ -24,4 +26,4 @@ Nine small interactive tools, trackers, and generators in one repo, each in its 
 
 ## History
 
-Consolidated 2026-10-28 from the single-tool repos mood_tracker, typographic-weather-loom, tyquest, paint-pomodoro, digital-journal-app, castle-wordkeep, little-folders, tamagotchi-password-gen, and password-geode (all files moved byte-for-byte, including castle-wordkeep's JS modules, tyquest's images, and password-geode's scripts and screenshots). Note: `mood_tracker` (this one, the original) is a different repo from `mood-tracker`, which remains standalone.
+Consolidated 2026-10-28 from the single-tool repos mood_tracker, typographic-weather-loom, tyquest, paint-pomodoro, digital-journal-app, castle-wordkeep, little-folders, tamagotchi-password-gen, and password-geode, with Gameboy-about-me added the same day (all files moved byte-for-byte, including castle-wordkeep's JS modules, tyquest's images, and password-geode's scripts and screenshots). Note: `mood_tracker` (this one, the original) is a different repo from `mood-tracker`, which remains standalone.
