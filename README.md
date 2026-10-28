@@ -1,6 +1,6 @@
 # Interactive Tools
 
-Ten small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
+Twelve small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
 
 `heycristobal.com/interactive-tools/<folder>/`
 
@@ -17,6 +17,10 @@ Ten small interactive tools, trackers, and generators in one repo, each in its o
 | Password Geode | [password-geode/](password-geode/) | A password strength assay that cracks open a crystal geode. |
 
 | Gameboy About Me | [Gameboy-about-me/](Gameboy-about-me/) | An about-me page living inside a Game Boy. |
+
+| Mobile Preview | [mobile-render/](mobile-render/) | Preview pages inside an iPhone 14 Pro frame. |
+
+| Minimal Mood Tracker | [mood-tracker/](mood-tracker/) | A minimal mood tracker, the newer of the two shelved here. |
 
 ## Adding a tool
 

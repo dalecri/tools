@@ -1,0 +1,780 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Minimal Mood Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg-color: #D2F35C;
+            --fg-color: #1A430B;
+            --accent-color: #A2C728;
+            --surface-color: #C2E549;
+            --surface-hover: #B7DC3B;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+
+        /* Smooth dynamic color variables */
+        .theme-bg { background-color: var(--bg-color); }
+        .theme-fg { color: var(--fg-color); }
+        .theme-accent { color: var(--accent-color); }
+        .theme-surface { background-color: var(--surface-color); }
+        .theme-btn-solid { 
+            background-color: var(--fg-color); 
+            color: var(--bg-color); 
+        }
+
+        /* Big background status label styling */
+        .status-display-text {
+            font-weight: 900;
+            letter-spacing: -0.055em;
+            line-height: 0.95;
+            transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .status-pop {
+            transform: scale(1.06);
+        }
+
+        /* Custom Slider Track & Thumb */
+        .slider-hit-area {
+            touch-action: none;
+            cursor: pointer;
+        }
+
+        .thumb-shadow {
+            box-shadow: 0 8px 20px -4px rgba(0, 0, 0, 0.22);
+            transition: transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .slider-hit-area:active .thumb-shadow,
+        .thumb-active {
+            transform: translate(-50%, -50%) scale(1.16) !important;
+        }
+
+        /* Subtle organic eye blink animation */
+        @keyframes naturalBlink {
+            0%, 94%, 100% { transform: scaleY(1); }
+            97% { transform: scaleY(0.08); }
+        }
+
+        .eye-blink-wrapper {
+            transform-origin: center center;
+            animation: naturalBlink 5.5s infinite ease-in-out;
+        }
+
+        /* Hide scrollbars inside logs */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+</head>
+<body class="w-screen h-dvh flex items-center justify-center bg-neutral-950 sm:p-6 transition-colors duration-300">
+
+    <!-- Ambient Desktop Glow -->
+    <div id="ambient-glow" class="hidden sm:block fixed inset-0 opacity-25 blur-[130px] pointer-events-none transition-colors duration-300 theme-bg"></div>
+
+    <!-- Main Mobile Container / Fullscreen Mobile View -->
+    <main id="app-card" class="relative w-full h-full sm:max-w-[400px] sm:h-[830px] sm:max-h-[92dvh] sm:rounded-[52px] theme-bg theme-fg flex flex-col justify-between p-6 sm:p-8 overflow-hidden sm:shadow-[0_25px_70px_-15px_rgba(0,0,0,0.75)] sm:border-[10px] sm:border-neutral-900 z-10">
+        
+        <!-- Optional Desktop Dynamic Island Mockup -->
+        <div class="hidden sm:flex items-center justify-between w-full px-2 pt-0 pb-2 opacity-80 pointer-events-none select-none text-xs font-bold">
+            <span>9:41</span>
+            <div class="w-28 h-7 bg-black rounded-full mx-auto"></div>
+            <div class="flex items-center gap-1.5">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 24 24"><path d="M2 20h2v-4H2v4zm4 0h2v-8H6v8zm4 0h2V8h-2v12zm4 0h2V4h-2v16z"/></svg>
+                <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 24 24"><path d="M17 5H5c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V7c0-1.1-.9-2-2-2zm5 4h-2v6h2V9z"/></svg>
+            </div>
+        </div>
+
+        <!-- Top Navigation Bar -->
+        <header class="flex items-center justify-between w-full z-20 pt-1">
+            <!-- Reset / Clear Button -->
+            <button id="reset-btn" aria-label="Reset mood" title="Reset" class="w-11 h-11 rounded-full theme-surface flex items-center justify-center transition-transform active:scale-90 hover:brightness-95">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round">
+                    <path d="M18 6L6 18M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <!-- Prompt Switcher Pill -->
+            <button id="prompt-cycle-btn" title="Click to switch question prompt" class="px-3.5 py-1.5 rounded-full theme-surface text-xs font-bold tracking-tight flex items-center gap-1.5 transition-transform active:scale-95 hover:brightness-95">
+                <span id="prompt-badge-label">Mood Check</span>
+                <svg class="w-3.5 h-3.5 opacity-70" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M7 15l5 5 5-5M7 9l5-5 5 5"/>
+                </svg>
+            </button>
+
+            <!-- Mood History Drawer Button -->
+            <button id="history-btn" aria-label="Mood History" title="View Logged Moods" class="relative w-11 h-11 rounded-full theme-surface flex items-center justify-center transition-transform active:scale-90 hover:brightness-95">
+                <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="9"/>
+                    <path d="M12 16v-4M12 8h.01"/>
+                </svg>
+                <span id="history-count-badge" class="hidden absolute -top-1 -right-1 w-5 h-5 rounded-full theme-btn-solid text-[11px] font-extrabold flex items-center justify-center shadow-sm">0</span>
+            </button>
+        </header>
+
+        <!-- Prompt Heading -->
+        <div class="text-center px-4 mt-2 z-20">
+            <h1 id="question-title" class="text-[22px] sm:text-[24px] font-bold leading-snug tracking-tight max-w-[260px] mx-auto transition-opacity duration-200">
+                How are you feeling right now?
+            </h1>
+        </div>
+
+        <!-- Center Expressive Character & Status Readout -->
+        <div class="flex-1 flex flex-col items-center justify-center w-full my-auto select-none relative z-10">
+            <div id="face-wrapper" class="w-full max-w-[300px] aspect-[4/3] flex items-center justify-center">
+                <svg id="face-svg" viewBox="0 0 320 230" class="w-full h-full overflow-visible">
+                    <g class="eye-blink-wrapper">
+                        <!-- Left Eye Group (rotates for angry/bad state) -->
+                        <g id="left-eye-pivot" transform="translate(95, 92)">
+                            <rect id="left-eye-rect" x="-60" y="-60" width="120" height="120" rx="60" ry="60" fill="currentColor" />
+                        </g>
+                        <!-- Right Eye Group (rotates for angry/bad state) -->
+                        <g id="right-eye-pivot" transform="translate(225, 92)">
+                            <rect id="right-eye-rect" x="-60" y="-60" width="120" height="120" rx="60" ry="60" fill="currentColor" />
+                        </g>
+                    </g>
+                    <!-- Expressive Mouth Curve -->
+                    <path id="mouth-path" d="M 140 165 Q 160 183 180 165" fill="none" stroke="currentColor" stroke-width="14" stroke-linecap="round" />
+                </svg>
+            </div>
+
+            <!-- Massive Mood Label (BAD / NOT BAD / GOOD) -->
+            <div class="mt-1 sm:mt-2 h-16 flex items-center justify-center">
+                <h2 id="mood-word" class="status-display-text text-[54px] sm:text-[62px] theme-accent uppercase select-none">
+                    GOOD
+                </h2>
+            </div>
+        </div>
+
+        <!-- Interactive Slider Section -->
+        <div class="w-full px-2 mb-5 z-20">
+            <div id="slider-container" class="slider-hit-area relative h-14 flex items-center">
+                <!-- Background Track Line -->
+                <div class="w-full h-[6px] rounded-full theme-surface relative flex items-center justify-between">
+                    <!-- 3 Anchor Stop Dots -->
+                    <div class="w-4 h-4 rounded-full theme-surface -ml-1"></div>
+                    <div class="w-4 h-4 rounded-full theme-surface"></div>
+                    <div class="w-4 h-4 rounded-full theme-surface -mr-1"></div>
+                </div>
+
+                <!-- Active Fill Line -->
+                <div id="slider-fill" class="
+                    absolute left-0 h-[6px] rounded-full pointer-events-none"
+                    style="background-color: var(--accent-color); width: 100%;">
+                </div>
+
+                <!-- Draggable Thumb with Dynamic Mini-Mouth Icon -->
+                <div id="slider-thumb" class="thumb-shadow absolute top-1/2 w-12 h-12 rounded-full theme-btn-solid flex items-center justify-center pointer-events-none" style="left: 100%; transform: translate(-50%, -50%);">
+                    <svg class="w-6 h-6 overflow-visible" viewBox="0 0 24 24">
+                        <path id="thumb-mouth" d="M 7 10.5 Q 12 15.5 17 10.5" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" />
+                    </svg>
+                </div>
+            </div>
+
+            <!-- 3 Mood Stop Labels -->
+            <div class="flex justify-between items-center text-[14px] font-bold mt-1 px-0.5">
+                <button type="button" data-stop="0" class="mood-stop-btn py-1 pr-3 text-left transition-opacity">Bad</button>
+                <button type="button" data-stop="0.5" class="mood-stop-btn py-1 px-3 text-center transition-opacity">Not bad</button>
+                <button type="button" data-stop="1" class="mood-stop-btn py-1 pl-3 text-right transition-opacity">Good</button>
+            </div>
+        </div>
+
+        <!-- Bottom Action Bar ("Add note" + "Submit ->") -->
+        <div class="w-full z-20">
+            <div class="w-full h-[64px] rounded-full theme-surface p-2 pl-6 flex items-center justify-between gap-2 transition-all">
+                <button id="open-note-btn" type="button" class="flex-1 text-left truncate text-[15px] font-bold py-2 focus:outline-none">
+                    <span id="note-preview-label" class="opacity-75">Add note</span>
+                </button>
+                <button id="submit-mood-btn" type="button" class="h-full px-6 rounded-full theme-btn-solid font-bold text-[15px] flex items-center gap-2.5 transition-transform active:scale-95 shadow-md">
+                    <span>Submit</span>
+                    <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M5 12h14M13 6l6 6-6 6"/>
+                    </svg>
+                </button>
+            </div>
+        </div>
+
+        <!-- Note Input Modal Sheet -->
+        <div id="note-modal" class="fixed sm:absolute inset-0 z-40 bg-black/40 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-200 flex items-end">
+            <div id="note-sheet" class="w-full theme-bg theme-fg rounded-t-[36px] p-6 shadow-2xl transform translate-y-full transition-transform duration-300">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-extrabold tracking-tight">Add a quick note</h3>
+                    <button id="close-note-btn" type="button" class="w-9 h-9 rounded-full theme-surface flex items-center justify-center">
+                        <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+                <textarea id="note-input" rows="3" maxlength="160" placeholder="What's contributing to this feeling? (optional)" class="w-full rounded-2xl theme-surface p-4 text-[15px] font-semibold placeholder:opacity-50 focus:outline-none resize-none mb-4 select-text"></textarea>
+                <div class="flex justify-end gap-2">
+                    <button id="clear-note-btn" type="button" class="px-5 py-3 rounded-full theme-surface font-bold text-sm">Clear</button>
+                    <button id="save-note-btn" type="button" class="px-7 py-3 rounded-full theme-btn-solid font-bold text-sm">Done</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Mood History & Insights Drawer -->
+        <div id="history-modal" class="fixed sm:absolute inset-0 z-40 bg-black/45 backdrop-blur-xs opacity-0 pointer-events-none transition-opacity duration-200 flex items-end">
+            <div id="history-sheet" class="w-full h-[78%] theme-bg theme-fg rounded-t-[36px] p-6 flex flex-col shadow-2xl transform translate-y-full transition-transform duration-300">
+                <div class="flex items-center justify-between pb-4 border-b border-black/10">
+                    <div>
+                        <h3 class="text-xl font-extrabold tracking-tight">Mood Journal</h3>
+                        <p class="text-xs font-semibold opacity-70">Your tracked entries this session</p>
+                    </div>
+                    <button id="close-history-btn" type="button" class="w-10 h-10 rounded-full theme-surface flex items-center justify-center">
+                        <svg class="w-5 h-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6L6 18M6 6l12 12"/></svg>
+                    </button>
+                </div>
+
+                <!-- Summary Pills -->
+                <div class="grid grid-cols-3 gap-2.5 my-4">
+                    <div class="rounded-2xl theme-surface p-3 text-center">
+                        <div id="stat-good" class="text-xl font-black">0</div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider opacity-70">Good</div>
+                    </div>
+                    <div class="rounded-2xl theme-surface p-3 text-center">
+                        <div id="stat-notbad" class="text-xl font-black">0</div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider opacity-70">Not Bad</div>
+                    </div>
+                    <div class="rounded-2xl theme-surface p-3 text-center">
+                        <div id="stat-bad" class="text-xl font-black">0</div>
+                        <div class="text-[11px] font-bold uppercase tracking-wider opacity-70">Bad</div>
+                    </div>
+                </div>
+
+                <!-- Entries List -->
+                <div id="history-list" class="flex-1 overflow-y-auto no-scrollbar space-y-2.5 pr-0.5"></div>
+            </div>
+        </div>
+
+        <!-- Toast Confirmation Feedback -->
+        <div id="toast-pill" class="pointer-events-none absolute top-20 left-1/2 -translate-x-1/2 z-50 px-5 py-2.5 rounded-full theme-btn-solid font-bold text-xs tracking-wide shadow-xl opacity-0 -translate-y-4 transition-all duration-300 flex items-center gap-2">
+            <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>
+            <span id="toast-message">Mood logged!</span>
+        </div>
+
+    </main>
+
+    <script>
+        /**
+         * Keyframe visual states for:
+         * 0.0 = BAD (Vibrant Coral Orange-Red with tilted squinting angry/sad face)
+         * 0.5 = NOT BAD (Warm Golden Amber with narrow flat eyes and slight frown, matching screenshot)
+         * 1.0 = GOOD (Electric Lime Green with big round eyes and happy smile, matching screenshot)
+         */
+        const KEYFRAMES = {
+            bad: {
+                bg: [255, 114, 94],         // #FF725E
+                fg: [68, 14, 9],            // #440E09
+                accent: [219, 75, 56],      // #DB4B38
+                surface: [240, 98, 78],     // #F0624E
+                eyeWidth: 112,
+                eyeHeight: 42,
+                eyeRadius: 16,
+                eyeTilt: 16,                // Inward angry/frustrated slant
+                eyeY: 98,
+                mouthSideY: 184,
+                mouthControlY: 146,         // Deep frown curve
+                thumbSideY: 14.5,
+                thumbControlY: 8.5,
+                label: 'BAD'
+            },
+            notBad: {
+                bg: [243, 198, 95],         // #F3C65F (Matches screenshot 3)
+                fg: [74, 38, 6],            // #4A2606
+                accent: [204, 154, 43],     // #CC9A2B
+                surface: [229, 181, 76],    // #E5B54C
+                eyeWidth: 114,
+                eyeHeight: 36,              // Horizontal pill eyes
+                eyeRadius: 18,
+                eyeTilt: 0,
+                eyeY: 94,
+                mouthSideY: 164,
+                mouthControlY: 146,         // Slight unimpressed arch
+                thumbSideY: 12.5,
+                thumbControlY: 11.5,
+                label: 'NOT BAD'
+            },
+            good: {
+                bg: [210, 243, 92],         // #D2F35C (Matches screenshots 1 & 2)
+                fg: [26, 67, 11],           // #1A430B
+                accent: [162, 199, 40],     // #A2C728
+                surface: [194, 229, 73],    // #C2E549
+                eyeWidth: 120,
+                eyeHeight: 120,             // Full large circle eyes
+                eyeRadius: 60,
+                eyeTilt: 0,
+                eyeY: 88,
+                mouthSideY: 164,
+                mouthControlY: 188,         // Happy smile curve
+                thumbSideY: 10.5,
+                thumbControlY: 15.8,
+                label: 'GOOD'
+            }
+        };
+
+        const PROMPTS = [
+            { badge: 'Mood Check', question: 'How are you feeling right now?' },
+            { badge: 'Shopping UI', question: 'How was your shopping experience?' },
+            { badge: 'Daily Energy', question: 'How was your energy level today?' }
+        ];
+
+        // Application State
+        let currentValue = 1.0;       // Current animated value (0 to 1)
+        let targetValue = 1.0;        // Target slider value (0 to 1)
+        let isDragging = false;
+        let currentNote = '';
+        let currentPromptIndex = 1;   // Default to the screenshot prompt ("How was your shopping experience?")
+        let activeLabel = 'GOOD';
+        let lookOffset = { x: 0, y: 0 };
+
+        // Pre-populated sample logs so the history drawer feels alive immediately
+        const moodHistory = [
+            {
+                id: 'sample-1',
+                mood: 'GOOD',
+                value: 1,
+                prompt: 'How was your shopping experience?',
+                note: 'Super fast checkout and clean interface!',
+                timestamp: '2:14 PM'
+            },
+            {
+                id: 'sample-2',
+                mood: 'NOT BAD',
+                value: 0.5,
+                prompt: 'How are you feeling right now?',
+                note: 'Need an afternoon espresso.',
+                timestamp: '11:30 AM'
+            }
+        ];
+
+        // DOM Elements
+        const root = document.documentElement;
+        const leftEyePivot = document.getElementById('left-eye-pivot');
+        const rightEyePivot = document.getElementById('right-eye-pivot');
+        const leftEyeRect = document.getElementById('left-eye-rect');
+        const rightEyeRect = document.getElementById('right-eye-rect');
+        const mouthPath = document.getElementById('mouth-path');
+        const thumbMouth = document.getElementById('thumb-mouth');
+        const moodWord = document.getElementById('mood-word');
+        const sliderContainer = document.getElementById('slider-container');
+        const sliderThumb = document.getElementById('slider-thumb');
+        const sliderFill = document.getElementById('slider-fill');
+        const stopButtons = document.querySelectorAll('.mood-stop-btn');
+
+        const promptCycleBtn = document.getElementById('prompt-cycle-btn');
+        const promptBadgeLabel = document.getElementById('prompt-badge-label');
+        const questionTitle = document.getElementById('question-title');
+        const resetBtn = document.getElementById('reset-btn');
+
+        // Note & History Elements
+        const openNoteBtn = document.getElementById('open-note-btn');
+        const notePreviewLabel = document.getElementById('note-preview-label');
+        const noteModal = document.getElementById('note-modal');
+        const noteSheet = document.getElementById('note-sheet');
+        const noteInput = document.getElementById('note-input');
+        const closeNoteBtn = document.getElementById('close-note-btn');
+        const saveNoteBtn = document.getElementById('save-note-btn');
+        const clearNoteBtn = document.getElementById('clear-note-btn');
+
+        const historyBtn = document.getElementById('history-btn');
+        const historyCountBadge = document.getElementById('history-count-badge');
+        const historyModal = document.getElementById('history-modal');
+        const historySheet = document.getElementById('history-sheet');
+        const closeHistoryBtn = document.getElementById('close-history-btn');
+        const historyList = document.getElementById('history-list');
+        const submitMoodBtn = document.getElementById('submit-mood-btn');
+        const toastPill = document.getElementById('toast-pill');
+        const toastMessage = document.getElementById('toast-message');
+
+        // Math Helpers
+        function lerp(a, b, t) {
+            return a + (b - a) * t;
+        }
+
+        function lerpColor(rgbA, rgbB, t) {
+            const r = Math.round(lerp(rgbA[0], rgbB[0], t));
+            const g = Math.round(lerp(rgbA[1], rgbB[1], t));
+            const b = Math.round(lerp(rgbA[2], rgbB[2], t));
+            return `rgb(${r}, ${g}, ${b})`;
+        }
+
+        /**
+         * Interpolates between Bad (0.0), Not Bad (0.5), and Good (1.0)
+         */
+        function renderMoodState(val) {
+            const clamped = Math.max(0, Math.min(1, val));
+            let stateA, stateB, localT;
+
+            if (clamped < 0.5) {
+                stateA = KEYFRAMES.bad;
+                stateB = KEYFRAMES.notBad;
+                localT = clamped * 2;
+            } else {
+                stateA = KEYFRAMES.notBad;
+                stateB = KEYFRAMES.good;
+                localT = (clamped - 0.5) * 2;
+            }
+
+            // 1. Update CSS Theme Colors
+            root.style.setProperty('--bg-color', lerpColor(stateA.bg, stateB.bg, localT));
+            root.style.setProperty('--fg-color', lerpColor(stateA.fg, stateB.fg, localT));
+            root.style.setProperty('--accent-color', lerpColor(stateA.accent, stateB.accent, localT));
+            root.style.setProperty('--surface-color', lerpColor(stateA.surface, stateB.surface, localT));
+
+            // 2. Interpolate Eye Dimensions & Positions
+            const eyeW = lerp(stateA.eyeWidth, stateB.eyeWidth, localT);
+            const eyeH = lerp(stateA.eyeHeight, stateB.eyeHeight, localT);
+            const eyeR = lerp(stateA.eyeRadius, stateB.eyeRadius, localT);
+            const eyeTilt = lerp(stateA.eyeTilt, stateB.eyeTilt, localT);
+            const eyeY = lerp(stateA.eyeY, stateB.eyeY, localT);
+
+            // Apply geometry to both eyes
+            [leftEyeRect, rightEyeRect].forEach(rect => {
+                rect.setAttribute('width', eyeW.toFixed(2));
+                rect.setAttribute('height', eyeH.toFixed(2));
+                rect.setAttribute('x', (-eyeW / 2).toFixed(2));
+                rect.setAttribute('y', (-eyeH / 2).toFixed(2));
+                rect.setAttribute('rx', eyeR.toFixed(2));
+                rect.setAttribute('ry', eyeR.toFixed(2));
+            });
+
+            // Apply subtle eye-tracking offset + tilt
+            const lx = 95 + lookOffset.x;
+            const rx = 225 + lookOffset.x;
+            const ly = eyeY + lookOffset.y;
+
+            leftEyePivot.setAttribute('transform', `translate(${lx.toFixed(1)}, ${ly.toFixed(1)}) rotate(${eyeTilt.toFixed(2)})`);
+            rightEyePivot.setAttribute('transform', `translate(${rx.toFixed(1)}, ${ly.toFixed(1)}) rotate(${(-eyeTilt).toFixed(2)})`);
+
+            // 3. Interpolate Mouth Curve
+            const mSideY = lerp(stateA.mouthSideY, stateB.mouthSideY, localT) + lookOffset.y * 0.45;
+            const mCtrlY = lerp(stateA.mouthControlY, stateB.mouthControlY, localT) + lookOffset.y * 0.45;
+            const mCenterX = 160 + lookOffset.x * 0.45;
+            mouthPath.setAttribute(
+                'd',
+                `M ${(138 + lookOffset.x * 0.35).toFixed(1)} ${mSideY.toFixed(1)} Q ${mCenterX.toFixed(1)} ${mCtrlY.toFixed(1)} ${(182 + lookOffset.x * 0.35).toFixed(1)} ${mSideY.toFixed(1)}`
+            );
+
+            // 4. Interpolate Slider Thumb Mini-Mouth
+            const tSideY = lerp(stateA.thumbSideY, stateB.thumbSideY, localT);
+            const tCtrlY = lerp(stateA.thumbControlY, stateB.thumbControlY, localT);
+            thumbMouth.setAttribute('d', `M 7 ${tSideY.toFixed(2)} Q 12 ${tCtrlY.toFixed(2)} 17 ${tSideY.toFixed(2)}`);
+
+            // 5. Update Slider Thumb & Active Fill Position
+            const percentage = (clamped * 100).toFixed(2) + '%';
+            sliderThumb.style.left = percentage;
+            sliderFill.style.width = percentage;
+
+            // 6. Determine Nearest Label & Pop Animation
+            let nextLabel = 'NOT BAD';
+            if (clamped < 0.28) nextLabel = 'BAD';
+            else if (clamped > 0.72) nextLabel = 'GOOD';
+
+            if (nextLabel !== activeLabel) {
+                activeLabel = nextLabel;
+                moodWord.textContent = activeLabel;
+                moodWord.classList.remove('status-pop');
+                void moodWord.offsetWidth; // Reflow to trigger pop
+                moodWord.classList.add('status-pop');
+                setTimeout(() => moodWord.classList.remove('status-pop'), 220);
+            }
+
+            // Highlight active stop label below slider
+            stopButtons.forEach(btn => {
+                const stopVal = parseFloat(btn.dataset.stop);
+                const dist = Math.abs(clamped - stopVal);
+                btn.style.opacity = dist < 0.24 ? '1' : '0.45';
+                btn.style.transform = dist < 0.24 ? 'scale(1.05)' : 'scale(1)';
+            });
+        }
+
+        // Smooth animation loop for spring-like slider transitions
+        function animateLoop() {
+            const diff = targetValue - currentValue;
+            if (Math.abs(diff) > 0.0005) {
+                currentValue += diff * (isDragging ? 0.38 : 0.16);
+                renderMoodState(currentValue);
+            } else if (currentValue !== targetValue) {
+                currentValue = targetValue;
+                renderMoodState(currentValue);
+            }
+            requestAnimationFrame(animateLoop);
+        }
+
+        // Snap to nearest of the 3 stops (0, 0.5, 1) when user releases slider
+        function snapToNearestStop() {
+            if (targetValue < 0.25) {
+                targetValue = 0;
+            } else if (targetValue < 0.75) {
+                targetValue = 0.5;
+            } else {
+                targetValue = 1;
+            }
+        }
+
+        // Convert pointer X coordinate to normalized 0..1 slider value
+        function updateSliderFromPointer(clientX) {
+            const rect = sliderContainer.getBoundingClientRect();
+            const raw = (clientX - rect.left) / rect.width;
+            targetValue = Math.max(0, Math.min(1, raw));
+
+            // Make the character glance toward the user's finger while dragging
+            lookOffset.x = (targetValue - 0.5) * 14;
+            lookOffset.y = 5;
+            renderMoodState(currentValue);
+        }
+
+        // Pointer Events for Slider
+        sliderContainer.addEventListener('pointerdown', (e) => {
+            isDragging = true;
+            sliderThumb.classList.add('thumb-active');
+            sliderContainer.setPointerCapture(e.pointerId);
+            updateSliderFromPointer(e.clientX);
+        });
+
+        sliderContainer.addEventListener('pointermove', (e) => {
+            if (!isDragging) return;
+            updateSliderFromPointer(e.clientX);
+        });
+
+        function handlePointerRelease() {
+            if (!isDragging) return;
+            isDragging = false;
+            sliderThumb.classList.remove('thumb-active');
+            lookOffset = { x: 0, y: 0 };
+            snapToNearestStop();
+            renderMoodState(currentValue);
+        }
+
+        sliderContainer.addEventListener('pointerup', handlePointerRelease);
+        sliderContainer.addEventListener('pointercancel', handlePointerRelease);
+
+        // Clicking directly on "Bad", "Not bad", or "Good" text buttons
+        stopButtons.forEach(btn => {
+            btn.addEventListener('click', () => {
+                targetValue = parseFloat(btn.dataset.stop);
+            });
+        });
+
+        // Subtle interactive eye tracking when moving mouse across card
+        document.addEventListener('pointermove', (e) => {
+            if (isDragging) return;
+            const rect = document.getElementById('face-svg').getBoundingClientRect();
+            const centerX = rect.left + rect.width / 2;
+            const centerY = rect.top + rect.height / 2;
+            const dx = Math.max(-1, Math.min(1, (e.clientX - centerX) / 220));
+            const dy = Math.max(-1, Math.min(1, (e.clientY - centerY) / 220));
+            lookOffset.x = dx * 8;
+            lookOffset.y = dy * 6;
+            renderMoodState(currentValue);
+        });
+
+        // Keyboard Left/Right Arrow Accessibility
+        window.addEventListener('keydown', (e) => {
+            if (document.activeElement === noteInput) return;
+            if (e.key === 'ArrowLeft') {
+                targetValue = Math.max(0, targetValue - 0.5);
+                snapToNearestStop();
+            } else if (e.key === 'ArrowRight') {
+                targetValue = Math.min(1, targetValue + 0.5);
+                snapToNearestStop();
+            }
+        });
+
+        // Switch Question Prompts (Shopping Experience vs Mood Check)
+        function updatePromptDisplay() {
+            const item = PROMPTS[currentPromptIndex];
+            promptBadgeLabel.textContent = item.badge;
+            questionTitle.style.opacity = '0';
+            setTimeout(() => {
+                questionTitle.textContent = item.question;
+                questionTitle.style.opacity = '1';
+            }, 150);
+        }
+
+        promptCycleBtn.addEventListener('click', () => {
+            currentPromptIndex = (currentPromptIndex + 1) % PROMPTS.length;
+            updatePromptDisplay();
+        });
+
+        // Reset Button
+        resetBtn.addEventListener('click', () => {
+            targetValue = 0.5;
+            currentNote = '';
+            noteInput.value = '';
+            updateNotePreview();
+            showToast('Reset to neutral');
+        });
+
+        // Note Sheet Controls
+        function openNoteSheet() {
+            noteInput.value = currentNote;
+            noteModal.classList.remove('opacity-0', 'pointer-events-none');
+            noteSheet.classList.remove('translate-y-full');
+            setTimeout(() => noteInput.focus(), 150);
+        }
+
+        function closeNoteSheet() {
+            noteModal.classList.add('opacity-0', 'pointer-events-none');
+            noteSheet.classList.add('translate-y-full');
+            noteInput.blur();
+        }
+
+        function updateNotePreview() {
+            if (currentNote.trim().length > 0) {
+                notePreviewLabel.textContent = currentNote.trim();
+                notePreviewLabel.classList.remove('opacity-75');
+            } else {
+                notePreviewLabel.textContent = 'Add note';
+                notePreviewLabel.classList.add('opacity-75');
+            }
+        }
+
+        openNoteBtn.addEventListener('click', openNoteSheet);
+        closeNoteBtn.addEventListener('click', closeNoteSheet);
+        saveNoteBtn.addEventListener('click', () => {
+            currentNote = noteInput.value.trim();
+            updateNotePreview();
+            closeNoteSheet();
+        });
+        clearNoteBtn.addEventListener('click', () => {
+            noteInput.value = '';
+            currentNote = '';
+            updateNotePreview();
+        });
+        noteModal.addEventListener('click', (e) => {
+            if (e.target === noteModal) closeNoteSheet();
+        });
+
+        // Mood History Drawer Controls
+        function renderHistoryList() {
+            historyCountBadge.textContent = moodHistory.length;
+            historyCountBadge.classList.toggle('hidden', moodHistory.length === 0);
+
+            const counts = { GOOD: 0, 'NOT BAD': 0, BAD: 0 };
+            moodHistory.forEach(item => {
+                if (counts[item.mood] !== undefined) counts[item.mood]++;
+            });
+
+            document.getElementById('stat-good').textContent = counts['GOOD'];
+            document.getElementById('stat-notbad').textContent = counts['NOT BAD'];
+            document.getElementById('stat-bad').textContent = counts['BAD'];
+
+            if (moodHistory.length === 0) {
+                historyList.innerHTML = `
+                    <div class="h-40 flex flex-col items-center justify-center text-center opacity-60">
+                        <p class="font-bold text-sm">No entries logged yet</p>
+                        <p class="text-xs mt-1">Slide the face and tap Submit to track your mood.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = moodHistory.map(entry => {
+                const dotColor = entry.mood === 'GOOD' ? '#1A430B' : entry.mood === 'NOT BAD' ? '#4A2606' : '#440E09';
+                return `
+                    <div class="rounded-2xl theme-surface p-4 flex flex-col gap-1.5">
+                        <div class="flex items-center justify-between">
+                            <span class="inline-flex items-center gap-2 font-black text-xs uppercase tracking-wider">
+                                <span class="w-2.5 h-2.5 rounded-full" style="background:${dotColor}"></span>
+                                ${entry.mood}
+                            </span>
+                            <span class="text-[11px] font-bold opacity-65">${entry.timestamp}</span>
+                        </div>
+                        <p class="text-xs font-semibold opacity-75">${entry.prompt}</p>
+                        ${entry.note ? `<p class="text-sm font-bold mt-0.5">“${entry.note}”</p>` : ''}
+                    </div>
+                `;
+            }).join('');
+        }
+
+        function openHistoryDrawer() {
+            renderHistoryList();
+            historyModal.classList.remove('opacity-0', 'pointer-events-none');
+            historySheet.classList.remove('translate-y-full');
+        }
+
+        function closeHistoryDrawer() {
+            historyModal.classList.add('opacity-0', 'pointer-events-none');
+            historySheet.classList.add('translate-y-full');
+        }
+
+        historyBtn.addEventListener('click', openHistoryDrawer);
+        closeHistoryBtn.addEventListener('click', closeHistoryDrawer);
+        historyModal.addEventListener('click', (e) => {
+            if (e.target === historyModal) closeHistoryDrawer();
+        });
+
+        // Toast Helper
+        let toastTimeout = null;
+        function showToast(msg) {
+            toastMessage.textContent = msg;
+            toastPill.classList.remove('opacity-0', '-translate-y-4');
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toastPill.classList.add('opacity-0', '-translate-y-4');
+            }, 2200);
+        }
+
+        // Submit Mood Handler
+        submitMoodBtn.addEventListener('click', () => {
+            const now = new Date();
+            const timeStr = now.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+            moodHistory.unshift({
+                id: Date.now().toString(),
+                mood: activeLabel,
+                value: targetValue,
+                prompt: PROMPTS[currentPromptIndex].question,
+                note: currentNote,
+                timestamp: timeStr
+            });
+
+            currentNote = '';
+            noteInput.value = '';
+            updateNotePreview();
+            renderHistoryList();
+
+            // Joyful bounce on submit
+            const faceWrapper = document.getElementById('face-wrapper');
+            faceWrapper.style.transition = 'transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1)';
+            faceWrapper.style.transform = 'scale(1.08)';
+            setTimeout(() => {
+                faceWrapper.style.transform = 'scale(1)';
+            }, 300);
+
+            showToast(`Logged "${activeLabel}"!`);
+        });
+
+        // Initialize on Window Load
+        window.onload = function () {
+            questionTitle.textContent = PROMPTS[currentPromptIndex].question;
+            promptBadgeLabel.textContent = PROMPTS[currentPromptIndex].badge;
+            renderMoodState(currentValue);
+            renderHistoryList();
+            animateLoop();
+        };
+    </script>
+</body>
+</html>
