@@ -1,6 +1,6 @@
 # Interactive Tools
 
-Ten small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
+Eleven small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
 
 `heycristobal.com/tools/<folder>/`
 
@@ -29,3 +29,4 @@ Ten small interactive tools, trackers, and generators in one repo, each in its o
 ## History
 
 Consolidated 2026-10-28 from the single-tool repos mood_tracker, typographic-weather-loom, tyquest, paint-pomodoro, digital-journal-app, castle-wordkeep, little-folders, tamagotchi-password-gen, and password-geode, with Gameboy-about-me added the same day (all files moved byte-for-byte, including castle-wordkeep's JS modules, tyquest's images, and password-geode's scripts and screenshots). Note: `mood_tracker` (this one, the original) is a different repo from `mood-tracker`, which remains standalone.
+| Rito Text Engine | [rito-text/](rito-text/) | Type any text and get an itsrito-style ASCII banner: block letters with the diagonal % shadow and the pointer scramble. |

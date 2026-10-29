@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rito Text Engine</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0b130e; --panel: #111d16; --line: #1f3a2b;
+    --ink: #d6f5e3; --dim: #7fa892; --accent: #c4d96a; --on-accent: #0b130e;
+    --r-ban: #d6f5e3; --r-shd: #3f6d4d; --r-hot: #f1ffd0; --glow: #c4d96a33;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font-family: "Space Mono", ui-monospace, monospace;
+    min-height: 100vh; display: flex; flex-direction: column; align-items: center;
+    padding: 28px 16px 40px;
+  }
+  main { width: min(960px, 100%); }
+  h1 { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; color: var(--accent); margin: 0 0 16px; font-weight: 700; }
+  .controls { display: flex; gap: 10px; margin-bottom: 14px; }
+  input[type="text"] {
+    flex: 1; min-width: 0; background: var(--panel); border: 1px solid var(--line);
+    border-radius: 10px; color: var(--ink); font: inherit; font-size: 16px;
+    padding: 11px 14px; outline: none; text-transform: uppercase;
+  }
+  input[type="text"]:focus { border-color: var(--accent); }
+  button {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+    color: var(--ink); font: inherit; font-size: 13px; padding: 11px 16px; cursor: pointer;
+  }
+  button:hover { border-color: var(--accent); color: var(--accent); }
+  button:active { background: var(--accent); color: var(--on-accent); }
+  .stage {
+    background: var(--panel); border: 1px solid var(--line); border-radius: 14px;
+    padding: 22px 10px; overflow: hidden; display: flex; justify-content: center;
+  }
+  pre.art { margin: 0; white-space: pre; line-height: 1.08; font-weight: 700; cursor: default; }
+  .r-ban { color: var(--r-ban); } .r-shd { color: var(--r-shd); }
+  .hot { color: var(--r-hot); text-shadow: 0 0 8px var(--glow); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Rito Text Engine</h1>
+  <div class="controls">
+    <input type="text" id="text" value="RITO" maxlength="16" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Text to render">
+    <button type="button" id="copy">Copy ASCII</button>
+  </div>
+  <div class="stage" id="stage"><pre class="art" id="out" aria-hidden="true"></pre></div>
+</main>
+<script>
+"use strict";
+/* The letterforms: R, I, T, O are itsrito.com's own banner glyphs; the rest are
+   drawn on the same 9-row grid with the same stroke. */
+const LETTERS = {"R": ["XXXXXXXX ", "XX     XX", "XX     XX", "XX     XX", "XXXXXXXX ", "XX   XX  ", "XX    XX ", "XX     XX", "XX     XX"], "I": ["XXXXXX", "  XX  ", "  XX  ", "  XX  ", "  XX  ", "  XX  ", "  XX  ", "  XX  ", "XXXXXX"], "T": ["XXXXXXXXXX", "    XX    ", "    XX    ", "    XX    ", "    XX    ", "    XX    ", "    XX    ", "    XX    ", "    XX    "], "O": [" XXXXXXX ", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", " XXXXXXX "], "A": ["  XXXXX  ", " XX   XX ", "XX     XX", "XX     XX", "XXXXXXXXX", "XX     XX", "XX     XX", "XX     XX", "XX     XX"], "B": ["XXXXXXX  ", "XX     XX", "XX     XX", "XX     XX", "XXXXXXX  ", "XX     XX", "XX     XX", "XX     XX", "XXXXXXX  "], "C": [" XXXXXXX ", "XX     XX", "XX       ", "XX       ", "XX       ", "XX       ", "XX       ", "XX     XX", " XXXXXXX "], "D": ["XXXXXXX  ", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XXXXXXX  "], "E": ["XXXXXXXXX", "XX       ", "XX       ", "XX       ", "XXXXXXX  ", "XX       ", "XX       ", "XX       ", "XXXXXXXXX"], "F": ["XXXXXXXXX", "XX       ", "XX       ", "XX       ", "XXXXXXX  ", "XX       ", "XX       ", "XX       ", "XX       "], "G": [" XXXXXXX ", "XX     XX", "XX       ", "XX       ", "XX   XXXX", "XX     XX", "XX     XX", "XX     XX", " XXXXXXX "], "H": ["XX     XX", "XX     XX", "XX     XX", "XX     XX", "XXXXXXXXX", "XX     XX", "XX     XX", "XX     XX", "XX     XX"], "J": ["XXXXXXXXX", "      XX ", "      XX ", "      XX ", "      XX ", "      XX ", "      XX ", "XX    XX ", " XXXXXX  "], "K": ["XX     XX", "XX    XX ", "XX   XX  ", "XX  XX   ", "XXXXX    ", "XX  XX   ", "XX   XX  ", "XX    XX ", "XX     XX"], "L": ["XX       ", "XX       ", "XX       ", "XX       ", "XX       ", "XX       ", "XX       ", "XX       ", "XXXXXXXXX"], "M": ["XX       XX", "XXX     XXX", "XXXX   XXXX", "XX XX XX XX", "XX  XXX  XX", "XX       XX", "XX       XX", "XX       XX", "XX       XX"], "N": ["XX     XX", "XXX    XX", "XXXX   XX", "XX XX  XX", "XX  XX XX", "XX   XXXX", "XX    XXX", "XX     XX", "XX     XX"], "P": ["XXXXXXX  ", "XX     XX", "XX     XX", "XX     XX", "XXXXXXX  ", "XX       ", "XX       ", "XX       ", "XX       "], "Q": [" XXXXXXX ", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX   X XX", "XX    XXX", "XX     XX", " XXXXXXX "], "S": [" XXXXXXX ", "XX     XX", "XX       ", "XX       ", " XXXXXXX ", "       XX", "       XX", "XX     XX", " XXXXXXX "], "U": ["XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", " XXXXXXX "], "V": ["XX     XX", "XX     XX", "XX     XX", "XX     XX", "XX     XX", " XX   XX ", " XX   XX ", "  XX XX  ", "   XXX   "], "W": ["XX       XX", "XX       XX", "XX       XX", "XX       XX", "XX   X   XX", "XX   X   XX", "XX   X   XX", " XX  X   XX", "  XX X XX  "], "X": ["XX     XX", "XX     XX", " XX   XX ", "  XX XX  ", "   XXX   ", "  XX XX  ", " XX   XX ", "XX     XX", "XX     XX"], "Y": ["XX     XX", "XX     XX", " XX   XX ", "  XX XX  ", "   XXX   ", "    XX   ", "    XX   ", "    XX   ", "    XX   "], "Z": ["XXXXXXXXX", "       XX", "      XX ", "     XX  ", "    XX   ", "   XX    ", "  XX     ", " XX      ", "XXXXXXXXX"], "0": [" XXXXXXX ", "XX     XX", "XX    XXX", "XX   XXX ", "XX  XXX  ", "XX XXX   ", "XXX    XX", "XX     XX", " XXXXXXX "], "1": ["    XX   ", "   XXX   ", "  XXXX   ", "    XX   ", "    XX   ", "    XX   ", "    XX   ", "    XX   ", "  XXXXXX "], "2": [" XXXXXXX ", "XX     XX", "       XX", "      XX ", "     XX  ", "    XX   ", "   XX    ", "  XX     ", "XXXXXXXXX"], "3": [" XXXXXXX ", "XX     XX", "       XX", "  XXXXXX ", "       XX", "       XX", "       XX", "XX     XX", " XXXXXXX "], "4": ["XX     XX", "XX     XX", "XX     XX", "XX     XX", "XXXXXXXXX", "       XX", "       XX", "       XX", "       XX"], "5": ["XXXXXXXXX", "XX       ", "XX       ", "XXXXXXXX ", "       XX", "       XX", "       XX", "XX     XX", " XXXXXXX "], "6": [" XXXXXXX ", "XX     XX", "XX       ", "XX       ", "XXXXXXX  ", "XX     XX", "XX     XX", "XX     XX", " XXXXXXX "], "7": ["XXXXXXXXX", "       XX", "      XX ", "     XX  ", "     XX  ", "    XX   ", "    XX   ", "    XX   ", "    XX   "], "8": [" XXXXXXX ", "XX     XX", "XX     XX", "XX     XX", " XXXXXXX ", "XX     XX", "XX     XX", "XX     XX", " XXXXXXX "], "9": [" XXXXXXX ", "XX     XX", "XX     XX", "XX     XX", " XXXXXXXX", "       XX", "       XX", "XX     XX", " XXXXXXX "], " ": ["    ", "    ", "    ", "    ", "    ", "    ", "    ", "    ", "    "], ".": ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "XX", "XX"], ",": ["  ", "  ", "  ", "  ", "  ", "  ", "  ", "XX", " X"], "!": ["XX", "XX", "XX", "XX", "XX", "XX", "XX", "  ", "XX"], "?": [" XXXXXXX ", "XX     XX", "       XX", "      XX ", "     XX  ", "    XX   ", "    XX   ", "         ", "    XX   "], "-": ["   ", "   ", "   ", "   ", "XXX", "XXX", "   ", "   ", "   "], "+": ["   ", "   ", " X ", "XXX", "XXX", "XXX", " X ", "   ", "   "], "'": ["XX", "XX", "XX", "  ", "  ", "  ", "  ", "  ", "  "], ":": ["  ", "  ", "XX", "XX", "  ", "  ", "  ", "XX", "XX"], "/": ["       XX", "      XX ", "     XX  ", "     XX  ", "    XX   ", "    XX   ", "   XX    ", "  XX     ", " XX      "], "(": ["    XX", "   XX ", "  XX  ", "  XX  ", "  XX  ", "  XX  ", "  XX  ", "   XX ", "    XX"], ")": ["XX    ", " XX   ", "  XX  ", "  XX  ", "  XX  ", "  XX  ", "  XX  ", " XX   ", "XX    "], "_": ["     ", "     ", "     ", "     ", "     ", "     ", "     ", "     ", "XXXXX"], "&": [" XXXXX   ", "XX   XX  ", "XX   XX  ", " XXXXX   ", "   XX    ", "  XXXX   ", " XX  XX  ", "XX    XX ", " XXXXXX  "]};
+
+function textGrid(word) {
+  const rows = 9, gap = 2;
+  const parts = [...word.toUpperCase()].map(l => LETTERS[l] || LETTERS[" "]);
+  if (!parts.length) parts.push(LETTERS[" "]);
+  const W = parts.reduce((s, p) => s + p[0].length, 0) + gap * (parts.length - 1) + 1, H = rows + 1;
+  const on = Array.from({ length: H }, () => new Array(W).fill(false));
+  let ox = 0;
+  parts.forEach(p => { p.forEach((ln, y) => [...ln].forEach((c, x) => { if (c === "X") on[y][ox + x] = true; })); ox += p[0].length + gap; });
+  const g = [];
+  for (let y = 0; y < H; y++) {
+    const row = [];
+    for (let x = 0; x < W; x++) {
+      if (on[y][x]) row.push({ ch: "#", role: "ban" });
+      else if (y > 0 && x > 0 && on[y - 1][x - 1]) row.push({ ch: "%", role: "shd" });
+      else row.push({ ch: " ", role: "sky" });
+    }
+    g.push(row);
+  }
+  return g;
+}
+
+/* The glyph field: same renderer as itsrito.com, scramble mode and all. */
+const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+class Field {
+  constructor(el) { this.el = el; this.cells = []; this.W = 0; this.H = 0; }
+  load(grid) {
+    this.H = grid.length; this.W = grid[0].length;
+    this.cells = grid.flat();
+    this.energy = new Float32Array(this.cells.length);
+    this.dirty = true; this.render();
+  }
+  poke(clientX, clientY) {
+    if (reduced) return;
+    const r = this.el.getBoundingClientRect();
+    const cx = (clientX - r.left) / r.width * this.W;
+    const cy = (clientY - r.top) / r.height * this.H;
+    const rx = 3.2, ry = 2;
+    for (let y = Math.max(0, Math.floor(cy - ry)); y <= Math.min(this.H - 1, Math.ceil(cy + ry)); y++) {
+      for (let x = Math.max(0, Math.floor(cx - rx)); x <= Math.min(this.W - 1, Math.ceil(cx + rx)); x++) {
+        const d = Math.hypot((x + .5 - cx) / rx, (y + .5 - cy) / ry);
+        if (d < 1) { const i = y * this.W + x; this.energy[i] = Math.max(this.energy[i], 1 - d * .6); }
+      }
+    }
+    this.dirty = true; start();
+  }
+  step(dt) {
+    let active = false; const k = Math.pow(0.5, dt / 140);
+    for (let i = 0; i < this.energy.length; i++) {
+      if (this.energy[i] > 0) {
+        this.energy[i] *= k;
+        if (this.energy[i] < 0.04) this.energy[i] = 0;
+        active = true;
+      }
+    }
+    if (active) this.dirty = true;
+    return active;
+  }
+  render() {
+    const SCR = "#%@&*+=:";
+    let html = "";
+    for (let y = 0; y < this.H; y++) {
+      let cls = null, buf = "";
+      for (let x = 0; x < this.W; x++) {
+        const i = y * this.W + x, c = this.cells[i], e = this.energy ? this.energy[i] : 0;
+        let ch = c.ch, k = "r-" + c.role;
+        if (e > 0.2 && ch !== " ") {
+          k += " hot";
+          if (e > 0.35) ch = SCR[(Math.random() * SCR.length) | 0];
+        }
+        if (k !== cls) { if (cls !== null) html += `<span class="${cls}">${esc(buf)}</span>`; cls = k; buf = ""; }
+        buf += ch;
+      }
+      html += `<span class="${cls}">${esc(buf)}</span>` + (y < this.H - 1 ? "\n" : "");
+    }
+    this.el.innerHTML = html; this.dirty = false;
+  }
+}
+function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+
+const out = document.getElementById("out");
+const stage = document.getElementById("stage");
+const input = document.getElementById("text");
+const field = new Field(out);
+let plainText = "";
+
+let raf = null, last = 0;
+function loop(ts) {
+  const dt = last ? Math.min(64, ts - last) : 16; last = ts;
+  const active = field.step(dt);
+  if (field.dirty) field.render();
+  raf = active ? requestAnimationFrame(loop) : null;
+}
+function start() { if (!raf && !reduced && !document.hidden) { last = 0; raf = requestAnimationFrame(loop); } }
+
+function fit() {
+  const avail = stage.clientWidth - 20;
+  const fs = Math.max(5, Math.min(22, Math.floor(avail / (field.W * 0.6))));
+  out.style.fontSize = fs + "px";
+}
+function update() {
+  const grid = textGrid(input.value || " ");
+  plainText = grid.map(r => r.map(c => c.ch).join("").replace(/\s+$/, "")).join("\n");
+  field.load(grid);
+  fit();
+}
+input.addEventListener("input", update);
+out.addEventListener("pointermove", e => field.poke(e.clientX, e.clientY));
+out.addEventListener("pointerdown", e => field.poke(e.clientX, e.clientY));
+window.addEventListener("resize", fit);
+document.getElementById("copy").addEventListener("click", async () => {
+  const btn = document.getElementById("copy");
+  try { await navigator.clipboard.writeText(plainText); btn.textContent = "Copied"; }
+  catch { btn.textContent = "Copy failed"; }
+  setTimeout(() => { btn.textContent = "Copy ASCII"; }, 1400);
+});
+update();
+</script>
+</body>
+</html>
