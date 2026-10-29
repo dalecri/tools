@@ -2,7 +2,7 @@
 
 Ten small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
 
-`heycristobal.com/interactive-tools/<folder>/`
+`heycristobal.com/tools/<folder>/`
 
 | Tool | Open | About |
 |---|---|---|
