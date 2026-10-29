@@ -1,6 +1,6 @@
 # Interactive Tools
 
-Eleven small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
+Ten small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
 
 `heycristobal.com/interactive-tools/<folder>/`
 
@@ -15,7 +15,6 @@ Eleven small interactive tools, trackers, and generators in one repo, each in it
 | Tamagotchi Password Generator | [tamagotchi-password-gen/](tamagotchi-password-gen/) | A password generator raised like a virtual pet. |
 | Password Geode | [password-geode/](password-geode/) | A password strength assay that cracks open a crystal geode. |
 
-| Gameboy About Me | [Gameboy-about-me/](Gameboy-about-me/) | An about-me page living inside a Game Boy. |
 
 | Mobile Preview | [mobile-render/](mobile-render/) | Preview pages inside an iPhone 14 Pro frame. |
 
