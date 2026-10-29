@@ -5,8 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Interactive Tools</title>
 <style>
-  @font-face{font-family:"Alpha Lyrae";src:url("https://heycristobal.com/vault/assets/fonts/AlphaLyrae-Medium.woff2") format("woff2");font-weight:500;font-display:swap}
-  :root{--bg:#1E1826; --panel:#2A2233; --panel2:#241C2E; --line:#3A2F47; --ink:#EDE7F2; --muted:#9B8FA8; --faint:#6E6182; --amber:#E8B34B --pink:#E85C8A; --blue:#7FB8D9; --gold:#F2C94C; --mint:#72EFDD; --violet:#B79CED;}
+  @font-face{font-family:"Alpha Lyrae";src:url("https://heycristobal.com/vault/assets/fonts/AlphaLyrae-Medium.woff2") format("woff2"),url("https://heycristobal.com/vault/assets/fonts/AlphaLyrae-Medium.woff") format("woff");font-weight:400 700;font-display:swap}
+  :root{--bg:#1E1826; --panel:#2A2233; --panel2:#241C2E; --line:#3A2F47; --ink:#EDE7F2; --muted:#9B8FA8; --faint:#6E6182; --amber:#E8B34B; --pink:#E85C8A; --blue:#7FB8D9; --gold:#F2C94C; --mint:#72EFDD; --violet:#B79CED;}
   *{box-sizing:border-box}
   body{margin:0; background:var(--bg); color:var(--ink); font-family:"Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:48px 20px 64px}
   ::selection{background:var(--amber); color:#1E1826}
@@ -18,7 +18,7 @@
     user-select:none;
   }
   .banner .w{color:var(--blue)} .banner .k{color:var(--amber)} .banner .l{color:#8FAE7C}
-  h1{font-size:clamp(28px,5vw,44px); font-weight:700; letter-spacing:-0.01em; margin:0 0 10px}
+  h1{font-family:"Alpha Lyrae","Space Mono",monospace; font-size:clamp(28px,5vw,44px); font-weight:700; letter-spacing:-0.01em; margin:0 0 10px}
   h1 .dot{color:var(--amber)}
   .lede{color:var(--muted); max-width:620px; margin:0 auto; font-size:15px}
   .meta{margin-top:14px; color:var(--faint); font-size:12px; letter-spacing:0.14em; text-transform:uppercase}
