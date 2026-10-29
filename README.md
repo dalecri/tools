@@ -1,13 +1,12 @@
 # Interactive Tools
 
-Twelve small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
+Eleven small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
 
 `heycristobal.com/interactive-tools/<folder>/`
 
 | Tool | Open | About |
 |---|---|---|
 | Mood Tracker | [mood_tracker/](mood_tracker/) | A small daily mood tracker. |
-| Typographic Weather Loom | [typographic-weather-loom/](typographic-weather-loom/) | Weather rendered as woven typography. |
 | TyQuest Retro | [tyquest/](tyquest/) | A pixel task tracker made for Tyler, with room-code sync. |
 | Paint Pomodoro | [paint-pomodoro/](paint-pomodoro/) | A pomodoro timer inside a natural watercolor studio. |
 | Softleaf Journal | [digital-journal-app/](digital-journal-app/) | A calm journaling app. |
