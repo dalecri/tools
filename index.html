@@ -6,15 +6,28 @@
 <title>Interactive Tools</title>
 <style>
   @font-face{font-family:"Alpha Lyrae";src:url("https://heycristobal.com/vault/assets/fonts/AlphaLyrae-Medium.woff2") format("woff2");font-weight:500;font-display:swap}
-  :root{--bg:#1E1826; --panel:#2A2233; --panel2:#241C2E; --line:#3A2F47; --ink:#EDE7F2; --muted:#9B8FA8; --faint:#6E6182; --amber:#E8B34B}
+  :root{--bg:#1E1826; --panel:#2A2233; --panel2:#241C2E; --line:#3A2F47; --ink:#EDE7F2; --muted:#9B8FA8; --faint:#6E6182; --amber:#E8B34B --pink:#E85C8A; --blue:#7FB8D9; --gold:#F2C94C; --mint:#72EFDD; --violet:#B79CED;}
   *{box-sizing:border-box}
   body{margin:0; background:var(--bg); color:var(--ink); font-family:"Space Mono", ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; padding:48px 20px 64px}
   ::selection{background:var(--amber); color:#1E1826}
   .wrap{max-width:1020px; margin:0 auto}
-  h1{font-family:"Alpha Lyrae","Space Mono",monospace; font-weight:500; font-size:42px; letter-spacing:.04em; margin:0 0 6px}
+  header{padding:56px 0 8px; text-align:center}
+  .banner{
+    margin:0 auto 18px; display:inline-block; text-align:left;
+    color:var(--faint); font-size:11px; line-height:1.35; white-space:pre;
+    user-select:none;
+  }
+  .banner .w{color:var(--blue)} .banner .k{color:var(--amber)} .banner .l{color:#8FAE7C}
+  h1{font-size:clamp(28px,5vw,44px); font-weight:700; letter-spacing:-0.01em; margin:0 0 10px}
   h1 .dot{color:var(--amber)}
-  .sub{color:var(--muted); margin:0 0 8px; font-size:15px}
-  .stats{color:var(--faint); font-size:13px; margin:0 0 28px}
+  .lede{color:var(--muted); max-width:620px; margin:0 auto; font-size:15px}
+  .meta{margin-top:14px; color:var(--faint); font-size:12px; letter-spacing:0.14em; text-transform:uppercase}
+  .meta b{color:var(--gold); font-weight:400}
+  #wave{
+    display:block; margin:26px auto 4px; max-width:760px; width:100%;
+    white-space:pre; overflow:hidden; text-align:center;
+    color:#3E6B8C; font-size:12px; line-height:1.2; user-select:none;
+  }
   .grid{display:grid; grid-template-columns:repeat(auto-fill,minmax(230px,1fr)); gap:14px}
   .card{background:var(--panel); border:1px solid var(--line); border-radius:14px; padding:16px 16px 13px; display:flex; flex-direction:column; gap:8px}
   .card h3{font-family:"Alpha Lyrae","Space Mono",monospace; font-weight:500; font-size:19px; margin:0; letter-spacing:.03em}
@@ -28,9 +41,15 @@
 </head>
 <body>
 <div class="wrap">
-  <h1>Interactive Tools<span class="dot">.</span></h1>
-  <p class="sub">Twelve small interactive tools, trackers, and generators, one repo. Each lives in its own folder, exactly as it was published.</p>
-  <p class="stats">12 tools · 1 repo · 0 build steps</p>
+    <header>
+    <pre class="banner" aria-hidden="true">  <span class="w">--</span><span class="k">o</span><span class="w">----</span>     <span class="l">----</span><span class="k">o</span><span class="l">-</span>
+  <span class="w">-----</span><span class="k">o</span>      <span class="l">-</span><span class="k">o</span><span class="l">----</span>
+  <span class="w">-</span><span class="k">o</span><span class="w">-----</span>     <span class="l">--</span><span class="k">o</span><span class="l">---</span></pre>
+    <h1>Interactive Tools<span class="dot">.</span></h1>
+    <p class="lede">Twelve small interactive tools, trackers, and generators, one repo. Each lives in its own folder, exactly as it was published.</p>
+    <p class="meta"><b>12</b> tools &nbsp;·&nbsp; <b>1</b> repo &nbsp;·&nbsp; <b>0</b> build steps</p>
+    <pre id="wave" aria-hidden="true"></pre>
+  </header>
   <div class="grid">
       <article class="card"><h3>Mood Tracker</h3><p>A small daily mood tracker.</p><div class="foot"><a class="view" href="mood_tracker/">Open →</a><a class="code" href="https://github.com/dalecri/interactive-tools/tree/main/mood_tracker">Code</a></div></article>
       <article class="card"><h3>Typographic Weather Loom</h3><p>Weather rendered as woven typography.</p><div class="foot"><a class="view" href="typographic-weather-loom/">Open →</a><a class="code" href="https://github.com/dalecri/interactive-tools/tree/main/typographic-weather-loom">Code</a></div></article>
@@ -48,5 +67,28 @@
   <footer>Consolidated 2026-10-28 from twelve single-tool repos.<br>
   Add a tool: create a folder with the tool in it (its entry point as <i>index.html</i>, plus any files it references), then add its card above and a row to the README table.</footer>
 </div>
+<script>
+  // A one-line pond ripple under the header. Decorative only.
+  (function () {
+    var el = document.getElementById('wave');
+    var W = 72, chars = ' .~\u2248~. ', t = 0;
+    function frame() {
+      var s = '';
+      for (var x = 0; x < W; x++) {
+        var v = Math.sin(x * 0.32 + t) + Math.sin(x * 0.11 - t * 0.7) + Math.sin(x * 0.53 + t * 1.7) * 0.5;
+        var i = Math.max(0, Math.min(chars.length - 1, Math.floor((v + 2.5) / 5 * chars.length)));
+        s += chars[i];
+      }
+      el.textContent = s;
+      t += 0.045;
+    }
+    if (window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      frame();
+    } else {
+      frame();
+      setInterval(function () { if (!document.hidden) frame(); }, 90);
+    }
+  })();
+</script>
 </body>
 </html>
