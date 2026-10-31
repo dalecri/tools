@@ -1,11 +1,12 @@
 # Interactive Tools
 
-Eleven small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
+Twelve small interactive tools, trackers, and generators in one repo, each in its own folder exactly as published:
 
 `heycristobal.com/tools/<folder>/`
 
 | Tool | Open | About |
 |---|---|---|
+| DREAMLOOP | [dreamloop/](dreamloop/) | A dreamy Strudel step sequencer: extended chords, haze, swing, and a seeded drift melody. |
 | Mood Tracker | [mood_tracker/](mood_tracker/) | A small daily mood tracker. |
 | TyQuest Retro | [tyquest/](tyquest/) | A pixel task tracker made for Tyler, with room-code sync. |
 | Paint Pomodoro | [paint-pomodoro/](paint-pomodoro/) | A pomodoro timer inside a natural watercolor studio. |
