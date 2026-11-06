@@ -6,6 +6,7 @@ Twelve small interactive tools, trackers, and generators in one repo, each in it
 
 | Tool | Open | About |
 |---|---|---|
+| Iso Pattern Forge | [isopattern/](isopattern/) | A seeded generator of intricate isometric outline patterns to colour in Procreate: four modes, closed ColorDrop-safe regions, a daily seed, and PNG and SVG export. |
 | DREAMLOOP | [dreamloop/](dreamloop/) | A dreamy Strudel step sequencer: extended chords, haze, swing, and a seeded drift melody. |
 | TyQuest Retro | [tyquest/](tyquest/) | A pixel task tracker made for Tyler, with room-code sync. |
 | Paint Pomodoro | [paint-pomodoro/](paint-pomodoro/) | A pomodoro timer inside a natural watercolor studio. |
@@ -30,3 +31,4 @@ Twelve small interactive tools, trackers, and generators in one repo, each in it
 ## History
 
 Consolidated 2026-10-28 from the single-tool repos mood_tracker, typographic-weather-loom, tyquest, paint-pomodoro, digital-journal-app, castle-wordkeep, little-folders, tamagotchi-password-gen, and password-geode, with Gameboy-about-me added the same day (all files moved byte-for-byte, including castle-wordkeep's JS modules, tyquest's images, and password-geode's scripts and screenshots). Note: `mood_tracker` (this one, the original) is a different repo from `mood-tracker`, which remains standalone. The original `mood_tracker` was removed on 2026-11-05 in favour of the newer Minimal Mood Tracker.
+Iso Pattern Forge was added on 2026-11-05: a single-file isometric outline pattern generator (built by Claude from a prompt by Automata, checked against that prompt before shelving).
