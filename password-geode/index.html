@@ -1,469 +1,684 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>Password Geode</title>
-<meta name="viewport" content="width=device-width, initial-scale=1" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Instrument+Serif&family=JetBrains+Mono:wght@300;400;500;600&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Space+Mono:ital,wght@0,400;0,700;1,400&display=swap" rel="stylesheet">
 <style>
-  :root{
-    --bg: #0c0d0f;
-    --bg-2: #131418;
-    --panel: rgba(22,23,26,0.72);
-    --panel-stroke: rgba(255,255,255,0.06);
-    --ink: #e9e6df;
-    --ink-dim: #8a867e;
-    --ink-mute: #5a574f;
-    --rule: rgba(255,255,255,0.08);
-    --ok: #8ecf9a;
-    --warn: #e6b873;
-    --bad: #d97a6a;
-    --accent: #d9c7a0;
-  }
-  *{ box-sizing:border-box; }
-  html,body{ margin:0; padding:0; height:100%; background:var(--bg); color:var(--ink); font-family:"Inter", system-ui, sans-serif; overflow:hidden; -webkit-font-smoothing:antialiased; }
-  body{
-    background:
-      radial-gradient(1200px 800px at 70% 30%, rgba(60,52,40,0.25), transparent 60%),
-      radial-gradient(900px 700px at 10% 90%, rgba(30,40,60,0.25), transparent 60%),
-      var(--bg);
-  }
-  canvas#gl{ display:block; position:fixed; inset:0; width:100vw; height:100vh; z-index:1; pointer-events:none; }
-  .serif{ font-family:"Instrument Serif", serif; font-weight:400; letter-spacing:-0.01em; }
-  .mono{ font-family:"JetBrains Mono", ui-monospace, monospace; }
-  #root{ position:fixed; inset:0; }
-
-  /* Top bar */
-  .topbar{
-    position:absolute; top:22px; left:28px; right:28px;
-    display:flex; align-items:center; justify-content:space-between;
-    pointer-events:none; z-index:10;
-  }
-  .brand{ display:flex; align-items:center; gap:14px; pointer-events:auto; }
-  .brand .mark{
-    width:26px; height:26px; border-radius:2px;
-    background: conic-gradient(from 210deg, #2a2723, #4a4036, #1a1917, #2a2723);
-    border:1px solid rgba(255,255,255,0.12);
-    box-shadow: inset 0 0 0 1px rgba(0,0,0,0.4), 0 2px 8px rgba(0,0,0,0.4);
-    position:relative; overflow:hidden;
-  }
-  .brand .mark::after{
-    content:""; position:absolute; inset:3px; border-radius:1px;
-    background: radial-gradient(circle at 30% 30%, rgba(255,230,180,0.55), transparent 45%);
-    mix-blend-mode:screen;
-  }
-  .brand .wordmark{ display:flex; flex-direction:column; line-height:1; }
-  .brand .wordmark .t1{ font-size:18px; letter-spacing:0.02em; }
-  .brand .wordmark .t2{ font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-dim); margin-top:4px; }
-.crumbs { 
-  display: flex; 
-  gap: 18px; 
-  pointer-events: auto; 
-  margin-right: 90px; /* Adds space for the Forge button */
+/* Layout: a dark display case holds the stone; a slim instrument column beside it swaps jobs by tab (assay, forge, cabinet). */
+@font-face{font-family:'Alpha Lyrae';src:url('https://heycristobal.com/my-style-guide/assets/fonts/AlphaLyrae-Medium.woff2') format('woff2'),url('https://heycristobal.com/my-style-guide/assets/fonts/AlphaLyrae-Medium.woff') format('woff');font-weight:400 700;font-display:swap}
+:root{
+  --void:#1E1826; --surface:#2A2233; --surface-2:#251F2D; --text:#EDE7F2; --muted:#9B8FA8; --line:#3D3448;
+  --accent:#B9A9D9; --ring:rgba(185,169,217,.16); --on-accent:#1E1826;
+  --case:#130e18; --case-line:#2c2335; --case-text:#9B8FA8;
+  --good:#8ecf9a; --warn:#F2C94C; --bad:#e8876f;
+  --f-display:'Alpha Lyrae','Space Mono',ui-monospace,monospace;
+  --f-ui:'Space Mono',ui-monospace,Menlo,monospace;
+  --f-pixel:'Press Start 2P','Space Mono',monospace;
+  --ease:cubic-bezier(.4,0,.2,1);
+  color-scheme:dark;
 }
-  .crumb{ font-size:11px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-mute); }
-  .crumb.active{ color:var(--ink); }
-
-  /* Bottom readout */
-  .hud{
-    position:absolute; left:0; right:0; bottom:0; padding:0 28px 22px;
-    display:grid; grid-template-columns: 1fr minmax(420px, 560px) 1fr; gap:22px; align-items:end;
-    pointer-events:none; z-index:10;
-  }
-  .col{ pointer-events:auto; }
-  .col.left{ justify-self:start; max-width:340px; }
-  .col.right{ justify-self:end; max-width:340px; text-align:right; }
-
-  /* Password input */
-  .inputwrap{
-    background: var(--panel);
-    backdrop-filter: blur(16px) saturate(1.1);
-    -webkit-backdrop-filter: blur(16px) saturate(1.1);
-    border:1px solid var(--panel-stroke);
-    border-radius:14px;
-    padding:14px 16px 12px;
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.7), inset 0 1px 0 rgba(255,255,255,0.03);
-  }
-  .inputwrap .label{
-    display:flex; justify-content:space-between; align-items:center;
-    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px;
-  }
-  .inputwrap .label .hint{ color:var(--ink-dim); letter-spacing:0.14em; }
-  .field{
-    display:flex; align-items:center; gap:10px;
-    border-bottom:1px solid var(--rule); padding:6px 0 10px;
-  }
-  .field input{
-    flex:1; background:transparent; border:0; outline:0; color:var(--ink);
-    font-family:"JetBrains Mono", monospace; font-size:20px; letter-spacing:0.05em;
-    caret-color:var(--accent);
-  }
-  .field input::placeholder{ color:var(--ink-mute); letter-spacing:0.08em; }
-  .iconbtn{
-    background:transparent; border:1px solid var(--rule); color:var(--ink-dim);
-    width:28px; height:28px; border-radius:7px; cursor:pointer;
-    display:inline-flex; align-items:center; justify-content:center;
-    transition: all 160ms ease;
-  }
-  .iconbtn:hover{ color:var(--ink); border-color:rgba(255,255,255,0.18); background:rgba(255,255,255,0.03); }
-  .iconbtn.active{ color:var(--accent); border-color:rgba(217,199,160,0.4); }
-
-  .meter{
-    margin-top:12px; display:flex; gap:4px; height:6px;
-  }
-  .meter .seg{ flex:1; background:rgba(255,255,255,0.06); border-radius:2px; position:relative; overflow:hidden; }
-  .meter .seg .fill{
-    position:absolute; inset:0; width:0%;
-    background: linear-gradient(90deg, var(--segA, var(--accent)), var(--segB, var(--accent)));
-    transition: width 220ms ease, background 320ms ease;
-  }
-
-  .metarow{
-    display:flex; justify-content:space-between; margin-top:10px;
-    font-size:10px; letter-spacing:0.18em; text-transform:uppercase; color:var(--ink-dim);
-  }
-  .metarow .verdict{ color:var(--ink); }
-
-  /* Left column: stats */
-  .statblock{ margin-bottom:14px; }
-  .statblock .k{ font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:6px; }
-  .statblock .v{ font-family:"Instrument Serif", serif; font-size:34px; line-height:1; color:var(--ink); }
-  .statblock .sub{ font-family:"JetBrains Mono", monospace; font-size:11px; color:var(--ink-dim); margin-top:6px; letter-spacing:0.04em; }
-
-  .charset{
-    display:grid; grid-template-columns: repeat(4, 1fr); gap:6px; margin-top:8px;
-  }
-  .chip{
-    border:1px solid var(--rule); border-radius:6px; padding:6px 0;
-    text-align:center; font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:0.12em;
-    color:var(--ink-mute);
-    transition: all 260ms ease;
-  }
-  .chip.on{ color:var(--ink); border-color:rgba(217,199,160,0.35); background:rgba(217,199,160,0.06); box-shadow: 0 0 20px -8px rgba(217,199,160,0.45); }
-
-  /* Right column: crystal specimen card */
-  .specimen{
-    font-family:"JetBrains Mono", monospace; font-size:11px; color:var(--ink-dim);
-    letter-spacing:0.04em; line-height:1.65;
-  }
-  .specimen .hdr{
-    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px;
-  }
-  .specimen .name{
-    font-family:"Instrument Serif", serif; font-size:26px; color:var(--ink); letter-spacing:-0.01em;
-    line-height:1.1; margin-bottom:10px;
-  }
-  .specimen .row{ display:flex; justify-content:space-between; gap:12px; padding:3px 0; border-bottom:1px dashed var(--rule); }
-  .specimen .row:last-child{ border-bottom:0; }
-  .specimen .row .lbl{ color:var(--ink-mute); letter-spacing:0.14em; text-transform:uppercase; font-size:9px; }
-  .specimen .row .val{ color:var(--ink); }
-
-  /* Center hero title (top center) */
-  .hero{
-    position:absolute; top:18%; left:50%; transform:translateX(-50%);
-    text-align:center; z-index:5; pointer-events:none;
-    transition: opacity 400ms ease;
-  }
-  .hero .eyebrow{ font-size:10px; letter-spacing:0.3em; text-transform:uppercase; color:var(--ink-mute); margin-bottom:8px; }
-  .hero .title{ font-family:"Instrument Serif", serif; font-size:56px; line-height:1; color:var(--ink); }
-  .hero .title em{ font-style:italic; color:var(--accent); }
-  .hero.hidden{ opacity:0; }
-
-  /* Generator panel */
-  .gen{
-    position:absolute; right:28px; top:72px; width:300px;
-    background:var(--panel); border:1px solid var(--panel-stroke); border-radius:14px;
-    backdrop-filter: blur(16px) saturate(1.1);
-    -webkit-backdrop-filter: blur(16px) saturate(1.1);
-    padding:14px 16px; z-index:12;
-    box-shadow: 0 20px 60px -20px rgba(0,0,0,0.7);
-    transform-origin: top right;
-    transition: opacity 200ms ease, transform 200ms ease;
-  }
-  .gen.closed{ opacity:0; transform: scale(0.96) translateY(-6px); pointer-events:none; }
-  .gen h3{
-    font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute);
-    margin:0 0 10px; font-weight:500;
-  }
-  .gen .controls{ display:flex; flex-direction:column; gap:10px; }
-  .gen label{ display:flex; justify-content:space-between; align-items:center; font-size:11px; color:var(--ink-dim); letter-spacing:0.08em; }
-  .gen label .v{ font-family:"JetBrains Mono", monospace; color:var(--ink); font-size:11px; }
-  .gen input[type="range"]{
-    -webkit-appearance:none; appearance:none; width:100%; height:2px; background:var(--rule); border-radius:2px; outline:none;
-  }
-  .gen input[type="range"]::-webkit-slider-thumb{
-    -webkit-appearance:none; appearance:none; width:12px; height:12px; border-radius:50%;
-    background:var(--accent); cursor:pointer; box-shadow: 0 0 0 3px rgba(217,199,160,0.12);
-  }
-  .toggles{ display:grid; grid-template-columns: repeat(2, 1fr); gap:6px; }
-  .toggle{
-    border:1px solid var(--rule); border-radius:6px; padding:7px 8px;
-    display:flex; justify-content:space-between; align-items:center; cursor:pointer;
-    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:0.1em; color:var(--ink-dim);
-    transition: all 160ms ease;
-    user-select:none;
-  }
-  .toggle .dot{ width:8px; height:8px; border-radius:50%; background:transparent; border:1px solid var(--ink-mute); transition: all 160ms ease; }
-  .toggle.on{ color:var(--ink); border-color:rgba(217,199,160,0.35); background:rgba(217,199,160,0.05); }
-  .toggle.on .dot{ background:var(--accent); border-color:var(--accent); box-shadow: 0 0 8px var(--accent); }
-  .gen .output{
-    margin-top:12px; padding:10px 12px; border:1px dashed var(--rule); border-radius:8px;
-    font-family:"JetBrains Mono", monospace; font-size:13px; color:var(--ink); word-break:break-all;
-    letter-spacing:0.04em; min-height:40px; display:flex; align-items:center;
-  }
-  .gen .actions{ display:flex; gap:6px; margin-top:10px; }
-  .btn{
-    flex:1; border:1px solid var(--rule); background:transparent; color:var(--ink-dim);
-    border-radius:7px; padding:8px 10px; font-family:"JetBrains Mono", monospace;
-    font-size:10px; letter-spacing:0.18em; text-transform:uppercase; cursor:pointer;
-    transition: all 160ms ease;
-  }
-  .btn:hover{ color:var(--ink); border-color:rgba(255,255,255,0.18); }
-  .btn.primary{ background:var(--accent); color:#1a1712; border-color:var(--accent); }
-  .btn.primary:hover{ filter:brightness(1.08); }
-
-  /* Toggle gen button */
-  .genToggle{
-    position:absolute; right:28px; top:22px; z-index:13;
-    display:flex; gap:6px; align-items:center;
-    background:var(--panel); border:1px solid var(--panel-stroke);
-    border-radius:10px; padding:6px 12px; cursor:pointer; pointer-events:auto;
-    font-family:"JetBrains Mono", monospace; font-size:10px; letter-spacing:0.18em; text-transform:uppercase;
-    color:var(--ink-dim); backdrop-filter: blur(12px);
-    transition: color 160ms ease;
-  }
-  .genToggle:hover{ color:var(--ink); }
-  .genToggle .plus{ display:inline-block; transition: transform 200ms ease; }
-  .genToggle.open .plus{ transform: rotate(45deg); }
-
-  /* Ticker scale on left */
-  .scale{
-    position:absolute; left:28px; top:50%; transform:translateY(-50%);
-    writing-mode: vertical-rl; transform-origin:center;
-    display:flex; gap:28px; font-family:"JetBrains Mono", monospace; font-size:9px; letter-spacing:0.3em; text-transform:uppercase;
-    color:var(--ink-mute); z-index:8; pointer-events:none;
-  }
-  .scale span.hot{ color:var(--accent); }
-
-  /* Tweaks panel */
-.tweaks {
-  position: absolute; 
-  right: 28px; 
-  top: 50%; /* Moves to the horizontal middle */
-  transform: translateY(-50%); /* Centers it exactly on the Y axis */
-  z-index: 15;
-  background: var(--panel); 
-  border: 1px solid var(--panel-stroke); 
-  border-radius: 14px;
-  backdrop-filter: blur(16px) saturate(1.1);
-  padding: 14px 16px; 
-  width: 260px;
-  box-shadow: none; /* Removes the black background circle */
+@media (prefers-color-scheme: light){:root:not([data-theme="dark"]){
+  --void:#F7F5FA; --surface:#FFFFFF; --surface-2:#EEE9F5; --text:#241E2E; --muted:#6E6480; --line:#E1DAEC;
+  --accent:#7A66A6; --ring:rgba(122,102,166,.16); --on-accent:#FFFFFF;
+  --case:#1E1826; --case-line:#3D3448; --case-text:#9B8FA8;
+  --good:#3f8a52; --warn:#9a6f0e; --bad:#b4472f; color-scheme:light;
+}}
+:root[data-theme="light"]{
+  --void:#F7F5FA; --surface:#FFFFFF; --surface-2:#EEE9F5; --text:#241E2E; --muted:#6E6480; --line:#E1DAEC;
+  --accent:#7A66A6; --ring:rgba(122,102,166,.16); --on-accent:#FFFFFF;
+  --case:#1E1826; --case-line:#3D3448; --case-text:#9B8FA8;
+  --good:#3f8a52; --warn:#9a6f0e; --bad:#b4472f; color-scheme:light;
 }
-  .tweaks.visible{ display:block; }
-  .tweaks h3{ font-size:10px; letter-spacing:0.22em; text-transform:uppercase; color:var(--ink-mute); margin:0 0 10px; font-weight:500; }
-  .tweaks .controls{ display:flex; flex-direction:column; gap:10px; }
-  .tweaks .seg-group{ display:grid; grid-template-columns: repeat(3, 1fr); gap:4px; }
-  .tweaks .seg-btn{
-    border:1px solid var(--rule); background:transparent; color:var(--ink-dim);
-    padding:6px; border-radius:6px; cursor:pointer;
-    font-family:"JetBrains Mono", monospace; font-size:9px; letter-spacing:0.14em; text-transform:uppercase;
-  }
-  .tweaks .seg-btn.on{ color:var(--ink); background:rgba(217,199,160,0.08); border-color:rgba(217,199,160,0.35); }
+:root[data-theme="dark"]{
+  --void:#1E1826; --surface:#2A2233; --surface-2:#251F2D; --text:#EDE7F2; --muted:#9B8FA8; --line:#3D3448;
+  --accent:#B9A9D9; --ring:rgba(185,169,217,.16); --on-accent:#1E1826;
+  --case:#130e18; --case-line:#2c2335; --case-text:#9B8FA8;
+  --good:#8ecf9a; --warn:#F2C94C; --bad:#e8876f; color-scheme:dark;
+}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{overflow-x:clip}
+body{background:var(--void);color:var(--text);font-family:var(--f-ui);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px;
+  transition:background .4s var(--ease),color .4s var(--ease)}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--void)}
+button{font-family:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.app{max-width:820px;margin:0 auto}
 
-  /* cracked flash */
-  @keyframes flash { 0%{opacity:0} 30%{opacity:1} 100%{opacity:0} }
-  .flash{
-    position:absolute; inset:0; background: radial-gradient(circle at center, rgba(255,240,210,0.6), transparent 60%);
-    pointer-events:none; z-index:6; opacity:0;
-  }
-  .flash.go{ animation: flash 900ms ease-out; }
+/* bar */
+.bar{position:sticky;top:env(safe-area-inset-top,0px);z-index:9;background:var(--void);display:flex;flex-wrap:wrap;align-items:center;gap:12px 16px;justify-content:space-between;padding-block:16px;border-bottom:1px solid var(--line);margin-bottom:24px}
+.mark{display:flex;align-items:center;gap:10px;text-decoration:none;color:var(--text)}
+.mark canvas{width:28px;height:28px;image-rendering:pixelated}
+.mark span{font-family:var(--f-display);font-size:19px;letter-spacing:.01em}
+.tabs{display:flex;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px}
+.tabs button{border:0;background:transparent;padding:7px 14px;border-radius:9px;font-size:12px;font-weight:700;letter-spacing:.04em;color:var(--muted);cursor:pointer;display:flex;align-items:center;gap:7px;transition:background .2s var(--ease),color .2s var(--ease),transform .12s var(--ease)}
+.tabs button:active{transform:scale(.96)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--text);box-shadow:0 1px 0 var(--line)}
+.count{font-size:10px;font-variant-numeric:tabular-nums;color:var(--accent)}
 
-  /* small utility */
-  .sr{ position:absolute; width:1px; height:1px; overflow:hidden; clip:rect(0 0 0 0); }
+/* layout */
+.view{display:grid;gap:20px;grid-template-columns:minmax(0,1fr)}
+@media (min-width:720px){ .view.split{grid-template-columns:minmax(0,1.05fr) minmax(0,1fr);align-items:start} }
+
+/* display case */
+.case{background:var(--case);border:1px solid var(--case-line);border-radius:16px;padding:14px;display:flex;flex-direction:column;gap:12px;position:relative;overflow:hidden}
+.case::after{content:"";position:absolute;inset:0;pointer-events:none;background:radial-gradient(70% 55% at 50% 42%,rgba(185,169,217,.07),transparent 70%)}
+.stage{display:block;width:100%;max-width:100%;aspect-ratio:1;image-rendering:pixelated;image-rendering:crisp-edges;cursor:pointer}
+.case.shake .stage{animation:shake 120ms var(--ease)}
+@keyframes shake{25%{transform:translate(2px,-1px)}50%{transform:translate(-2px,1px)}75%{transform:translate(1px,1px)}}
+.case-foot{display:flex;align-items:center;justify-content:space-between;gap:12px;position:relative;z-index:1}
+.px{font-family:var(--f-pixel);font-size:9px;letter-spacing:.06em;color:var(--case-text);line-height:1.6}
+.pips{display:flex;gap:3px;flex-wrap:wrap}
+.pip{width:9px;height:9px;background:#2c2335;transition:background .3s var(--ease),box-shadow .3s var(--ease)}
+.pip.on{background:var(--pc,#B9A9D9)}
+.pip.now{box-shadow:0 0 0 2px #130e18,0 0 0 3px var(--pc,#B9A9D9)}
+
+/* instrument column */
+.col{display:flex;flex-direction:column;gap:16px;min-width:0}
+.name{font-family:var(--f-display);font-weight:500;font-size:clamp(26px,4.4vw,34px);line-height:1.1;margin:4px 0 0;text-wrap:balance;transform-origin:left center}
+.name.pulse{animation:pulse 650ms var(--ease)}
+@keyframes pulse{0%{transform:scale(1)}35%{transform:scale(1.08);text-shadow:0 0 18px var(--glow,rgba(185,169,217,.55))}100%{transform:scale(1)}}
+.field{display:flex;align-items:center;gap:6px;background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:6px 6px 6px 14px;transition:border-color .2s var(--ease),box-shadow .2s var(--ease)}
+.field:focus-within{border-color:var(--accent);box-shadow:0 0 0 4px var(--ring)}
+.field input{flex:1;min-width:0;border:0;outline:0;background:transparent;color:var(--text);font-family:var(--f-ui);font-size:17px;padding:8px 0;caret-color:var(--accent)}
+.field input::placeholder{color:var(--muted)}
+.ib{width:36px;height:36px;border:0;border-radius:9px;background:var(--surface-2);color:var(--muted);cursor:pointer;display:grid;place-items:center;flex-shrink:0;transition:color .2s var(--ease),transform .12s var(--ease)}
+.ib:hover{color:var(--text)} .ib:active{transform:scale(.94)} .ib[aria-pressed="true"]{color:var(--accent)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:0}
+.stats div{background:var(--surface);padding:12px 14px;min-width:0}
+.stats dt{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted)}
+.stats dd{margin:4px 0 0;font-size:16px;font-weight:700;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.note{margin:0;font-size:12.5px;color:var(--muted);border-left:2px solid var(--nc,var(--line));padding:2px 0 2px 10px}
+.btn{border:0;border-radius:12px;padding:12px 16px;font-size:12.5px;font-weight:700;letter-spacing:.03em;cursor:pointer;background:var(--surface-2);color:var(--text);transition:transform .12s var(--ease),filter .2s var(--ease),opacity .2s var(--ease)}
+.btn:active{transform:scale(.97)} .btn:hover{filter:brightness(1.08)}
+.btn.primary{background:var(--accent);color:var(--on-accent)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;filter:none}
+.row{display:flex;gap:8px;flex-wrap:wrap} .row .btn{flex:1 1 auto}
+
+/* forge */
+.forged-case{display:grid;grid-template-columns:96px minmax(0,1fr);gap:14px;align-items:center}
+.forged-case canvas{width:96px;height:96px;image-rendering:pixelated}
+.forged{font-family:var(--f-ui);font-size:clamp(17px,2.6vw,21px);font-weight:700;color:#EDE7F2;overflow-wrap:anywhere;line-height:1.35;letter-spacing:.02em;position:relative;z-index:1}
+.forged-meta{margin-top:6px;position:relative;z-index:1}
+.seg{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--surface-2);padding:4px;border-radius:12px}
+.seg button{border:0;background:transparent;border-radius:9px;padding:9px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--surface);color:var(--text)}
+.slider-head{display:flex;justify-content:space-between;align-items:baseline;font-size:11px;color:var(--muted)}
+.slider-head b{color:var(--accent);font-variant-numeric:tabular-nums}
+.qp-slider{-webkit-appearance:none;appearance:none;width:100%;height:22px;border-radius:999px;margin:8px 0 0;cursor:pointer;outline-offset:3px;
+  background:linear-gradient(to right,var(--accent) 0,var(--accent) var(--fill,50%),var(--surface-2) var(--fill,50%),var(--surface-2) 100%)}
+.qp-slider::-webkit-slider-runnable-track{height:22px;background:transparent;border-radius:999px}
+.qp-slider::-moz-range-track{height:22px;background:transparent}
+.qp-slider::-webkit-slider-thumb{-webkit-appearance:none;width:22px;height:22px;background:transparent;border:0}
+.qp-slider::-moz-range-thumb{width:22px;height:22px;background:transparent;border:0}
+.chips{display:grid;grid-template-columns:repeat(4,1fr);gap:6px}
+.chip{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:10px 4px;font-size:12px;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s var(--ease)}
+.chip[aria-pressed="true"]{color:var(--text);border-color:var(--accent);box-shadow:inset 0 0 0 1px var(--accent)}
+.chip:active{transform:scale(.96)}
+@media (max-width:420px){.chips{grid-template-columns:repeat(2,1fr)}}
+
+/* cabinet */
+.drawer{background:var(--case);border:1px solid var(--case-line);border-radius:16px;padding:16px;display:flex;flex-direction:column;gap:14px}
+.drawer-head{display:flex;justify-content:space-between;align-items:baseline;gap:12px}
+.drawer-head h2{font-family:var(--f-display);font-weight:500;font-size:22px;margin:0;color:#EDE7F2}
+.slots{display:grid;grid-template-columns:repeat(11,minmax(0,1fr));gap:6px}
+@media (max-width:560px){.slots{grid-template-columns:repeat(6,minmax(0,1fr))}}
+.slot{aspect-ratio:1;max-width:100%;border:1px solid var(--case-line);border-radius:8px;display:grid;place-items:center;position:relative;background:#0f0b13}
+.slot canvas{width:100%;height:100%;image-rendering:pixelated}
+.slot .q{position:absolute;font-family:var(--f-pixel);font-size:9px;color:#4a3f55}
+.slot.found{border-color:#3d3448}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:12px}
+.card{border:1px solid var(--line);background:var(--surface);border-radius:14px;padding:10px;display:flex;flex-direction:column;gap:8px;cursor:pointer;text-align:left;transition:transform .12s var(--ease),border-color .2s var(--ease)}
+.card:hover{border-color:var(--accent)} .card:active{transform:scale(.97)}
+.card canvas{width:100%;aspect-ratio:1;max-width:100%;image-rendering:pixelated;background:var(--case);border-radius:9px}
+.card .cn{font-family:var(--f-display);font-size:15px;line-height:1.2}
+.card .cm{display:flex;justify-content:space-between;font-size:10.5px;color:var(--muted);font-variant-numeric:tabular-nums}
+.empty{text-align:center;color:var(--muted);padding:28px 12px;display:flex;flex-direction:column;align-items:center;gap:10px}
+.empty canvas{width:120px;height:120px;image-rendering:pixelated}
+.foot{margin:32px 0 0;text-align:center;font-size:11px;color:var(--muted)}
+
+/* sheet */
+.sheet-back{position:fixed;inset:0;z-index:30;background:rgba(10,7,14,.6);display:flex;align-items:flex-end;justify-content:center;padding:16px max(16px,env(safe-area-inset-right,0px)) calc(16px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+@media (min-width:600px){.sheet-back{align-items:center}}
+.sheet{width:100%;max-width:400px;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:14px;animation:rise 280ms var(--ease)}
+@keyframes rise{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+.sheet canvas{width:100%;aspect-ratio:1;image-rendering:pixelated;background:var(--case);border-radius:12px}
+.sheet h3{font-family:var(--f-display);font-weight:500;font-size:24px;margin:0;line-height:1.15}
+.toast{position:fixed;left:50%;bottom:calc(20px + env(safe-area-inset-bottom,0px));transform:translate(-50%,20px);opacity:0;z-index:40;background:var(--text);color:var(--void);padding:10px 16px;border-radius:12px;font-size:12.5px;font-weight:700;pointer-events:none;transition:opacity .25s var(--ease),transform .25s var(--ease);max-width:calc(100% - 32px)}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
 </style>
 </head>
 <body>
-  <div id="root">
-    <canvas id="gl"></canvas>
-    <div class="flash" id="flash"></div>
 
-    <!-- top bar -->
-    <div class="topbar">
-      <div class="brand">
-        <div class="mark" aria-hidden="true"></div>
-        <div class="wordmark">
-          <div class="t1 serif">Password Geode</div>
-          <div class="t2">Mineralogical Entropy Assay · Mk II</div>
-        </div>
+
+<div class="app">
+  <header class="bar">
+    <a class="mark" href="#assay" aria-label="Password Geode"><canvas id="logo" width="80" height="80"></canvas><span>Password Geode</span></a>
+    <nav class="tabs" role="tablist" aria-label="Sections">
+      <button role="tab" id="t-assay" data-view="assay" aria-selected="true">Assay</button>
+      <button role="tab" id="t-forge" data-view="forge" aria-selected="false">Forge</button>
+      <button role="tab" id="t-cabinet" data-view="cabinet" aria-selected="false">Cabinet <span class="count" id="cabCount">0</span></button>
+    </nav>
+  </header>
+
+  <main>
+    <section class="view split" id="v-assay" role="tabpanel" aria-labelledby="t-assay">
+      <div class="case" id="case">
+        <canvas class="stage" id="stage" width="80" height="80" aria-label="Pixel geode that reacts to password strength"></canvas>
+        <div class="case-foot"><span class="px" id="tierLabel">TIER 00/10</span><div class="pips" id="pips" aria-hidden="true"></div></div>
       </div>
-      <div class="crumbs">
-        <span class="crumb active">Assay</span>
-        <span class="crumb">Forge</span>
-        <span class="crumb">Archive</span>
-      </div>
-    </div>
-
-    <button class="genToggle" id="genToggle">
-      <span class="plus">+</span>
-      <span>Forge</span>
-    </button>
-
-    <!-- Scale -->
-    <div class="scale" aria-hidden="true">
-      <span>0</span><span>1</span><span>2</span><span>3</span><span class="hot">4</span><span class="hot">5</span>
-      <span style="color:var(--ink);">Mohs</span>
-    </div>
-
-    <!-- Hero title, hidden once user starts typing -->
-    <div class="hero" id="hero">
-      <div class="eyebrow">Specimen · Pending</div>
-      <div class="title serif">A password is a <em>rock</em>.<br/>A strong one is a <em>geode</em>.</div>
-    </div>
-
-    <!-- Generator panel (Forge) -->
-    <div class="gen closed" id="gen">
-      <h3>Forge · Procedural Password</h3>
-      <div class="controls">
-        <label>Length <span class="v" id="genLenV">20</span></label>
-        <input type="range" id="genLen" min="8" max="48" value="20" />
-        <div class="toggles">
-          <div class="toggle on" data-tog="lower"><span>a–z</span><span class="dot"></span></div>
-          <div class="toggle on" data-tog="upper"><span>A–Z</span><span class="dot"></span></div>
-          <div class="toggle on" data-tog="digit"><span>0–9</span><span class="dot"></span></div>
-          <div class="toggle on" data-tog="symbol"><span>! @ #</span><span class="dot"></span></div>
+      <div class="col">
+        <h1 class="name" id="specName">Unstruck Stone</h1>
+        <div class="field">
+          <input id="pw" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Strike it with a password" aria-label="Password to assay">
+          <button class="ib" id="eye" aria-pressed="false" aria-label="Show password"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg></button>
+          <button class="ib" id="clear" aria-label="Clear and pick a new stone"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
         </div>
+        <dl class="stats">
+          <div><dt>Crack time</dt><dd id="crack">—</dd></div>
+          <div><dt id="bitsLabel">Entropy</dt><dd id="bits">0 bits</dd></div>
+        </dl>
+        <p class="note" id="note" hidden></p>
+        <button class="btn primary" id="keep" disabled>Keep specimen</button>
       </div>
-      <div class="output mono" id="genOut">—</div>
-      <div class="actions">
-        <button class="btn" id="genForge">Forge</button>
-        <button class="btn primary" id="genUse">Use</button>
-      </div>
-    </div>
+    </section>
 
-    <!-- Bottom HUD -->
-    <div class="hud">
-      <div class="col left">
-        <div class="statblock">
-          <div class="k">Entropy</div>
-          <div class="v serif"><span id="entropyV">0.0</span> <span style="font-family:'JetBrains Mono',monospace; font-size:14px; color:var(--ink-dim);">bits</span></div>
-          <div class="sub">charset · <span id="charsetSize">0</span></div>
-        </div>
-        <div class="statblock">
-          <div class="k">Crack Time</div>
-          <div class="v serif" id="crackV" style="font-size:22px;">—</div>
-          <div class="sub">@ 10¹⁰ guesses / sec</div>
-        </div>
-        <div class="charset">
-          <div class="chip" id="chLower">a–z</div>
-          <div class="chip" id="chUpper">A–Z</div>
-          <div class="chip" id="chDigit">0–9</div>
-          <div class="chip" id="chSym">sym</div>
-        </div>
-      </div>
-
-      <div class="col center">
-        <div class="inputwrap">
-          <div class="label">
-            <span>Specimen Input</span>
-            <span class="hint mono" id="lenLabel">0 chars</span>
-          </div>
-          <div class="field">
-            <input id="pw" type="password" autocomplete="off" spellcheck="false" placeholder="Strike the rock · type a password" />
-            <button class="iconbtn" id="eye" title="Reveal">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>
-            </button>
-            <button class="iconbtn" id="clear" title="Clear">
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M6 6l12 12M18 6L6 18"/></svg>
-            </button>
-          </div>
-          <div class="meter" id="meter">
-            <div class="seg"><div class="fill"></div></div>
-            <div class="seg"><div class="fill"></div></div>
-            <div class="seg"><div class="fill"></div></div>
-            <div class="seg"><div class="fill"></div></div>
-            <div class="seg"><div class="fill"></div></div>
-          </div>
-          <div class="metarow">
-            <span>Assay</span>
-            <span class="verdict" id="verdict">Untouched</span>
+    <section class="view split" id="v-forge" role="tabpanel" aria-labelledby="t-forge" hidden>
+      <div class="case">
+        <div class="forged-case">
+          <canvas id="forgeGem" width="80" height="80" aria-hidden="true"></canvas>
+          <div style="min-width:0">
+            <div class="forged" id="forged" aria-live="polite"></div>
+            <div class="forged-meta px" id="forgedMeta"></div>
           </div>
         </div>
       </div>
-
-      <div class="col right">
-        <div class="specimen">
-          <div class="hdr">Specimen Report · № <span id="specNo">000</span></div>
-          <div class="name serif" id="specName">Greystone, unfractured</div>
-          <div class="row"><span class="lbl">Stage</span><span class="val" id="spStage">Intact</span></div>
-          <div class="row"><span class="lbl">Facets</span><span class="val" id="spFacets">0</span></div>
-          <div class="row"><span class="lbl">Hue</span><span class="val" id="spHue">—</span></div>
-          <div class="row"><span class="lbl">Luster</span><span class="val" id="spLust">dull</span></div>
-          <div class="row"><span class="lbl">Fracture</span><span class="val" id="spFrac">0%</span></div>
+      <div class="col">
+        <div class="seg" role="group" aria-label="Forge mode">
+          <button id="m-random" data-mode="random" aria-pressed="true">Random</button>
+          <button id="m-phrase" data-mode="phrase" aria-pressed="false">Passphrase</button>
+        </div>
+        <div>
+          <div class="slider-head"><label for="size" id="sizeLabel">Length</label><b id="sizeVal">20</b></div>
+          <input class="qp-slider" type="range" id="size" min="8" max="64" value="20">
+        </div>
+        <div class="chips" id="randOpts" role="group" aria-label="Characters">
+          <button class="chip" id="c-lower" data-set="lower" aria-pressed="true">a–z</button>
+          <button class="chip" id="c-upper" data-set="upper" aria-pressed="true">A–Z</button>
+          <button class="chip" id="c-digit" data-set="digit" aria-pressed="true">0–9</button>
+          <button class="chip" id="c-symbol" data-set="symbol" aria-pressed="true">#$%</button>
+        </div>
+        <div class="chips" id="phraseOpts" role="group" aria-label="Passphrase options" hidden>
+          <button class="chip" id="p-sep-dash" data-sep="-" aria-pressed="true">a-b</button>
+          <button class="chip" id="p-sep-dot" data-sep="." aria-pressed="false">a.b</button>
+          <button class="chip" id="p-cap" data-flag="cap" aria-pressed="true">Abc</button>
+          <button class="chip" id="p-num" data-flag="num" aria-pressed="false">+ 7</button>
+        </div>
+        <div class="row">
+          <button class="btn" id="reforge">Forge again</button>
+          <button class="btn" id="copy">Copy</button>
+          <button class="btn primary" id="toAssay">Assay it</button>
         </div>
       </div>
+    </section>
+
+    <section class="view" id="v-cabinet" role="tabpanel" aria-labelledby="t-cabinet" hidden>
+      <div class="drawer">
+        <div class="drawer-head"><h2>Collection</h2><span class="px" id="found">0/11</span></div>
+        <div class="slots" id="slots"></div>
+      </div>
+      <div class="grid" id="grid"></div>
+      <div class="empty" id="empty" hidden>
+        <canvas id="emptyGem" width="80" height="80" aria-hidden="true"></canvas>
+        <div>Empty drawer</div>
+        <button class="btn primary" id="goAssay">Strike a stone</button>
+      </div>
+    </section>
+
+    <p class="foot">Runs in your browser. Passwords are never saved or sent.</p>
+  </main>
+</div>
+
+<div class="sheet-back" id="sheetBack" hidden>
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheetName">
+    <canvas id="sheetGem" width="80" height="80" aria-hidden="true"></canvas>
+    <div>
+      <div class="px" id="sheetNo" style="color:var(--muted)"></div>
+      <h3 id="sheetName"></h3>
     </div>
-
-    <!-- Tweaks panel (toggled by host) -->
-    <div class="tweaks" id="tweaks">
-      <h3>Tweaks</h3>
-      <div class="controls">
-        <label>Palette</label>
-        <div class="seg-group" id="tw-palette">
-          <button class="seg-btn on" data-val="amethyst">Amethyst</button>
-          <button class="seg-btn" data-val="citrine">Citrine</button>
-          <button class="seg-btn" data-val="emerald">Emerald</button>
-        </div>
-        <label>Voxel resolution</label>
-        <div class="seg-group" id="tw-res">
-          <button class="seg-btn" data-val="low">Low</button>
-          <button class="seg-btn on" data-val="med">Medium</button>
-          <button class="seg-btn" data-val="high">High</button>
-        </div>
-        <label>Animation</label>
-        <div class="seg-group" id="tw-spin">
-          <button class="seg-btn" data-val="off">Still</button>
-          <button class="seg-btn on" data-val="slow">Slow</button>
-          <button class="seg-btn" data-val="fast">Fast</button>
-        </div>
-      </div>
+    <dl class="stats">
+      <div><dt>Crack time</dt><dd id="sheetCrack"></dd></div>
+      <div><dt>Filed</dt><dd id="sheetDate"></dd></div>
+    </dl>
+    <div class="row">
+      <button class="btn" id="sheetDel">Remove</button>
+      <button class="btn primary" id="sheetClose">Close</button>
     </div>
   </div>
+</div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
-<script id="tweak-defaults" type="application/json">
-{
-  "rock": "granite",
-  "palette": "amethyst",
-  "resolution": "med",
-  "spin": "slow"
-}
-</script>
-
-<!-- EDITMODE: persistable tweak state -->
 <script>
-const TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
-  "rock": "granite",
-  "palette": "amethyst",
-  "resolution": "low",
-  "spin": "slow"
-}/*EDITMODE-END*/;
-</script>
+(()=>{
+'use strict';
+const WORDS = ["army","often","central","country","english","french","among","water","play","side","list","times","near","late","form","center","power","german","moved","court","land","council","island","record","million","award","street","given","region","support","western","point","period","title","started","various","using","england","role","become","program","works","field","total","office","class","written","radio","union","level","force","created","founded","married","though","site","open","short","society","version","royal","present","worked","full","joined","story","france","social","india","days","design","further","round","wrote","project","control","railway","board","popular","free","battle","video","common","living","half","playing","post","average","records","special","modern","areas","rock","release","elected","others","example","term","opened","similar","formed","route","census","current","schools","lake","race","himself","forces","upon","match","event","songs","result","events","eastern","track","lead","teams","science","human","germany","awards","style","body","museum","health","seven","signed","chief","centre","debut","tour","points","media","light","range","across","largest","network","less","players","refer","europe","sold","usually","taken","despite","process","return","episode","stage","thus","arts","space","months","china","study","middle","leading","japan","groups","federal","civil","rights","model","coach","books","eight","type","capital","academy","instead","kingdom","studies","sports","size","above","section","gold","systems","market","fourth","bank","ground","base","lower","sent","rather","added","coast","grand","valley","bridge","winning","films","chinese","awarded","degree","russian","shows","native","female","square","studio","medical","data","african","spanish","theatre","student","provide","ship","primary","owned","writing","texas","related","natural","parts","reached","ireland","units","senior","decided","italian","whose","higher","africa","income","placed","active","novel","energy","stated","itself","channel","below","leader","trade","limited","runs","prior","regular","famous","saint","navy","foreign","listed","artist","airport","results","unit","officer","goal","command","staff","lived","plays","places","older","medal","self","scored","highway","wide","musical","notable","library","paris","towards","allowed","plant","annual","whom","highest","earlier","artists","rural","seat","ended","soviet","length","spent","manager","press","author","issues","zealand","policy","engine","noted","mission","nine","recent","opening","lines","report","youth","closed","theory","writer","italy","angeles","feature","queen","legal","terms","entered","issue","edition","singer","greek","source","anti","complex","changes","stadium","islands","month","uses","port","castle","mostly","names","fort","status","earth","pacific","cover","variety","certain","goals","remains","upper","studied","irish","nature","loss","caused","chart","forced","create","retired","review","rate","singles","larger","shown","speed","poland","parish","cities","temple","wing","genus","serving","cost","wales","passed","view","cases","forms","actor","male","matches","males","stars","tracks","females","median","effect","train","camp","offered","houses","mainly","surface","nearly","score","ancient","subject","prime","seasons","claimed","failed","overall","plot","greater","spain","heavy","raised","campus","appears","lies","fifth","nations","creek","britain","double","cast","meaning","earned","carried","latter","housing","attempt","article","border","nearby","direct","ships","value","workers","label","rule","fellow","editor","dutch","covered","flight","races","defense","tower","emperor","albums","daily","stories","managed","quality","prize","journal","code","vice","corps","highly","mayor","rugby","ohio","serve","allow","nation","scene","levels","growth","latin","host","jersey","arrived","issued","metal","estate","vote","quickly","produce","urban","global","appear","types","opera","mass","smaller","drama","shortly","density","senate","effects","iran","polish","naval","divided","basis","product","mile","sources","format","clubs","initial","offers","avenue","grade","fleet","percent","farm","leaders","likely","website","mount","grew","method","renamed","iron","asia","reserve","widely","crew","founder","lack","amount","build","efforts","concept","follows","ordered","leaves","economy","affairs","ability","color","text","focus","comedy","serves","cars","firm","agency","purpose","planned","growing","removed","models","solo","largely","gained","adopted","scale","spread","titled","applied","safety","mixed","rail","defeat","semi","owner","joint","liberal","actress","traffic","basic","notes","unique","supreme","simply","plants","sales","parties","jazz","becomes","titles","concert","remain","content","sons","block","premier","impact","volume","image","sites","account","roles","sport","quarter","zone","yard","scoring","classes","hosted","split","taught","origin","olympic","claims","critics","damage","defined","draft","ontario","climate","reports","reduced","ranked","allows","birth","younger","newly","kong","theater","finals","sixth","laws","reviews","swedish","theme","fiction","rome","trains","deputy","labour","develop","fans","granted","receive","begins","fame","buried","palace","falls","letters","combat","effort","regions","towns","chosen","animals","labor","yards","steel","peak","ocean","brigade","fully","sides","acts","oldest","cells","votes","armed","supply","flying","figures","korea","faculty","draw","stock","seats","methods","unknown","claim","holds","sweden","covers","settled","marked","funding","unlike","crown","rise","portion","sector","phase","edge","hills","brand","fund","unable","refused","metres","aired","rank","multi","vehicle","fought","perform","poetry","bronze","bands","entry","bureau","maximum","billion","trees","screen","refers","gallery","setting","treaty","adult","pilot","mobile","writers","squad","copies","korean","sets","defence","offices","core","factory","actions","prevent","ending","weekly","weight","bowl","derived","lyrics","mexican","selling","opposed","mill","visited","roads","pieces","rear","launch","circuit","studios","shared","canal","comic","fuel","cape","hits","wins","norway","occur","surname","funds","proved","links","birds","contest","users","poet","display","rare","motion","piano","toward","exist","courses","signal","dynasty","heavily","budget","weather","faced","pair","chapel","reform","height","vietnam","occurs","motor","lands","focused","sought","shape","homes","borough","failure","aged","passing","oregon","flow","trail","seventh","fashion","trained","skills","scenes","views","notably","typical","engines","decades","commune","chain","austria","sale","values","chamber","winners","task","swiss","user","flag","stores","closely","laid","coal","equal","causes","turkish","quebec","promote","easily","dates","advance","survey","humans","passes","streets","folk","egypt","visual","actual","medium","protein","operate","poverty","factor","costs","bodies","device","flat","objects","chapter","improve","courts","merged","comics","gain","mining","crisis","joining","decade","habitat","routes","arena","cycle","briefly","vocals","degrees","object","demand","voted","causing","ruled","grounds","starred","drawn","stands","formal","persons","compete","wave","ncaa","brief","greece","contain","argued","session","cabinet","loan","profit","charts","designs","moth","items","goods","grey","images","reduce","owners","stating","iraq","capture","tank","rooms","finance","reign","iowa","landing","broad","circle","path","gmina","leads","shaped","kings","ages","metro","colony","coastal","painted","attend","trophy","require","cable","scheme","appeal","factors","acid","roughly","senator","diocese","prix","czech","wings","relief","stages","duties","novels","accused","whilst","charged","measure","couples","request","danish","guide","devices","tries","allied","frame","puerto","forests","replace","inner","actors","denmark","steam","aspects","assumed","severe","shore","arrival","debuted","returns","damaged","storage","markets","losses","gulf","charter","physics","mounted","pattern","belgium","harvard","mode","debate","journey","linked","salt","authors","context","tamil","ottoman","hungary","poem","versus","gardens","amongst","audio","makeup","meters","eighth","soil","tokyo","limit","ranking","cavalry","centers","twin","narrow","hosts","rates","domain","whereas","forming","rating","trading","origins","praised","disc","ukraine","driven","edited","solar","ensure","wooden","rapid","meets","tunnel","adapted","adults","cinema","script","flows","romania","achieve","tools","revival","vienna","springs","lakes","gender","manner","adding","decline","critic","powered","depth","admiral","brick","output","existed","carbon","credits","colour","rising","hence","filmed","listing","column","orleans","struck","index","conduct","vocal","tourism","finland","bears","medals","themes","visible","basin","boats","styles","rival","drawing","vessels","touring","cited","dated","roots","string","transit","poems","minimum","triple","greatly","printed","peaked","rapidly","stream","innings","counter","honour","lasted","exists","honors","harbor","panel","profile","vessel","farmers","lists","revenue","utah","begun","longest","siege","genre","agents","videos","funded","rated","ninth","passage","outer","facing","scholar","shares","signing","battery","alleged","judges","regime","penalty","taiwan","denied","filed","ratio","doubles","useful","honours","blocks","retail","ranks","patrol","inter","extent","strip","organ","symbol","abroad","periods","writes","drums","voting","allies","assist","toured","apply","maine","throne","emerged","obtain","seek","clan","finnish","fifa","seeking","volumes","limits","venue","trials","ruling","glasgow","germans","persian","donated","viewed","belgian","posted","tech","dual","delhi","usage","partly","locally","absence","belief","statue","manor","stable","viewers","chile","seed","cargo","segment","endemic","forum","monthly","erected","suburb","descent","indoor","rebuilt","serbian","summary","pitch","tenure","drivers","assets","venture","punk","pages","mines","ferry","behalf","drafted","ranging","lanka","linear","voters","tours","grades","aimed","beijing","dispute","resort","capita","derby","exposed","diverse","layer","vast","ceased","uefa","cattle","filming","rarely","decides","merger","guinea","commons","radical","serbia","baptist","buses","harbour","choir","citizen","sole","sacred","tanks","fled","remote","texts","fitted","tribute","devoted","coaches","pole","peru","prices","cuba","elite","tourist","earning","ties","anglo","pursue","worship","scores","traded","lowest","horror","outdoor","biology","loop","farming","housed","patent","pupils","athens","maps","reveals","flights","lions","norfolk","hebrew","eldest","shops","virtual","margin","ongoing","iranian","sailed","secured","landed","martial","focuses","topics","ballet","wealthy","evolved","bases","acres","heights","vary","chess","illness","leaf","organic","leeds","grammar","wealth","spaces","reaches","repair","taxes","ratings","leagues","winds","nigeria","genetic","camps","playoff","expand","bonus","gauge","shield","munich","favour","seeds","qualify","mini","banned","pointed","partial","pradesh","ottawa","metre","drum","phrase","logo","error","trio","rabbi","globe","nepal","veteran","carries","ranges","lodge","obama","tenth","crosses","syria","croatia","worn","airline","sized","enters","ruler","gospel","extend","serial","ideal","grows","grass","tier","towers","wider","welfare","columns","alumni","banking","closure","pitched","heroes","exile","demands","input","tube","stem","axis","targets","visits","regard","removal","lebanon","manga","rally","amounts","yale","signals","pilots","enzyme","placing","batting","poll","travels","namely","aims","readers","coached","coup","lesser","verse","pairs","consist","aspect","coins","resumed","canton","palm","civic","boards","stakes","freight","oblast","extinct","bearing","revised","grants","reforms","athlete","tales","reflect","sequel","widow","backed","thereby","pitcher","singers","crops","militia","centres","waves","nest","payment","mars","plaza","unity","scotia","farms","variant","estates","venues","retreat","customs","saudi","exhibit","depot","binding","ports","relay","experts","bishops","embassy","essex","bengal","inches","deemed","meter","riders","spots","auto","chorus","thai","failing","delayed","cork","tomb","gaining","canyon","stored","assists","kerala","mosque","grammy","theorem","unions","glacier","arrives","fewer","liga","peer","armies","dynamic","mixture","serie","posts","beliefs","beta","layout","fastest","logic","creates","beaten","appeals","plains","graphic","iraqi","span","burial","backing","prague","heir","dame","arch","tissue","footage","updated","rhythm","cafe","suburbs","oral","extends","larvae","voiced","dialect","quoted","grid","nearest","roster","indies","manages","citing","artwork","rivals","varied","enabled","skating","forcing","tasks","youtube","argues","colored","advisor","mumbai","runners","priests","creator","temples","perth","sheep","breed","isle","hybrid","hotels","dubbed","anchor","sussex","optical","congo","colours","varies","fluid","praise","convoy","export","syrian","bosnia","aires","wickets","epic","scandal","buenos","patron","brands","retain","foods","orbit","compact","refuge","manila","entity","skill","ruins","museums","aerial","altered","codes","voyage","merit","cuban","dome","tobacco","trend","equally","grande","pianist","grain","shifted","neutral","define","cycling","seized","array","motors","firms","varying","restore","vital","enable","inland","naming","deer","rhode","bassist","symbols","scope","yuan","poets","punjab","nursing","cent","nasa","renewed","cyprus","permit","valid","facade","mineral","baronet","carved","fees","pursued","tampa","toll","staged","streams","guild","revolt","terrain","paulo","surrey","voltage","floors","lineup","curve","onwards","trips","imposed","hosting","strict","solely","utility","euro","vinyl","haven","distant","rivalry","runway","torpedo","zones","shrine","idaho","pursuit","genes","thermal","hindi","casting","plateau","thesis","interim","guided","pastor","finale","insects","marshal","airing","cardiff","prey","herald","capitol","lasting","desired","panels","oslo","ghana","blog","sabha","intent","equity","disk","layers","prussia","quartet","monks","nato","topped","bold","morocco","publish","crater","planes","joins","unified","streak","oval","archive","noting","remix","servant","width","trans","maker","excess","tactics","snail","diving","caps","bulk","graph","rulers","secular","learns","inquiry","idol","cluster","armenia","revived","nadu","editing","trails","arctic","essays","belfast","acquire","labels","acclaim","outcome","diploma","malta","degc","legends","consent","gravity","duchy","refuses","estonia","crowned","rises","empress","slopes","decree","ballot","henri","poles","convert","poorly","sudan","wyoming","minimal","repairs","viii","naples","lens","advised","attract","editors","ussr","formats","indie","barrier","sponsor","uganda","crucial","unclear","notion","ecology","iceland","albania","scouts","armor","errors","gaming","baroque","entries","arose","rounded","rhine","agrees","genera","ecuador","edges","careers","faction","gaelic","resides","fiscal","coin","draws","genres","finite","differ","vale","newer","valve","luxury","notre","ulster","loans","mandate","sectors","steep","prizes","pupil","jointly","nobel","baltic","crop","granite","dense","seeks","slot","arcade","marking","halls","indo","speeds","clause","bavaria","referee","zurich","prairie","rapper","mammals","makers","yield","clergy","defunct","batted","locals","walt","flowing","induced","viewing","bounded","fruits","statute","algebra","modes","spelled","sizes","acre","pageant","bats","feast","tackles","raja","derives","geology","counted","seating","invaded","sphere","traces","openly","dancers","fossils","absent","lanes","stint","chains","module","tribune","miners","seoul","owing","linking","mollusk","depicts","kosovo","pottery","scorer","aided","defines","elderly","lunar","coupled","flown","espn","valued","papal","twelfth","chilean","tide","profits","lengths","itunes","slope","outlets","isbn","termed","yearly","stems","enacted","linux","enhance","heating","evident","shuttle","wicket","twitter","adds","branded","teaches","schemes","pension","cairo","varsity","shells","cuisine","peaks","trilogy","skilled","verses","savings","licence","modest","regent","algeria","crest","brewery","combine","chassis","fiji","uruguay","bypass","elect","tackle","console","precise","infant","sicily","charted","armored","mild","lateral","hurling","moist","convent","tubes","nominee","leased","dubai","polar","munster","sings","teamed","dances","midland","cedar","flee","snails","divide","asset","themed","dairy","intact","phases","applies","vacant","lacked","copa","encoded","possess","ucla","chaired","stoke","tibetan","frames","motto","chateau","bolivia","urged","folded","suffolk","myth","acute","sunk","replied","gains","parkway","sided","ballad","mascot","peaking","saxony","metals","scots","verb","differs","guru","avoided","vatican","maori","caves","mixing","shapes","anthem","surveys","chennai","paths","lacking","upgrade","sailors","freely","georges","gandhi","cove","tends","afghan","masses","asylum","imaging","fiber","lisbon","rica","judaism","adviser","batsman","lgbt","cooling","shiva","employs","thirds","scenic","tallest","textile","tram","cloth","leisure","baden","flags","coined","sitcom","implies","daytime","damages","valleys","mapping","sank","binary","marched","natives","turks","adolf","fails","loading","vacuum","favored","alter","trends","paved","broader","enables","tract","haiti","acids","erie","laps","fauna","moths","annexed","remake","suited","feared","latvia","airways","plaque","flank","statues","planets","cologne","employ","readily","libya","resign","halt","reef","mega","rowing","dorsal","albeit","liner","telugu","domains","detect","bengali","atlas","xbox","shire","kiev","lengthy","sued","seas","aquatic","unesco","radius","tunnels","janeiro","exeter","omaha","cadet","resided","prose"];
+const $ = id => document.getElementById(id);
+const TAU = Math.PI*2, LOG10_2 = Math.log10(2);
+const clamp = (v,a=0,b=1)=>Math.max(a,Math.min(b,v));
+const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-<script type="importmap">
-{
-  "imports": {
-    "three": "https://unpkg.com/three@0.160.0/build/three.module.js"
+/* ---------- randomness ---------- */
+function rng(seed){let a=seed>>>0;return()=>{a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296;};}
+function hashStr(s){let h=2166136261>>>0;for(let i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619)>>>0;}return h>>>0;}
+const cryptoU32 = ()=>crypto.getRandomValues(new Uint32Array(1))[0];
+function randInt(n){ // unbiased
+  const lim = Math.floor(0x100000000/n)*n; let x;
+  do { x = cryptoU32(); } while (x >= lim);
+  return x % n;
+}
+const SALT = cryptoU32(); // per page load, never stored
+
+/* ---------- tiers ---------- */
+const hex = h=>[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)];
+const TIERS = [
+  {name:'Gravel',       min:-Infinity, c:'#6a6175'},
+  {name:'Greystone',    min:3,  c:'#8f8599'},
+  {name:'Quartz',       min:6,  c:'#d4d1dc', ramp:['#5c5868','#9a96a6','#d8d5e0','#ffffff'], bands:['#6e6a7a','#8c889a'], nb:1},
+  {name:'Smoky Quartz', min:9,  c:'#a68f80', ramp:['#3a2e2a','#6b5850','#a68f80','#efe0d2'], bands:['#4a3c36','#7a665c'], nb:2},
+  {name:'Agate',        min:11, c:'#e8a76a', ramp:['#b8a894','#ded2c2','#f4ece2','#ffffff'], bands:['#7a3216','#c4652a','#e8a76a','#f4d9b4','#5a2410'], nb:6},
+  {name:'Amethyst',     min:13, c:'#a77bd8', ramp:['#3b2459','#6b3fa0','#a77bd8','#ecdcff'], bands:['#cfc6d8','#8d7aa6'], nb:2},
+  {name:'Citrine',      min:15, c:'#f2c14e', ramp:['#7a4a12','#c98a1e','#f2c14e','#fff3c4'], bands:['#e8dcc0','#b08a4a','#f4e6c4'], nb:3},
+  {name:'Celestine',    min:17, c:'#7fb8d9', ramp:['#1e3d5c','#3c7fa6','#7fb8d9','#e4f4fc'], bands:['#d6e2ea','#9fb6c6','#eef3f6'], nb:3},
+  {name:'Emerald',      min:19, c:'#4fc28a', ramp:['#0f3d2c','#1f7a52','#4fc28a','#d2f7e3'], bands:['#2c4a3a','#5f8a70','#c9d8cc'], nb:3},
+  {name:'Ruby',         min:22, c:'#e04a5f', ramp:['#4a0f1c','#9a1f36','#e04a5f','#ffd6dc'], bands:['#3a2a2e','#6e4a52','#d8c4c8','#a87880'], nb:4},
+  {name:'Star Opal',    min:25, c:'#f6f2fa', ramp:['#5a6a8a','#9ab0d0','#d8e6f4','#ffffff'], bands:['#e8eef4','#cfd8e6','#f6f2fa','#dde6f0'], nb:4, opal:true},
+];
+TIERS.forEach(t=>{ if(t.ramp){t.R=t.ramp.map(hex);t.B=t.bands.map(hex);} });
+const tierFor = l=>{let i=0;TIERS.forEach((t,k)=>{if(l>=t.min)i=k;});return i;};
+const ADJ = ['Banded','Twin-crowned','Hollow-heart','Frosted','Lantern','Comb','Starlit','Velvet','Cathedral','Dogtooth','Ember-veined','Moonlit','Drusy','Lace','Laurentian','Sceptre'];
+function specName(ti,detail,empty){
+  if(empty) return 'Unstruck Stone';
+  if(ti===0) return 'Loose Gravel';
+  if(ti===1) return 'Fractured Greystone';
+  return ADJ[(detail>>>0)%ADJ.length]+' '+TIERS[ti].name;
+}
+
+/* ---------- strength ---------- */
+const COMMON = /(password|passw0rd|123456|qwerty|azerty|admin|letmein|welcome|iloveyou|monkey|dragon|abc123|111111|soleil|bonjour)/i;
+function fallbackScore(pw){
+  let pool=0;
+  if(/[a-z]/.test(pw))pool+=26; if(/[A-Z]/.test(pw))pool+=26; if(/\d/.test(pw))pool+=10; if(/[^a-zA-Z0-9]/.test(pw))pool+=33;
+  // conservative until zxcvbn arrives: real passwords are rarely uniform random
+  let l = pw.length*Math.log10(Math.max(pool,1))*0.5*(0.5+0.5*new Set(pw).size/pw.length);
+  if(COMMON.test(pw)) l=Math.min(l,3);
+  return {log10:l, note:''};
+}
+let forgedNow = null; // {pw, bits}
+function score(pw){
+  if(!pw) return {log10:0, note:'', src:'none'};
+  if(forgedNow && pw===forgedNow.pw) return {log10:forgedNow.bits*LOG10_2, note:'Scored from the forge’s own randomness.', src:'forge'};
+  if(window.zxcvbn){
+    const r = zxcvbn(pw.slice(0,100));
+    const f = r.feedback||{}; const note = f.warning || (r.guesses_log10<13 ? (f.suggestions||[])[0]||'' : '');
+    return {log10:r.guesses_log10, note, src:'zx'};
+  }
+  return {...fallbackScore(pw), src:'est'};
+}
+function crackTime(l){
+  const s = Math.pow(10,l)/1e10; // fast offline attack, 10 billion guesses per second
+  if(s<1) return 'Instantly';
+  const U=[[60,'seconds'],[3600,'minutes',60],[86400,'hours',3600],[86400*30.44,'days',86400],[86400*365.25,'months',86400*30.44]];
+  if(s<60) return Math.round(s)+' seconds';
+  if(s<3600) return Math.round(s/60)+' minutes';
+  if(s<86400) return Math.round(s/3600)+' hours';
+  if(s<86400*30.44) return Math.round(s/86400)+' days';
+  if(s<86400*365.25) return Math.round(s/(86400*30.44))+' months';
+  const y=s/(86400*365.25);
+  if(y<1e3) return Math.round(y)+' years';
+  if(y<1e6) return Math.round(y/1e3)+'k years';
+  if(y<1e9) return Math.round(y/1e6)+' million years';
+  if(y<5e9) return (y/1e9).toFixed(1)+' billion years';
+  return 'Outlasts the sun';
+}
+const bitsOf = l=>Math.round(l/LOG10_2);
+
+/* ---------- pixel renderer ---------- */
+const N=80, CX=40, CY=37;
+const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5].map(v=>(v+.5)/16);
+const dith=(v,x,y,n)=>Math.min(n-1,Math.max(0,Math.floor(clamp(v)*(n-1)+BAYER[(y&3)*4+(x&3)])));
+const ROCK=['#15101a','#2f2837','#4a4254','#6a6175','#8f8599','#b3a9bc'].map(hex);
+const VOID=['#08050b','#100b15','#1a1421'].map(hex);
+const SHADOW=hex('#0a070d');
+const grain=(x,y,s)=>{let h=Math.imul(x*374761393+y*668265263^s,1274126177);h^=h>>>13;return((h>>>0)%1000)/1000;};
+
+function makeShape(seed){const r=rng(seed);return{seed,R:28+r()*2.2,sq:.86+r()*.08,h:[2,3,5,7].map((f,k)=>({f,a:(.035+r()*.03)/(1+k*.7),p:r()*TAU}))};}
+const edge=(s,a)=>{let m=1;for(const q of s.h)m+=q.a*Math.sin(q.f*a+q.p);return s.R*m;};
+function polar(s,x,y){const dx=x+.5-CX,dy=(y+.5-CY)/s.sq,r=Math.hypot(dx,dy),a=Math.atan2(dy,dx);return{a,d:r/edge(s,a),dx,dy};}
+
+function canvasKit(){
+  const img=new ImageData(N,N),D=img.data,inside=new Uint8Array(N*N);
+  const put=(x,y,c,al=255)=>{if(x<0||y<0||x>=N||y>=N)return;const i=(y*N+x)*4;D[i]=c[0];D[i+1]=c[1];D[i+2]=c[2];D[i+3]=al;};
+  return{img,D,inside,put};
+}
+function shadowAndMask(s,k){
+  const sy=CY+s.R*s.sq+1;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    const e=((x+.5-CX)/(s.R*1.08))**2+((y+.5-sy)/4)**2;
+    if(e<1&&(e<.5||((x+y)&1)))k.put(x,y,SHADOW);
+    if(polar(s,x,y).d<=1)k.inside[y*N+x]=1;
   }
 }
-</script>
+function outline(k){
+  const {inside,put}=k;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if(!inside[y*N+x])continue;
+    if(x===0||y===0||x===N-1||y===N-1||!inside[y*N+x-1]||!inside[y*N+x+1]||!inside[(y-1)*N+x]||!inside[(y+1)*N+x])put(x,y,ROCK[0]);
+  }
+}
+function crackPaths(s){
+  if(s.cracks)return s.cracks;
+  const r=rng(s.seed^0x9e3779b9),strike=-0.95+(r()-.5)*.7,paths=[];
+  for(let k=0;k<7;k++){
+    const a=k<4?strike+(r()-.5)*.9:r()*TAU,R0=edge(s,a)*.97;
+    let x=CX+Math.cos(a)*R0,y=CY+Math.sin(a)*R0*s.sq;
+    let dir=Math.atan2(CY-y+(r()-.5)*24,CX-x+(r()-.5)*24);
+    const pts=[],L=12+r()*24;
+    for(let i=0;i<L;i++){dir+=(r()-.5)*.8;x+=Math.cos(dir);y+=Math.sin(dir);pts.push([Math.round(x),Math.round(y)]);}
+    paths.push(pts);
+  }
+  return s.cracks=paths;
+}
+function renderClosed(s,p){
+  const k=canvasKit();shadowAndMask(s,k);
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if(!k.inside[y*N+x])continue;
+    const {d,dx,dy}=polar(s,x,y),nz=Math.sqrt(Math.max(0,1-d*d)),R=s.R;
+    let nx=dx/R,ny=dy/R;const len=Math.hypot(nx,ny,nz)||1;nx/=len;ny/=len;
+    const lam=Math.max(0,-.55*nx-.6*ny+.58*nz/len);
+    const v=.1+.78*lam+(grain(x,y,s.seed)-.5)*.24;
+    k.put(x,y,ROCK[1+dith(v,x,y,ROCK.length-1)]);
+  }
+  outline(k);
+  if(p>0){
+    crackPaths(s).forEach((pts,i)=>{
+      const cp=clamp(p*1.7-i*.16);const n=Math.floor(cp*pts.length);
+      for(let j=0;j<n;j++){const [x,y]=pts[j];if(x<0||y<0||x>=N||y>=N||!k.inside[y*N+x])continue;
+        k.put(x,y,ROCK[0]);if(y+1<N&&k.inside[(y+1)*N+x])k.put(x,y+1,ROCK[5]);}
+    });
+  }
+  return {img:k.img,inside:k.inside,crystals:[],tips:[]};
+}
+function renderOpen(s,detail,ti){
+  const T=TIERS[ti],lv=ti-2,r=rng(detail),k=canvasKit();shadowAndMask(s,k);
+  const rind=.12,bOut=1-rind,bandW=.04+.02*T.nb,bIn=bOut-bandW,maxD=Math.min(.17+lv*.03,bIn-.13);
+  const nT=11+lv*2+Math.floor(r()*5),ph=r(),hts=Array.from({length:nT},()=>maxD*(.5+.5*r()));
+  const nT2=Math.round(nT*1.7),ph2=r(),hts2=Array.from({length:nT2},()=>maxD*(.3+.3*r()));
+  const w0=r()*TAU,w1=r()*TAU,wA=.25+r()*.3;
+  // slab side (thickness below the cut face)
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if(k.inside[y*N+x])continue;
+    for(let j=1;j<=3;j++){if(y-j>=0&&k.inside[(y-j)*N+x]){k.put(x,y,ROCK[j===1?2:1]);break;}}
+  }
+  const crystals=[],tips=[];
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if(!k.inside[y*N+x])continue;
+    const {a,d}=polar(s,x,y),g=grain(x,y,detail);
+    if(d>bOut){ k.put(x,y,ROCK[1+dith(.42+(g-.5)*.4-(d>.95?.25:0),x,y,4)]); continue; }
+    if(d>bIn){
+      const u=(bOut-d)/bandW*T.nb+wA*Math.sin(3*a+w0)+.15*Math.sin(7*a+w1);
+      const B=T.B,c=B[((Math.floor(u)%B.length)+B.length)%B.length];
+      k.put(x,y,g>.94?c.map(v=>Math.min(255,v+28)):c); continue;
+    }
+    const dep=bIn-d,ang=((a/TAU)%1+1)%1;
+    const u1=(ang+ph)*nT,i1=Math.floor(u1)%nT,t1=u1-Math.floor(u1),h1=hts[i1]*(1-Math.abs(2*t1-1));
+    let h2=0,t2=0,i2=0;
+    if(lv>=3){const u2=(ang+ph2)*nT2;i2=Math.floor(u2)%nT2;t2=u2-Math.floor(u2);h2=hts2[i2]*(1-Math.abs(2*t2-1));}
+    if(dep<Math.max(h1,h2,.03)){
+      const second=h2>h1,t=second?t2:t1,H=second?hts2[i2]:hts[i1],f=clamp(dep/Math.max(H,.001));
+      const lit=t<.5;let v=lit?.48+.47*f:.16+.36*f;if(second)v+=.07;v+=(g-.5)*.1;
+      const idx=dith(v,x,y,4);k.put(x,y,T.R[idx]);
+      crystals.push({i:(y*N+x)*4,v:clamp(v),ho:ang*720+f*140});
+      if(f>.55&&lit)tips.push([x,y]);
+    }else{
+      const q=clamp((d-0)/(bIn-maxD+.001));k.put(x,y,VOID[dith(q*.95,x,y,3)]);
+    }
+  }
+  outline(k);
+  return {img:k.img,inside:k.inside,crystals,tips,opal:!!T.opal};
+}
+function hsl(h,s,l){s/=100;l/=100;const k=n=>(n+h/30)%12,a=s*Math.min(l,1-l),f=n=>l-a*Math.max(-1,Math.min(k(n)-3,Math.min(9-k(n),1)));return[f(0)*255|0,f(8)*255|0,f(4)*255|0];}
+function paintOpal(res,t){
+  const D=res.img.data;
+  for(const c of res.crystals){const [r,g,b]=hsl((t*50+c.ho)%360,62+c.v*20,34+c.v*56);D[c.i]=r;D[c.i+1]=g;D[c.i+2]=b;}
+}
+function renderSpec(sp){
+  const s=makeShape(sp.shape);
+  const res=sp.tier>=2?renderOpen(s,sp.detail,sp.tier):renderClosed(s,sp.p||0);
+  if(res.opal)paintOpal(res,0);
+  return res;
+}
+function drawTo(cv,img){const c=cv.getContext('2d');c.putImageData(img,0,0);}
 
-<script type="module">
-import * as THREE from 'https://unpkg.com/three@0.160.0/build/three.module.js';
-window.THREE = THREE;
-window.dispatchEvent(new Event('three-ready'));
+/* ---------- stage ---------- */
+const stage=$('stage'),sctx=stage.getContext('2d'),caseEl=$('case');
+const buf=document.createElement('canvas');buf.width=buf.height=N;const bctx=buf.getContext('2d');
+let shape=makeShape(cryptoU32()),cur=null,curTier=0,wasOpen=false,particles=[],sparkles=[],flash=0,detailNow=0,pNow=0,lastResult=null;
+
+function setSparkles(res){
+  sparkles=[];const r=rng(detailNow^77),n=Math.min(res.tips.length,4+Math.max(0,curTier-2)*2);
+  for(let i=0;i<n;i++){const t=res.tips[Math.floor(r()*res.tips.length)];sparkles.push({x:t[0],y:t[1],s:.8+r()*1.6,p:r()*TAU});}
+}
+function dust(n,fromRim){
+  if(reduced)return;
+  const a=-0.9+(Math.random()-.5)*1.2,R=edge(shape,a);
+  for(let i=0;i<n;i++){
+    const x=fromRim?CX+Math.cos(a)*R:CX+(Math.random()-.5)*R*1.6,y=fromRim?CY+Math.sin(a)*R*shape.sq:CY+(Math.random()-.5)*R*1.4;
+    particles.push({x,y,vx:(Math.random()-.3)*1.4,vy:-Math.random()*1.6-.3,life:0,max:24+Math.random()*20,c:ROCK[3+Math.floor(Math.random()*3)]});
+  }
+}
+function burst(prev){
+  if(reduced||!prev)return;
+  const D=prev.img.data;
+  for(let y=0;y<N;y++)for(let x=0;x<N;x++){
+    if(!prev.inside[y*N+x]||Math.random()>.22)continue;const i=(y*N+x)*4;
+    const dx=x-CX,dy=y-CY,m=Math.hypot(dx,dy)||1;
+    particles.push({x,y,vx:dx/m*(1+Math.random()*1.6),vy:dy/m*(1+Math.random()*1.4)-1.2,life:0,max:30+Math.random()*30,c:[D[i],D[i+1],D[i+2]]});
+  }
+  flash=1;
+}
+function shake(){if(reduced)return;caseEl.classList.remove('shake');void caseEl.offsetWidth;caseEl.classList.add('shake');}
+
+let t0=performance.now();
+function frame(now){
+  const t=(now-t0)/1000;
+  if(cur){
+    if(cur.opal)paintOpal(cur,t);
+    if(cur.opal||!buf._ok){bctx.putImageData(cur.img,0,0);buf._ok=true;}
+  }
+  sctx.clearRect(0,0,N,N);sctx.drawImage(buf,0,0);
+  if(!reduced){
+    for(const sp of sparkles){
+      const b=Math.sin(t*sp.s*2+sp.p);
+      if(b>.82){sctx.fillStyle=`rgba(255,255,255,${(b-.82)/.18})`;sctx.fillRect(sp.x,sp.y,1,1);
+        if(b>.95){sctx.fillStyle='rgba(255,255,255,.55)';sctx.fillRect(sp.x-1,sp.y,1,1);sctx.fillRect(sp.x+1,sp.y,1,1);sctx.fillRect(sp.x,sp.y-1,1,1);sctx.fillRect(sp.x,sp.y+1,1,1);}}
+    }
+  }
+  particles=particles.filter(p=>p.life<p.max);
+  for(const p of particles){p.life++;p.vy+=.09;p.x+=p.vx;p.y+=p.vy;
+    sctx.fillStyle=`rgba(${p.c[0]},${p.c[1]},${p.c[2]},${1-p.life/p.max})`;sctx.fillRect(Math.round(p.x),Math.round(p.y),1,1);}
+  if(flash>0){sctx.fillStyle=`rgba(255,248,236,${flash*.85})`;sctx.fillRect(0,0,N,N);flash=Math.max(0,flash-.07);}
+  requestAnimationFrame(frame);
+}
+
+/* ---------- assay UI ---------- */
+const pw=$('pw'),nameEl=$('specName'),pips=$('pips');
+TIERS.forEach((t,i)=>{const d=document.createElement('span');d.className='pip';d.style.setProperty('--pc',t.c);d.title=t.name;pips.appendChild(d);});
+
+function assay(opts={}){
+  const v=pw.value,res=score(v);lastResult=res;
+  const ti=v?tierFor(res.log10):0, open=ti>=2;
+  detailNow=(hashStr(v)^SALT)>>>0;
+  pNow=v?clamp(res.log10/6):0;
+  const prev=cur;
+  cur=open?renderOpen(shape,detailNow,ti):renderClosed(shape,pNow);
+  buf._ok=false;
+  if(open&&!wasOpen)burst(prev);
+  else if(!open&&wasOpen)dust(14,false);
+  const tierChanged=ti!==curTier;
+  curTier=ti;wasOpen=open;setSparkles(cur);
+  const nm=specName(ti,detailNow,!v);
+  if(nameEl.textContent!==nm){nameEl.textContent=nm;}
+  if(tierChanged&&v&&!reduced){nameEl.style.setProperty('--glow',TIERS[ti].c);nameEl.classList.remove('pulse');void nameEl.offsetWidth;nameEl.classList.add('pulse');}
+  [...pips.children].forEach((p,i)=>{p.classList.toggle('on',!!v&&i<=ti);p.classList.toggle('now',!!v&&i===ti);});
+  $('tierLabel').textContent=v?`TIER ${String(ti).padStart(2,'0')}/10`:'TIER --/10';
+  $('crack').textContent=v?crackTime(res.log10):'—';
+  $('bits').textContent=v?bitsOf(res.log10)+' bits':'0 bits';
+  const note=$('note');
+  if(v&&res.note){note.hidden=false;note.textContent=res.note;note.style.setProperty('--nc',res.src==='forge'?'var(--accent)':ti<5?'var(--bad)':'var(--warn)');}
+  else note.hidden=true;
+  $('keep').disabled=!v;
+}
+pw.addEventListener('input',e=>{
+  const grew=e.inputType&&e.inputType.startsWith('insert');
+  assay();
+  if(grew&&!wasOpen){dust(5,true);shake();}
+  else if(grew&&wasOpen&&!reduced){dust(2,false);}
+});
+$('eye').onclick=()=>{const on=pw.type==='password';pw.type=on?'text':'password';$('eye').setAttribute('aria-pressed',on);$('eye').setAttribute('aria-label',on?'Hide password':'Show password');};
+$('clear').onclick=()=>{pw.value='';shape=makeShape(cryptoU32());wasOpen=false;dust(10,false);assay();pw.focus();};
+stage.onclick=()=>pw.focus();
+window.pgRescore=()=>{ if(pw.value) assay(); };
+
+/* ---------- cabinet ---------- */
+const KEY='password-geode.cabinet.v1';
+let cabinet=[];
+try{cabinet=JSON.parse(localStorage.getItem(KEY)||'[]');if(!Array.isArray(cabinet))cabinet=[];}catch(e){cabinet=[];}
+let nextNo=cabinet.reduce((m,s)=>Math.max(m,s.no||0),0)+1;
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(cabinet));}catch(e){}};
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(toast._t);toast._t=setTimeout(()=>t.classList.remove('show'),1800);}
+
+$('keep').onclick=()=>{
+  if(!pw.value||!lastResult)return;
+  const last=cabinet[0];
+  if(last&&last.detail===detailNow&&last.shape===shape.seed){toast('Already in the cabinet');return;}
+  const sp={no:nextNo++,shape:shape.seed,detail:detailNow,tier:curTier,p:pNow,log10:+lastResult.log10.toFixed(2),name:nameEl.textContent,at:Date.now()};
+  cabinet.unshift(sp);cabinet=cabinet.slice(0,120);save();renderCabinet();
+  toast(`Filed as № ${String(sp.no).padStart(3,'0')}`);
+};
+function renderCabinet(){
+  $('cabCount').textContent=cabinet.length||'';
+  const slots=$('slots');slots.innerHTML='';
+  const firstOf=t=>cabinet.find(s=>s.tier===t);let found=0;
+  TIERS.forEach((t,i)=>{
+    const sp=firstOf(i),el=document.createElement('div');el.className='slot'+(sp?' found':'');el.title=sp?t.name:'Undiscovered';
+    if(sp){found++;const cv=document.createElement('canvas');cv.width=cv.height=N;drawTo(cv,renderSpec(sp).img);el.appendChild(cv);}
+    else{const q=document.createElement('span');q.className='q';q.textContent='?';el.appendChild(q);}
+    slots.appendChild(el);
+  });
+  $('found').textContent=`${found}/11 FOUND`;
+  const grid=$('grid');grid.innerHTML='';
+  $('empty').hidden=cabinet.length>0;grid.hidden=cabinet.length===0;
+  cabinet.forEach(sp=>{
+    const b=document.createElement('button');b.className='card';b.setAttribute('aria-label',sp.name);
+    const cv=document.createElement('canvas');cv.width=cv.height=N;drawTo(cv,renderSpec(sp).img);
+    const n=document.createElement('div');n.className='cn';n.textContent=sp.name;
+    const m=document.createElement('div');m.className='cm';m.innerHTML=`<span>№ ${String(sp.no).padStart(3,'0')}</span><span>${bitsOf(sp.log10)} bits</span>`;
+    b.append(cv,n,m);b.onclick=()=>openSheet(sp);grid.appendChild(b);
+  });
+}
+let sheetSp=null;
+function openSheet(sp){
+  sheetSp=sp;drawTo($('sheetGem'),renderSpec(sp).img);
+  $('sheetNo').textContent=`№ ${String(sp.no).padStart(3,'0')} · ${TIERS[sp.tier].name.toUpperCase()}`;
+  $('sheetName').textContent=sp.name;$('sheetCrack').textContent=crackTime(sp.log10);
+  $('sheetDate').textContent=new Date(sp.at).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'});
+  const del=$('sheetDel');del.textContent='Remove';del.dataset.arm='';
+  $('sheetBack').hidden=false;$('sheetClose').focus();
+}
+const closeSheet=()=>{$('sheetBack').hidden=true;sheetSp=null;};
+$('sheetClose').onclick=closeSheet;
+$('sheetBack').onclick=e=>{if(e.target.id==='sheetBack')closeSheet();};
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('sheetBack').hidden)closeSheet();});
+$('sheetDel').onclick=()=>{
+  const d=$('sheetDel');
+  if(!d.dataset.arm){d.dataset.arm='1';d.textContent='Tap again to remove';return;}
+  cabinet=cabinet.filter(s=>s!==sheetSp);save();renderCabinet();closeSheet();toast('Removed from the cabinet');
+};
+
+/* ---------- forge ---------- */
+const SETS={lower:'abcdefghijkmnopqrstuvwxyz',upper:'ABCDEFGHJKLMNPQRSTUVWXYZ',digit:'23456789',symbol:'!#$%&*+-=?@^_~'};
+const fs={mode:'random',len:20,words:6,sets:{lower:true,upper:true,digit:true,symbol:true},sep:'-',cap:true,num:false};
+let forged=null;
+function forge(){
+  if(fs.mode==='random'){
+    const on=Object.keys(SETS).filter(k=>fs.sets[k]);const pool=on.map(k=>SETS[k]).join('');
+    let out;
+    do{out='';for(let i=0;i<fs.len;i++)out+=pool[randInt(pool.length)];}
+    while(fs.len>=on.length&&!on.every(k=>[...out].some(c=>SETS[k].includes(c))));
+    forged={pw:out,bits:fs.len*Math.log2(pool.length)};
+  }else{
+    let w=Array.from({length:fs.words},()=>WORDS[randInt(WORDS.length)]);
+    if(fs.cap)w=w.map(x=>x[0].toUpperCase()+x.slice(1));
+    let bits=fs.words*Math.log2(WORDS.length);
+    if(fs.num){const i=randInt(w.length);w[i]+=String(randInt(10));bits+=Math.log2(10)+Math.log2(fs.words);}
+    forged={pw:w.join(fs.sep),bits};
+  }
+  const l=forged.bits*LOG10_2,ti=tierFor(l);
+  $('forged').textContent=forged.pw;
+  $('forgedMeta').textContent=`${TIERS[ti].name.toUpperCase()} · ${Math.round(forged.bits)} BITS · ${crackTime(l).toUpperCase()}`;
+  const s=makeShape(hashStr(forged.pw)^SALT);
+  const res=ti>=2?renderOpen(s,hashStr(forged.pw)^SALT^1,ti):renderClosed(s,clamp(l/6));
+  if(res.opal)paintOpal(res,0);drawTo($('forgeGem'),res.img);
+}
+function syncForge(){
+  const r=fs.mode==='random',sz=$('size');
+  $('m-random').setAttribute('aria-pressed',r);$('m-phrase').setAttribute('aria-pressed',!r);
+  $('randOpts').hidden=!r;$('phraseOpts').hidden=r;
+  $('sizeLabel').textContent=r?'Length':'Words';
+  sz.min=r?8:3;sz.max=r?64:10;sz.value=r?fs.len:fs.words;
+  $('sizeVal').textContent=sz.value;sz.style.setProperty('--fill',((sz.value-sz.min)/(sz.max-sz.min)*100)+'%');
+}
+document.querySelectorAll('[data-mode]').forEach(b=>b.onclick=()=>{fs.mode=b.dataset.mode;syncForge();forge();});
+$('size').oninput=e=>{const v=+e.target.value;if(fs.mode==='random')fs.len=v;else fs.words=v;syncForge();forge();};
+document.querySelectorAll('[data-set]').forEach(b=>b.onclick=()=>{
+  const k=b.dataset.set;if(fs.sets[k]&&Object.values(fs.sets).filter(Boolean).length===1){toast('Keep at least one character set');return;}
+  fs.sets[k]=!fs.sets[k];b.setAttribute('aria-pressed',fs.sets[k]);forge();});
+document.querySelectorAll('[data-sep]').forEach(b=>b.onclick=()=>{fs.sep=b.dataset.sep;document.querySelectorAll('[data-sep]').forEach(x=>x.setAttribute('aria-pressed',x===b));forge();});
+document.querySelectorAll('[data-flag]').forEach(b=>b.onclick=()=>{const k=b.dataset.flag;fs[k]=!fs[k];b.setAttribute('aria-pressed',fs[k]);forge();});
+$('reforge').onclick=forge;
+$('copy').onclick=()=>{
+  const txt=forged.pw;
+  const fallback=()=>{const r=document.createRange();r.selectNodeContents($('forged'));const s=getSelection();s.removeAllRanges();s.addRange(r);toast('Selected. Copy it with your keyboard');};
+  try{navigator.clipboard.writeText(txt).then(()=>toast('Copied'),fallback);}catch(e){fallback();}
+};
+$('toAssay').onclick=()=>{forgedNow=forged;pw.value=forged.pw;go('assay');assay();dust(6,true);};
+$('goAssay').onclick=()=>go('assay');
+
+/* ---------- routing ---------- */
+const VIEWS=['assay','forge','cabinet'];
+function go(v,push=true){
+  if(!VIEWS.includes(v))v='assay';
+  VIEWS.forEach(k=>{$('v-'+k).hidden=k!==v;$('t-'+k).setAttribute('aria-selected',k===v);});
+  if(push&&location.hash!=='#'+v)history.replaceState(null,'','#'+v);
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.onclick=()=>go(b.dataset.view));
+addEventListener('hashchange',()=>go(location.hash.slice(1),false));
+
+/* ---------- boot ---------- */
+drawTo($('logo'),(()=>{const r=renderOpen(makeShape(7),11,5);return r.img;})());
+drawTo($('emptyGem'),renderClosed(makeShape(42),0).img);
+syncForge();forge();renderCabinet();assay();
+go(location.hash.slice(1)||'assay',false);
+requestAnimationFrame(frame);
+})();
 </script>
-<script src="geode-inline.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/zxcvbn/4.4.2/zxcvbn.js" async onload="window.pgRescore&&window.pgRescore()"></script>
+
 </body>
 </html>
