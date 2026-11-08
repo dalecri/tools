@@ -1,14 +1,206 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>Wordkeep — a place for your words</title>
+<html lang="en" data-world="moon">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wordkeep</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
 <style>
-:root{--ink:#303641;--muted:#777d83;--line:#e6e5e0;--paper:#faf9f5;--accent:#536864}*{box-sizing:border-box}body{margin:0;font-family:Arial,Helvetica,sans-serif;color:var(--ink);background:var(--paper)}button,select,textarea{font:inherit}button,select{cursor:pointer}button{color:inherit;border:0;background:none}button:focus-visible,select:focus-visible,textarea:focus-visible{outline:2px solid #799889;outline-offset:4px}button:hover{background:#ffffff75}button:disabled{opacity:.35;cursor:default}.app{height:100dvh;display:grid;grid-template-columns:minmax(310px,32%) 1fr;overflow:hidden}.writing{display:flex;flex-direction:column;padding:34px 32px 22px;z-index:2;min-height:0;background:var(--paper);border-right:1px solid #00000008}.brand{display:flex;align-items:center;gap:10px;font-size:20px;letter-spacing:-.8px;font-weight:600}.brand svg{width:23px;height:25px}.top{display:flex;align-items:center;justify-content:space-between}.save{font-size:12px;color:var(--muted)}.document-head{margin:52px 0 16px}.eyebrow{font-size:12px;letter-spacing:2px;text-transform:uppercase;color:var(--muted)}h1{font:normal 32px Georgia,serif;margin:11px 0}.writing textarea{flex:1;min-height:80px;width:100%;padding:10px 0;border:0;outline:none;resize:none;background:transparent;font:18px/1.85 Georgia,serif;color:#555c60;scrollbar-width:thin;scrollbar-color:#d9dad4 transparent}.writing textarea::placeholder{color:#a0a5a2}.writing footer{padding-top:22px;border-top:1px solid var(--line)}.wordrow{display:flex;justify-content:space-between;font-size:13px;color:var(--muted);align-items:center}.wordrow strong{color:var(--ink);font-weight:500}.progress{height:3px;background:#e9e9e1;margin:17px 0 12px;border-radius:2px;overflow:hidden}.progress i{display:block;height:100%;background:#8caa97;transition:width .5s}.next{font-size:13px;color:var(--muted);line-height:1.5}.editor-actions{display:flex;gap:14px;margin-top:19px}.textbutton{padding:7px 0;font-size:13px;color:#717a76}.scene{position:relative;overflow:hidden;background:radial-gradient(ellipse at 60% 65%,#e9ddd0 0%,#bfcbd0 65%,#b2bdce 100%);transition:background .6s}.scene:after{content:'';position:absolute;inset:0;pointer-events:none;box-shadow:inset 0 -80px 120px #71869615}.scene header{position:absolute;top:30px;left:32px;right:28px;display:flex;justify-content:space-between;align-items:start;z-index:2}.place-name{font:26px Georgia,serif;letter-spacing:-.4px;margin:7px 0}.tag{font-size:12px;letter-spacing:1.5px;text-transform:uppercase;color:#53616e}.quiet{color:#65717b;font-size:13px}.round{height:40px;width:40px;border-radius:50%;background:#ffffff36;display:inline-grid;place-items:center;border:1px solid #ffffff50;backdrop-filter:blur(15px);font-size:21px}.round.active{background:#354f50;color:#fff}.tools{display:flex;gap:7px}.scene canvas{width:100%;height:100%;display:block;touch-action:none;cursor:grab}.scene canvas:active{cursor:grabbing}.bottom{position:absolute;bottom:26px;left:28px;right:28px;display:flex;justify-content:space-between;align-items:end;gap:16px;z-index:3}.dock{display:flex;gap:3px;padding:5px;border:1px solid #ffffff60;border-radius:14px;background:#f6f8f075;backdrop-filter:blur(20px);box-shadow:0 6px 30px #273a4910}.dock button{padding:11px 15px;border-radius:10px;font-size:13px;white-space:nowrap}.dock button.active{background:#fff9;box-shadow:0 2px 5px #00000008;color:#253c3d}.camera{display:flex;gap:5px}.hint{position:absolute;bottom:96px;left:32px;font-size:12px;color:#67727e;pointer-events:none}.panel{position:absolute;right:28px;top:85px;width:240px;padding:19px;background:#fafbf6ee;backdrop-filter:blur(20px);border:1px solid #fff8;border-radius:16px;z-index:5;box-shadow:0 12px 40px #20313f15}.panel[hidden]{display:none}.panel label{display:flex;align-items:center;justify-content:space-between;font-size:14px;margin:12px 0}.panel h2{font-size:12px;text-transform:uppercase;letter-spacing:1.5px;margin:0 0 17px;color:#727c80}.panel select{padding:8px;border-radius:8px;border:1px solid #d9ded9;background:white;color:var(--ink);max-width:130px}.panel input{accent-color:#536864}.divider{height:1px;background:#dce1da;margin:16px 0}.toast{position:absolute;bottom:142px;left:50%;transform:translateX(-50%);padding:10px 18px;background:#2b4142e8;color:white;border-radius:30px;font-size:13px;opacity:0;transition:opacity .3s;pointer-events:none;z-index:9;white-space:nowrap}.toast.show{opacity:1}.mobile-toggle{display:none}.focus .app{grid-template-columns:0 1fr}.focus .writing{visibility:hidden;padding:0}.scene.night .tag,.scene.night .quiet,.scene.night .hint,.scene.night .place-name{color:#cbd5df}.scene.night .round{color:#e1e7e9;background:#ffffff15}.scene.night .dock{background:#293342aa;color:#dfe5ec}.scene.night .dock button.active{background:#53606c;color:white}@media(max-width:1000px){.writing{padding:25px 23px}.bottom{left:18px;right:18px;gap:8px}.dock button{padding:10px}.camera .zoom{display:none}.scene header{left:24px}.hint{left:23px}}@media(max-width:700px){.app{grid-template-columns:1fr;grid-template-rows:55% 45%}.scene{grid-row:1}.writing{grid-row:2;padding:17px 22px}.brand{font-size:16px}.brand svg{width:19px;height:19px}.document-head{display:none}.writing textarea{font-size:16px;line-height:1.65;margin-top:8px}.writing footer{padding-top:9px}.progress{margin:10px 0 7px}.next{font-size:12px}.editor-actions{position:absolute;right:22px;bottom:12px;margin:0;gap:10px}.writing footer{padding-bottom:30px}.scene header{top:18px;left:22px;right:18px}.place-name{font-size:23px}.bottom{bottom:14px}.hint{display:none}.round{width:35px;height:35px}.dock{padding:3px;border-radius:12px}.dock button{font-size:12px;padding:9px}.camera{gap:3px}.tag{font-size:11px}.quiet{font-size:12px}.panel{right:18px;top:65px}.focus .app{grid-template-columns:1fr;grid-template-rows:100% 0}.focus .writing{display:none}}@media(prefers-reduced-motion:reduce){*{transition:none!important}}
-</style></head><body>
-<div class="app"><section class="writing" aria-label="Writing desk"><div class="top"><div class="brand"><svg viewBox="0 0 24 26" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M3 23V9h5V3l4-2 4 2v6h5v14H3Zm5 0V12h8v11M10 6h4M10 16h4M11 23v-4h2v4"/></svg>wordkeep</div><span class="save" id="save">Saved on this device</span></div><div class="document-head"><span class="eyebrow">A little world, written by you</span><h1>Set your thoughts in stone.</h1></div><textarea id="writing" aria-label="Your writing" placeholder="Begin anywhere. A thought, a story, a small observation…" spellcheck="true"></textarea><footer><div class="wordrow"><span><strong id="words">0</strong> words</span><span id="stage">The first stone</span></div><div class="progress"><i id="progress"></i></div><div class="next" id="next"></div><div class="editor-actions"><button class="textbutton" id="example">Try a story</button><button class="textbutton" id="download">Save text ↓</button><button class="textbutton" id="clear">New page</button></div></footer></section>
-<section class="scene" id="scene" aria-label="Your growing castle"><header><div><span class="tag" id="kind">The storybook citadel</span><div class="place-name" id="place">Stillwater Keep</div><span class="quiet" id="detail">An island waiting for a story</span></div><div class="tools"><button class="round" id="focus" title="Focus on the world" aria-label="Toggle full scene">⛶</button><button class="round" id="settings" title="Atmosphere" aria-label="Open atmosphere settings" aria-expanded="false">☷</button></div></header><canvas id="world" aria-label="Isometric castle generated by your writing. Drag to pan; use the buttons to rotate and zoom."></canvas><div class="panel" id="panel" hidden><h2>Make it your world</h2><label>Atmosphere<select id="palette"><option value="dawn">Dawn</option><option value="dusk" selected>Dusk</option><option value="night">Night</option><option value="snow">Snow</option></select></label><label>Slow turn<input id="auto" type="checkbox"></label><div class="divider"></div><button class="textbutton" id="picture">Save scene as PNG ↓</button><p class="quiet">Words raise buildings. Sentences light windows. Paragraphs add gardens.</p></div><div class="hint">Drag to wander · Scroll to zoom</div><div class="toast" id="toast" role="status"></div><div class="bottom"><div class="dock" aria-label="Architecture style"><button class="active" data-style="citadel" aria-pressed="true">Citadel</button><button data-style="abbey" aria-pressed="false">Abbey</button><button data-style="sky" aria-pressed="false">Sky palace</button></div><div class="camera"><button class="round zoom" id="minus" aria-label="Zoom out">−</button><button class="round zoom" id="plus" aria-label="Zoom in">+</button><button class="round" id="rotate" aria-label="Rotate castle" title="Rotate castle">↻</button><button class="round" id="fit" aria-label="Fit castle to view" title="Fit to view">⌖</button></div></div></section></div>
+@font-face{font-family:'Alpha Lyrae';src:url('/my-style-guide/assets/fonts/AlphaLyrae-Medium.woff2') format('woff2');font-weight:400 700;font-display:swap}
+:root{
+  --void:#1E1826;--surface:#2A2233;--surface-2:#251F2D;--text:#EDE7F2;--muted:#9B8FA8;--line:#3D3448;
+  --accent:#B9A9D9;--on-accent:#1E1826;--ring:rgba(185,169,217,.16);
+  --ease:cubic-bezier(.4,0,.2,1);--head:'Alpha Lyrae','Space Mono',ui-monospace,monospace;
+  color-scheme:dark;
+}
+:root[data-world="lamp"]{--void:#1F150E;--surface:#2A1E14;--surface-2:#251A11;--text:#F2E6D6;--muted:#B99B7C;--line:#4A3521;--accent:#E8873A;--on-accent:#1F150E;--ring:rgba(232,135,58,.16)}
+:root[data-world="dawn"]{--void:#E9F1F6;--surface:#FFFFFF;--surface-2:#DCEAF2;--text:#1E3A4A;--muted:#5A7E8F;--line:#C3DBE6;--accent:#3C7FA6;--on-accent:#FFFFFF;--ring:rgba(60,127,166,.14);color-scheme:light}
+:root[data-world="sun"]{--void:#F4EDDB;--surface:#FFFBF0;--surface-2:#ECE1C4;--text:#3A3226;--muted:#8A7A56;--line:#DCCB9C;--accent:#B5862A;--on-accent:#FFFBF0;--ring:rgba(201,154,46,.18);color-scheme:light}
+
+*{box-sizing:border-box}
+html,body{height:100%}
+body{margin:0;background:var(--void);color:var(--text);font:14px/1.6 'Space Mono',ui-monospace,monospace;transition:background-color .4s var(--ease),color .4s var(--ease);overflow:hidden}
+button,input,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:0;background:none;padding:0;transition:transform .12s var(--ease),background-color .4s var(--ease),color .4s var(--ease),opacity .28s var(--ease)}
+button:active{transform:scale(.96)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:3px}
+textarea:focus-visible,.title:focus-visible{outline:0}
+
+.app{height:100dvh;display:grid;grid-template-columns:minmax(320px,34%) 1fr}
+
+/* ── writing desk ── */
+.desk{position:relative;display:flex;flex-direction:column;min-height:0;padding:26px 30px 22px;background:var(--surface);border-right:1px solid var(--line);transition:background-color .4s var(--ease),border-color .4s var(--ease);z-index:2}
+.top{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.brand{display:flex;align-items:center;gap:10px;font:17px var(--head);letter-spacing:.2px}
+.brand svg{width:20px;height:20px;color:var(--accent);shape-rendering:crispEdges}
+.brand .dot{width:6px;height:6px;border-radius:50%;background:var(--line);transition:background-color .4s var(--ease)}
+.brand .dot.busy{background:var(--accent)}
+.row{display:flex;gap:8px}
+.round{width:38px;height:38px;border-radius:50%;display:inline-grid;place-items:center;background:var(--surface-2);border:1px solid var(--line)}
+.round:hover{border-color:var(--accent)}
+.round svg{width:16px;height:16px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}
+.round.on{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.title{margin:44px 0 6px;width:100%;border:0;outline:0;background:transparent;font:30px/1.2 var(--head);color:var(--text);padding:0}
+.title::placeholder{color:var(--muted);opacity:.75}
+textarea{flex:1;min-height:80px;width:100%;margin-top:10px;padding:6px 0;border:0;outline:0;resize:none;background:transparent;font:15px/1.9 'Space Mono',ui-monospace,monospace;color:var(--text);opacity:.9;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+textarea::placeholder{color:var(--muted)}
+textarea::selection{background:var(--ring);color:var(--text)}
+.foot{padding-top:18px;border-top:1px solid var(--line)}
+.count{display:flex;justify-content:space-between;align-items:baseline;gap:12px;font-size:13px;color:var(--muted)}
+.count strong{color:var(--text);font-weight:700}
+.bar{height:6px;border-radius:6px;background:var(--surface-2);margin-top:12px;overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;width:0;background:var(--accent);border-radius:6px;transition:width .65s var(--ease),background-color .4s var(--ease)}
+
+/* ── scene ── */
+.scene{position:relative;overflow:hidden;background:var(--void);transition:background-color .4s var(--ease)}
+.scene canvas{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;cursor:grab;image-rendering:pixelated}
+.scene canvas.drag{cursor:grabbing}
+.scene canvas.peeking{cursor:pointer}
+.hud{position:absolute;left:28px;right:24px;top:24px;display:flex;justify-content:space-between;align-items:flex-start;gap:12px;pointer-events:none;z-index:3}
+.hud>*{pointer-events:auto}
+.name{font:24px/1.2 var(--head);margin:0;text-shadow:0 1px 0 var(--void)}
+.stage{display:inline-block;margin-top:6px;font-size:12px;color:var(--muted);letter-spacing:.5px}
+.bottom{position:absolute;left:24px;right:24px;bottom:22px;display:flex;justify-content:space-between;align-items:flex-end;gap:10px;z-index:3;pointer-events:none}
+.bottom>*{pointer-events:auto}
+.seg{display:flex;gap:2px;padding:4px;border-radius:999px;background:color-mix(in srgb,var(--surface) 82%,transparent);border:1px solid var(--line);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+.seg button{padding:8px 14px;border-radius:999px;font-size:12px;white-space:nowrap;color:var(--muted)}
+.seg button:hover{color:var(--text)}
+.seg button.on{background:var(--accent);color:var(--on-accent)}
+.cam{display:flex;gap:6px}
+.cam .round{background:color-mix(in srgb,var(--surface) 82%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px)}
+
+.peek{position:absolute;z-index:6;max-width:280px;padding:12px 14px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:0 10px 30px rgba(0,0,0,.25);font-size:13px;line-height:1.65;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .28s var(--ease),transform .28s var(--ease)}
+.peek.show{opacity:1;transform:none}
+.peek b{display:block;font:11px 'Space Mono',monospace;color:var(--accent);letter-spacing:.6px;margin-bottom:4px}
+
+.herald{position:absolute;left:50%;top:22%;transform:translateX(-50%);font:30px/1.2 var(--head);white-space:nowrap;pointer-events:none;opacity:0;z-index:4;color:var(--text)}
+.herald.go{animation:herald 2.6s var(--ease) forwards}
+@keyframes herald{0%{opacity:0;transform:translateX(-50%) scale(1)}8%{opacity:1;transform:translateX(-50%) scale(1.16);text-shadow:0 0 18px var(--accent)}25%{transform:translateX(-50%) scale(1);text-shadow:0 0 6px var(--ring)}80%{opacity:1}100%{opacity:0;transform:translateX(-50%) scale(1)}}
+
+/* ── sheets ── */
+.backdrop{position:fixed;inset:0;z-index:20;background:rgba(0,0,0,.4);display:flex;align-items:flex-end;justify-content:center;opacity:0;pointer-events:none;transition:opacity .28s var(--ease)}
+.backdrop.open{opacity:1;pointer-events:auto}
+.sheet{width:100%;max-width:480px;max-height:82dvh;overflow:auto;background:var(--surface);border:1px solid var(--line);border-radius:20px 20px 0 0;padding:22px 22px 26px;transform:translateY(16px);opacity:0;transition:transform .28s var(--ease),opacity .28s var(--ease)}
+.backdrop.open .sheet{transform:none;opacity:1}
+@media (min-width:640px){.backdrop{align-items:center}.sheet{border-radius:18px;max-width:400px}}
+.sheet-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}
+.sheet h2{margin:0;font:20px var(--head)}
+.x{width:32px;height:32px;border-radius:50%;color:var(--muted)}
+.x:hover{color:var(--text);background:var(--surface-2)}
+.keeps{display:flex;flex-direction:column;gap:6px;margin:0 0 16px;padding:0;list-style:none}
+.keep{display:flex;align-items:center;gap:6px;border-radius:14px;background:var(--surface-2);border:1px solid var(--line)}
+.keep.on{border-color:var(--accent)}
+.keep>button:first-child{flex:1;text-align:left;padding:11px 14px;display:flex;justify-content:space-between;gap:10px;min-width:0}
+.keep .kn{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.keep .kw{color:var(--muted);font-size:12px;flex:none}
+.keep .del{width:34px;height:34px;margin-right:4px;border-radius:50%;color:var(--muted);flex:none}
+.keep .del:hover{color:var(--text);background:var(--ring)}
+.pills{display:flex;flex-wrap:wrap;gap:8px}
+.pill{padding:9px 14px;border-radius:999px;border:1px solid var(--line);background:var(--surface-2);font-size:12px}
+.pill:hover{border-color:var(--accent)}
+.pill.primary{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.set{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-top:1px solid var(--line)}
+.set:first-of-type{border-top:0}
+.set>span{font-size:13px}
+.sheet .seg{background:var(--surface-2);backdrop-filter:none}
+.sheet .seg button{padding:7px 10px}
+.switch{width:46px;height:26px;border-radius:999px;background:var(--surface-2);border:1px solid var(--line);position:relative;flex:none}
+.switch::after{content:'';position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:9px 50% 50% 9px;background:var(--muted);transition:transform .4s var(--ease),background-color .4s var(--ease),border-radius .4s var(--ease)}
+.switch[aria-checked="true"]{border-color:var(--accent)}
+.switch[aria-checked="true"]::after{transform:translateX(20px);background:var(--accent);border-radius:50% 9px 9px 50%}
+
+/* ── focus + responsive ── */
+.focus .app{grid-template-columns:0 1fr}
+.focus .desk{visibility:hidden;padding:0;border:0}
+@media (max-width:1000px){.desk{padding:22px 22px 18px}.hud{left:20px;right:18px;top:18px}.bottom{left:16px;right:16px;bottom:16px}.seg button{padding:8px 11px}.cam .zoom{display:none}}
+@media (max-width:700px){
+  .app{grid-template-columns:1fr;grid-template-rows:52% 48%}
+  .scene{grid-row:1}.desk{grid-row:2;border-right:0;border-top:1px solid var(--line);padding:14px 18px 14px}
+  .title{margin:12px 0 0;font-size:22px}
+  textarea{font-size:15px;line-height:1.75;margin-top:6px}
+  .foot{padding-top:10px}.bar{margin-top:8px}
+  .name{font-size:19px}.round{width:34px;height:34px}
+  .seg button{padding:7px 10px;font-size:11px}
+  .herald{font-size:22px}
+  .focus .app{grid-template-rows:100% 0}.focus .desk{display:none}
+}
+@media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+</style>
+</head>
+<body>
+<div class="app">
+  <section class="desk" aria-label="Writing desk">
+    <div class="top">
+      <div class="brand">
+        <svg viewBox="0 0 12 12" aria-hidden="true"><path fill="currentColor" d="M1 3h2v1h1V3h1v1h2V3h1v1h1V3h2v9H7V9H5v3H1z"/><path fill="currentColor" opacity=".5" d="M5 0h2v2H5z"/></svg>
+        wordkeep<span class="dot" id="dot" title="Saved on this device"></span>
+      </div>
+      <div class="row">
+        <button class="round" id="openKeeps" aria-label="Your keeps" title="Your keeps"><svg viewBox="0 0 16 16"><path d="M2.5 4.5h11M2.5 8h11M2.5 11.5h7"/></svg></button>
+        <button class="round" id="openSettings" aria-label="World settings" title="World"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="2.4"/><path d="M8 1.8v1.6M8 12.6v1.6M1.8 8h1.6M12.6 8h1.6M3.6 3.6l1.1 1.1M11.3 11.3l1.1 1.1M3.6 12.4l1.1-1.1M11.3 4.7l1.1-1.1"/></svg></button>
+      </div>
+    </div>
+    <input class="title" id="title" aria-label="Title" autocomplete="off" spellcheck="false">
+    <textarea id="text" aria-label="Your writing" placeholder="Begin anywhere." spellcheck="true"></textarea>
+    <div class="foot">
+      <div class="count"><span><strong id="words">0</strong> words</span><span id="stageText"></span></div>
+      <div class="bar" id="bar"><i id="fill"></i></div>
+    </div>
+  </section>
+
+  <section class="scene" id="scene" aria-label="Your castle">
+    <canvas id="world" aria-label="A pixel castle built from your writing. Lit windows hold your sentences; click one to jump to it."></canvas>
+    <div class="hud">
+      <div><h1 class="name" id="castle">Stillwater Keep</h1><span class="stage" id="chapter"></span></div>
+      <button class="round" id="focus" aria-label="Full view" title="Full view"><svg viewBox="0 0 16 16"><path d="M2.5 6V2.5H6M10 2.5h3.5V6M13.5 10v3.5H10M6 13.5H2.5V10"/></svg></button>
+    </div>
+    <div class="herald" id="herald" role="status"></div>
+    <div class="peek" id="peek"></div>
+    <div class="bottom">
+      <div class="seg" id="styles" role="group" aria-label="Architecture">
+        <button data-style="citadel">Citadel</button><button data-style="abbey">Abbey</button><button data-style="sky">Sky palace</button>
+      </div>
+      <div class="cam">
+        <button class="round zoom" id="zout" aria-label="Zoom out"><svg viewBox="0 0 16 16"><path d="M3.5 8h9"/></svg></button>
+        <button class="round zoom" id="zin" aria-label="Zoom in"><svg viewBox="0 0 16 16"><path d="M3.5 8h9M8 3.5v9"/></svg></button>
+        <button class="round" id="turn" aria-label="Rotate" title="Rotate"><svg viewBox="0 0 16 16"><path d="M12.8 6.2A5 5 0 1 0 13 9.6"/><path d="M13.2 2.8v3.6H9.6"/></svg></button>
+        <button class="round" id="fit" aria-label="Recenter" title="Recenter"><svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="4.5"/><path d="M8 1.5v3M8 11.5v3M1.5 8h3M11.5 8h3"/></svg></button>
+      </div>
+    </div>
+  </section>
+</div>
+
+<div class="backdrop" id="keepsSheet" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="kh">
+    <div class="sheet-head"><h2 id="kh">Your keeps</h2><button class="x" data-close aria-label="Close">✕</button></div>
+    <ul class="keeps" id="keepList"></ul>
+    <div class="pills">
+      <button class="pill primary" id="newKeep">New keep</button>
+      <button class="pill" id="sampleKeep">Sample tale</button>
+      <button class="pill" id="exportTxt">Text ↓</button>
+      <button class="pill" id="exportPng">Picture ↓</button>
+    </div>
+  </div>
+</div>
+
+<div class="backdrop" id="settingsSheet" aria-hidden="true">
+  <div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sh">
+    <div class="sheet-head"><h2 id="sh">World</h2><button class="x" data-close aria-label="Close">✕</button></div>
+    <div class="set"><span>Light</span><div class="seg" id="worlds" role="group" aria-label="Light">
+      <button data-world="auto" title="Follows your clock">Clock</button><button data-world="moon">Moon</button><button data-world="lamp">Lamp</button><button data-world="dawn">Dawn</button><button data-world="sun">Sun</button>
+    </div></div>
+    <div class="set"><span>Snow</span><button class="switch" id="snow" role="switch" aria-checked="false" aria-label="Snow"></button></div>
+    <div class="set"><span>Slow turn</span><button class="switch" id="spin" role="switch" aria-checked="false" aria-label="Slow turn"></button></div>
+  </div>
+</div>
+
 <script>
 'use strict';
-const $=id=>document.getElementById(id);
-const SAMPLE=`Beyond the last bend in the river, a little island held its breath. There was a house there, or the beginning of one: pale stone, a blue roof, a door left open to the weather. Every evening, someone lit a lamp in the window. Nobody in the village could remember when that had started.
+const $ = id => document.getElementById(id);
+
+const SAMPLE = `Beyond the last bend in the river, a little island held its breath. There was a house there, or the beginning of one: pale stone, a blue roof, a door left open to the weather. Every evening, someone lit a lamp in the window. Nobody in the village could remember when that had started.
 
 The keeper collected things that other people overlooked. A brass button. A map of a place that did not exist. Letters with no address. He kept them in a room above the water, where the walls smelled faintly of rain and the shelves leaned under the weight of unfinished stories. He was certain that every small thing deserved somewhere to belong.
 
@@ -17,61 +209,530 @@ One autumn morning, a woman arrived carrying a clock without hands. She asked hi
 By winter, the island had become a castle. Its bridges connected rooms that had never met before. Trees grew in the courtyards. Gold banners caught the wind. On clear nights, light spilled from a hundred little windows, and the people across the river began to write their own stories too.
 
 The keeper never finished building. That was the lovely thing about it. There was always another stone to lay, another door to open, another stranger on the bridge with something worth keeping.`;
-let saved={};try{saved=JSON.parse(localStorage.getItem('wordkeep-v2')||'{}')}catch{}
-const state={text:typeof saved.text==='string'?saved.text:SAMPLE,style:['citadel','abbey','sky'].includes(saved.style)?saved.style:'citadel',palette:['dusk','dawn','night','snow'].includes(saved.palette)?saved.palette:'dusk',turn:0,zoom:1,panX:0,panY:0};
-const PALETTES={dusk:{stone:'#d8d6bd',trim:'#f0e9cb',dark:'#a9b3a3',roof:'#547b83',roof2:'#41616f',grass:'#80998a',leaf:'#6c9084',rock:'#89969b',water:'#9bb8bd',glass:'#e9b86a',bg:['#bbc5d4','#e8d9d3']},dawn:{stone:'#eadbc0',trim:'#fff0d0',dark:'#bdab94',roof:'#a97567',roof2:'#795867',grass:'#9ca586',leaf:'#839778',rock:'#a9a096',water:'#b3caca',glass:'#f5cf83',bg:['#d1ccd5','#f3dec8']},night:{stone:'#828fa0',trim:'#b4b9bd',dark:'#647489',roof:'#394c6c',roof2:'#293a5c',grass:'#485f65',leaf:'#3f6562',rock:'#455464',water:'#344f65',glass:'#ffd386',bg:['#182639','#526075']},snow:{stone:'#dedde0',trim:'#fcf7ef',dark:'#b3bbcd',roof:'#758caa',roof2:'#546885',grass:'#dce4e6',leaf:'#9bb7b6',rock:'#9faebd',water:'#b0cbd7',glass:'#ffcc80',bg:['#bfcedd','#eaf0ed']}};
-let voxels=[],faces=[],stats={},saveTimer,renderQueued=false,toastTimer;
-const thresholds=[0,12,35,70,120,190,280,400,560,760,1000];
-const stages=['The first stone','A place to begin','The gate opens','A rising keep','The outer court','Towers in the sky','A world of your own','The upper gardens','A grand residence','The crown','A living landmark'];
-const milestones=['a gatehouse','the great hall','the first tower','courtyard walls','the high spire','a bridge & lookout','terraced gardens','a second residence','the crown towers','the final lanterns'];
-function noise(x,y,z){let n=Math.imul(x+517,374761393)^Math.imul(y+113,668265263)^Math.imul(z+991,1274126177);n=Math.imul(n^(n>>>13),1274126177);return((n^(n>>>16))>>>0)/4294967295}
-function tint(c,f){const n=parseInt(c.slice(1),16);return '#'+[n>>16,(n>>8)&255,n&255].map(v=>Math.min(255,Math.max(0,Math.round(v*f))).toString(16).padStart(2,'0')).join('')}
-function build(){const p=PALETTES[state.palette],m=new Map();const words=(state.text.match(/[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu)||[]).length;const sentences=(state.text.match(/[.!?。！？]+/g)||[]).length;const paras=state.text.split(/\n\s*\n/).filter(s=>s.trim()).length;const level=thresholds.filter(t=>words>=t).length-1;stats={words,sentences,paras,level};
-function put(x,y,z,c){m.set(`${x},${y},${z}`,{x,y,z,c})}function del(x,y,z){m.delete(`${x},${y},${z}`)}
-function box(x,y,z,w,h,d,c){for(let a=x;a<x+w;a++)for(let b=y;b<y+h;b++)for(let k=z;k<z+d;k++)put(a,b,k,typeof c==='function'?c(a,b,k):c)}
-const stone=(x,y,z)=>tint(y%5===0?p.trim:p.stone,.94+noise(x,y,z)*.1);
-function arch(x,y,z,w,h,axis='x'){for(let i=0;i<w;i++)for(let j=0;j<h-Math.abs(i-(w-1)/2)*.7;j++){if(axis==='x')del(x+i,y+j,z);else del(x,y+j,z+i)}}
-function roof(x,y,z,w,d,h){for(let j=0;j<h;j++){let inset=Math.floor(j*Math.min(w,d)/(h*2));let a=w-inset*2,b=d-inset*2;if(a>0&&b>0)box(x+inset,y+j,z+inset,a,1,b,j%3===0?p.roof2:p.roof)}box(x+Math.floor(w/2),y+h,z+Math.floor(d/2),1,2,1,p.trim)}
-function windowAt(x,y,z,axis='x'){for(let j=0;j<3;j++)put(x,y+j,z,j===2?p.dark:p.glass);if(axis==='x'){put(x-1,y-1,z,p.trim);put(x,y-1,z,p.trim);put(x+1,y-1,z,p.trim)}}
-function hall(x,y,z,w,d,h,spire=false){box(x,y,z,w,h,d,stone);box(x-1,y+h,z-1,w+2,1,d+2,p.trim);roof(x-1,y+h+1,z-1,w+2,d+2,spire?Math.ceil(w*1.5):Math.ceil(w*.6));for(let a=2;a<w-1;a+=3){windowAt(x+a,y+Math.max(2,h-5),z-1);windowAt(x+a,y+Math.max(2,h-5),z+d)}for(let a=2;a<d-1;a+=3){windowAt(x-1,y+Math.max(2,h-5),z+a);windowAt(x+w,y+Math.max(2,h-5),z+a)}for(let a of [x,x+w-1])for(let b of [z,z+d-1])box(a,y,b,1,h,1,p.trim)}
-function tower(x,z,r,h,point=true,base=1){for(let a=-r;a<=r;a++)for(let b=-r;b<=r;b++){if(Math.abs(a)===r&&Math.abs(b)===r)continue;for(let y=base;y<base+h;y++)put(x+a,y,z+b,stone(x+a,y,z+b))}for(let a=-r-1;a<=r+1;a++)for(let b=-r-1;b<=r+1;b++)if(Math.abs(a)+Math.abs(b)<=2*r+1)put(x+a,base+h,z+b,p.trim);if(point){roof(x-r-1,base+h+1,z-r-1,r*2+3,r*2+3,r*3+4);let top=base+h+r*3+5;box(x,top,z,1,4,1,p.trim);box(x+1,top+1,z,3,2,1,'#d3a66d')}else{for(let a=-r;a<=r;a++)for(let b=-r;b<=r;b++)if((Math.abs(a)===r||Math.abs(b)===r)&&(a+b)%2===0)box(x+a,base+h+1,z+b,1,2,1,p.trim)}for(let y=base+3;y<base+h-2;y+=5){windowAt(x,y,z+r+1);windowAt(x+r+1,y,z);windowAt(x-r-1,y,z);windowAt(x,y,z-r-1)}}
-function wall(x,z,len,axis,h){for(let i=0;i<len;i++){let a=x+(axis==='x'?i:0),b=z+(axis==='z'?i:0);box(a,1,b,1,h,1,stone);put(a,h+1,b,p.trim);if(i%2===0)put(a,h+2,b,p.trim)}}
-function tree(x,z,s=1){box(x,1,z,1,3+s,1,'#7c8071');for(let y=0;y<4+s;y++){let r=Math.max(0,Math.floor((5+s-y)/2));for(let a=-r;a<=r;a++)for(let b=-r;b<=r;b++)if(Math.abs(a)+Math.abs(b)<=r+1)put(x+a,y+3,z+b,tint(p.leaf,.93+noise(x+a,y,z+b)*.2))}}
-// A sculpted island, with exposed rock shelves and a narrow causeway.
-for(let x=-22;x<=22;x++)for(let z=-19;z<=19;z++){let rr=(x/22)**2+(z/18)**2;if(rr<.96+noise(x,0,z)*.08){let depth=3+Math.floor((1-rr)*4+noise(x,2,z)*2);for(let y=-depth;y<=0;y++)put(x,y,z,y===0?p.grass:tint(p.rock,.84+noise(x,y,z)*.23));if(rr>.78&&noise(x,0,z)>.86)put(x,1,z,p.rock)}}
-for(let i=0;i<9;i++){let x=[-16,-18,16,18,-13,13,-18,17,4][i],z=[-9,1,-9,3,12,12,8,9,-14][i];tree(x,z,i%2)}
-box(-3,1,7,7,1,16,p.dark);for(let z=9;z<=25;z++){box(-2,0,z,5,1,1,p.stone);if(z%3===0){box(-3,0,z,1,2,1,p.trim);box(3,0,z,1,2,1,p.trim)}}
-if(words===0){box(-3,1,-3,7,1,7,p.dark);for(let x=-3;x<=3;x+=3)box(x,2,-3,1,1,1,p.trim)}
-if(words>0){hall(-4,1,-5,9,8,Math.min(9,3+Math.floor(words/5)));arch(-1,1,2,3,4);box(-1,1,3,3,1,2,p.trim)}
-if(level>=1){wall(-10,9,21,'x',5);for(let z=9;z<=9;z++)arch(-2,1,z,5,5);tower(-8,9,2,7,false);tower(8,9,2,7,false);box(-2,6,9,5,1,1,p.trim)}
-if(level>=2){if(state.style==='abbey'){hall(-3,1,-12,7,17,10);hall(-10,1,-6,21,6,8)}else if(state.style==='sky'){hall(-7,1,-8,15,10,10);hall(-4,12,-5,9,7,7,true)}else{hall(-6,1,-9,13,11,10);hall(-4,12,-7,9,7,7)}}
-if(level>=3){tower(-9,-7,3,state.style==='abbey'?21:17,true);wall(-11,-8,18,'z',5)}
-if(level>=4){wall(11,-8,18,'z',5);wall(-11,-10,23,'x',5);tower(10,-9,2,12,state.style!=='citadel');for(let x=-8;x<=8;x+=4)box(x,1,5,2,1,2,p.trim)}
-if(level>=5){if(state.style==='abbey'){tower(0,-3,3,26,true);tower(-5,3,2,17,true);tower(5,3,2,17,true)}else if(state.style==='sky'){tower(7,-5,3,26,true);tower(-5,2,2,21,true)}else{tower(6,-5,3,24,true);tower(-4,-3,2,23,true)}}
-if(level>=6){tower(15,-3,2,state.style==='sky'?22:15,true);box(8,10,-4,8,1,3,p.trim);box(8,11,-5,8,1,1,p.dark);box(8,11,-1,8,1,1,p.dark);for(let x=9;x<16;x+=3)box(x,6,-3,1,4,1,p.stone)}
-if(level>=7){hall(-16,1,0,6,8,8);box(-16,10,0,6,1,8,p.grass);tree(-14,3);tower(-14,6,2,13,false)}
-if(level>=8){hall(-5,1,-16,11,6,12,state.style==='sky');tower(-6,-14,2,17,true)}
-if(level>=9){tower(7,-13,2,21,true);tower(-10,-2,1,26,true)}
-if(level>=10){tower(0,-12,2,29,true)}
-// Paragraph gardens and sentence lanterns occupy stable slots: edits never reroll the world.
-for(let i=0;i<Math.min(paras,12);i++){let x=-8+(i%5)*4,z=12+Math.floor(i/5)*2;if(Math.abs(x)<4)continue;box(x,1,z,2,1,2,p.dark);put(x,2,z,p.leaf);put(x+1,2,z,i%2?'#c8978d':'#d5bf87')}
-for(let i=0;i<Math.min(sentences,16);i++){let z=11+Math.floor(i/2)*2;let x=i%2?4:-4;put(x,1,z,p.roof2);put(x,2,z,p.glass)}
-voxels=[...m.values()];prepareFaces(m);updateUI();requestRender()}
-const rotate=(x,z)=>{for(let i=0;i<state.turn;i++){let a=x;x=-z;z=a}return[x,z]};
-function prepareFaces(m){faces=[];const offsets=[[0,1,0],[1,0,0],[0,0,1],[-1,0,0],[0,0,-1]];const vertices=[[[0,1,0],[1,1,0],[1,1,1],[0,1,1]],[[1,0,0],[1,0,1],[1,1,1],[1,1,0]],[[0,0,1],[0,1,1],[1,1,1],[1,0,1]],[[0,0,0],[0,1,0],[0,1,1],[0,0,1]],[[0,0,0],[1,0,0],[1,1,0],[0,1,0]]];for(const v of voxels){for(let i=0;i<5;i++){const o=offsets[i],[nx,nz]=rotate(o[0],o[2]);if(i&&nx+nz<=0)continue;if(m.has(`${v.x+o[0]},${v.y+o[1]},${v.z+o[2]}`))continue;let ps=vertices[i].map(a=>{let[x,z]=rotate(v.x+a[0]-.5,v.z+a[2]-.5);let y=v.y+a[1];return{x:x-z,y:(x+z)*.5-y,depth:x+z+y*1.1}});faces.push({ps,c:tint(v.c,i===0?1.07:nx>0?.79:.92),depth:ps.reduce((a,b)=>a+b.depth,0)/4})}}faces.sort((a,b)=>a.depth-b.depth)}
-const canvas=$('world'),ctx=canvas.getContext('2d');let width=0,height=0;
-function requestRender(){if(renderQueued)return;renderQueued=true;requestAnimationFrame(()=>{renderQueued=false;render()})}
-function render(){let r=canvas.getBoundingClientRect();width=r.width;height=r.height;if(!width||!height)return;let dpr=Math.min(devicePixelRatio||1,2);if(canvas.width!==Math.round(width*dpr)||canvas.height!==Math.round(height*dpr)){canvas.width=Math.round(width*dpr);canvas.height=Math.round(height*dpr)}ctx.setTransform(dpr,0,0,dpr,0,0);ctx.clearRect(0,0,width,height);let p=PALETTES[state.palette];let bg=ctx.createLinearGradient(0,0,width*.4,height);bg.addColorStop(0,p.bg[0]);bg.addColorStop(1,p.bg[1]);ctx.fillStyle=bg;ctx.fillRect(0,0,width,height);
-let minY=Infinity,maxY=-Infinity,minX=Infinity,maxX=-Infinity;for(const f of faces)for(const q of f.ps){minY=Math.min(minY,q.y);maxY=Math.max(maxY,q.y);minX=Math.min(minX,q.x);maxX=Math.max(maxX,q.x)}const mobile=width<550;let unit=Math.min((width-(mobile?38:85))/(maxX-minX),(height-(mobile?135:190))/(maxY-minY))*state.zoom;unit=Math.max(1,unit);let cx=width/2-(maxX+minX)/2*unit+state.panX,cy=(mobile?85:115)+(height-(mobile?135:190))/2-(maxY+minY)/2*unit+state.panY;
-ctx.save();ctx.translate(cx,cy+4*unit);ctx.scale(1,.45);let grad=ctx.createRadialGradient(0,0,unit*8,0,0,unit*36);grad.addColorStop(0,state.palette==='night'?'#192b3c88':'#647c8670');grad.addColorStop(1,'#647c8600');ctx.fillStyle=grad;ctx.beginPath();ctx.ellipse(0,0,unit*38,unit*28,0,0,Math.PI*2);ctx.fill();ctx.restore();
-// Quiet water rings ground the island without adding interface chrome.
-ctx.strokeStyle=state.palette==='night'?'#accede12':'#ffffff42';ctx.lineWidth=1;for(let i=0;i<4;i++){ctx.beginPath();ctx.ellipse(cx,cy+12*unit,(32+i*3)*unit,(12+i*1.3)*unit,0,0,Math.PI*2);ctx.stroke()}
-for(const f of faces){ctx.fillStyle=f.c;ctx.beginPath();f.ps.forEach((q,i)=>{let x=cx+q.x*unit,y=cy+q.y*unit;i?ctx.lineTo(x,y):ctx.moveTo(x,y)});ctx.closePath();ctx.fill();ctx.strokeStyle=f.c;ctx.lineWidth=.35;ctx.stroke()}}
-function updateUI(){const s=stats;$('words').textContent=s.words.toLocaleString();$('stage').textContent=stages[s.level];let next=thresholds[s.level+1];$('progress').style.width=(next?Math.min(100,(s.words-thresholds[s.level])/(next-thresholds[s.level])*100):100)+'%';$('next').textContent=next?`${next-s.words} more words to ${milestones[s.level]}.`:'Your landmark is complete. The story can keep growing.';const labels={citadel:['The storybook citadel','Stillwater Keep'],abbey:['The riverside abbey','Bellwether Abbey'],sky:['The sky palace','Cloudspire Palace']};$('kind').textContent=labels[state.style][0];$('place').textContent=labels[state.style][1];$('detail').textContent=s.words?`${s.level+1} / 11 chapters of growth`:'An island waiting for a story';$('scene').classList.toggle('night',state.palette==='night');document.querySelectorAll('[data-style]').forEach(b=>{let active=b.dataset.style===state.style;b.classList.toggle('active',active);b.setAttribute('aria-pressed',active)});$('palette').value=state.palette}
-function persist(){try{localStorage.setItem('wordkeep-v2',JSON.stringify({text:state.text,style:state.style,palette:state.palette}));$('save').textContent='Saved on this device'}catch{$('save').textContent='Storage unavailable — save text ↓'}}
-function toast(t){$('toast').textContent=t;$('toast').classList.add('show');clearTimeout(toastTimer);toastTimer=setTimeout(()=>$('toast').classList.remove('show'),2600)}
-$('writing').value=state.text;let buildTimer;$('writing').addEventListener('input',()=>{state.text=$('writing').value;$('save').textContent='Saving…';clearTimeout(buildTimer);clearTimeout(saveTimer);buildTimer=setTimeout(()=>{const old=stats.level;build();if(stats.level>old)toast(stages[stats.level])},160);saveTimer=setTimeout(persist,400)});
-document.querySelectorAll('[data-style]').forEach(b=>b.onclick=()=>{state.style=b.dataset.style;build();persist()});$('palette').onchange=e=>{state.palette=e.target.value;build();persist()};$('settings').onclick=()=>{let open=$('panel').hidden;$('panel').hidden=!open;$('settings').classList.toggle('active',open);$('settings').setAttribute('aria-expanded',open)};document.addEventListener('keydown',e=>{if(e.key==='Escape'){$('panel').hidden=true;$('settings').classList.remove('active');$('settings').setAttribute('aria-expanded','false');document.body.classList.remove('focus');requestRender()}});
-$('focus').onclick=()=>{document.body.classList.toggle('focus');$('focus').classList.toggle('active',document.body.classList.contains('focus'));requestRender()};function turn(){state.turn=(state.turn+1)%4;prepareFaces(new Map(voxels.map(v=>[`${v.x},${v.y},${v.z}`,v])));requestRender()}$('rotate').onclick=turn;let auto;$('auto').onchange=e=>{clearInterval(auto);if(e.target.checked)auto=setInterval(()=>{if(!document.hidden)turn()},6000)};function zoom(f){state.zoom=Math.max(.45,Math.min(3,state.zoom*f));requestRender()}$('plus').onclick=()=>zoom(1.15);$('minus').onclick=()=>zoom(1/1.15);$('fit').onclick=()=>{state.zoom=1;state.panX=state.panY=0;requestRender()};canvas.addEventListener('wheel',e=>{e.preventDefault();zoom(e.deltaY<0?1.06:1/1.06)},{passive:false});let drag;canvas.onpointerdown=e=>{canvas.setPointerCapture(e.pointerId);drag={x:e.clientX,y:e.clientY}};canvas.onpointermove=e=>{if(!drag)return;state.panX+=e.clientX-drag.x;state.panY+=e.clientY-drag.y;drag={x:e.clientX,y:e.clientY};requestRender()};canvas.onpointerup=canvas.onpointercancel=()=>drag=null;
-function download(blob,name){let a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;a.click();setTimeout(()=>URL.revokeObjectURL(url),1000)}$('download').onclick=()=>download(new Blob([state.text],{type:'text/plain;charset=utf-8'}),'wordkeep-story.txt');$('picture').onclick=()=>{render();canvas.toBlob(b=>{if(b)download(b,`${state.style}-${state.palette}.png`)},'image/png')};let cleared=null;$('clear').onclick=()=>{if(cleared!==null){state.text=cleared;cleared=null;$('clear').textContent='New page'}else{cleared=state.text;state.text='';$('clear').textContent='Undo clear';toast('New page. Undo clear restores your writing.')}clearTimeout(buildTimer);$('writing').value=state.text;build();persist()};$('example').onclick=()=>{if(state.text&&state.text!==SAMPLE&&!confirm('Replace this page with the example story? Save your text first if you want to keep it.'))return;state.text=SAMPLE;$('writing').value=state.text;build();persist()};new ResizeObserver(requestRender).observe($('scene'));window.addEventListener('pagehide',persist);build();
-</script></body></html>
+
+/* ─────────── worlds: Quiet Pixel's four lights, each with its own scene palette ─────────── */
+const WORLDS = {
+  moon: { night: true,  sky: ['#17121F', '#2B2240'], pal: { stone:'#8f88a6', trim:'#bdb4d2', dark:'#5b5470', roof:'#4d4174', roof2:'#3a305a', grass:'#4a6866', leaf:'#3b5b5a', rock:'#4a4258', water:'#2a2846', foam:'#4a4870', rim:'#16121f', lit:'#ffcf7a', unlit:'#2a2438', trunk:'#4a3f45', banner:'#b9a9d9', fa:'#c58fae', fb:'#e2c27a', smoke:'#a59cbd' } },
+  lamp: { night: true,  sky: ['#160F0A', '#3A2618'], pal: { stone:'#c4a487', trim:'#e6cdae', dark:'#86664f', roof:'#8f4a30', roof2:'#6a3624', grass:'#68764a', leaf:'#52633b', rock:'#664c3e', water:'#33293a', foam:'#5a4858', rim:'#1a120c', lit:'#ffd27a', unlit:'#3a2a20', trunk:'#5a4030', banner:'#e8873a', fa:'#d9826a', fb:'#f2c94c', smoke:'#a8907a' } },
+  dawn: { night: false, sky: ['#D6E7F1', '#F3F1EC'], pal: { stone:'#dde2ea', trim:'#f6f8fb', dark:'#a7b4c4', roof:'#3c7fa6', roof2:'#2f6688', grass:'#8db398', leaf:'#6c9883', rock:'#8a96a6', water:'#98c3da', foam:'#d2e7f2', rim:'#6a8aa0', lit:'#ffe2a8', unlit:'#61798f', trunk:'#7a6a5e', banner:'#f2a6a0', fa:'#e8a0b4', fb:'#f2d27a', smoke:'#ffffff' } },
+  sun:  { night: false, sky: ['#F1E6C9', '#FBF7EC'], pal: { stone:'#eee0c3', trim:'#fff6e2', dark:'#c4b089', roof:'#b9674a', roof2:'#93523b', grass:'#9ab268', leaf:'#77984f', rock:'#ab9b83', water:'#7dbfc6', foam:'#c7e6e2', rim:'#8a7a56', lit:'#fff1c0', unlit:'#857552', trunk:'#86663f', banner:'#3c7fa6', fa:'#d97a6a', fb:'#f2c94c', smoke:'#ffffff' } }
+};
+const STYLES = { citadel: ['Stillwater Keep', 'Keep'], abbey: ['Bellwether Abbey', 'Abbey'], sky: ['Cloudspire Palace', 'Spire'] };
+const THRESHOLDS = [0, 12, 35, 70, 120, 190, 280, 400, 560, 760, 1000];
+const STAGES = ['The first stone', 'A place to begin', 'The gate opens', 'A rising keep', 'The outer court', 'Towers in the sky', 'A world of your own', 'The upper gardens', 'A grand residence', 'The crown', 'A living landmark'];
+const NEXT = ['a gatehouse', 'the great hall', 'the first tower', 'courtyard walls', 'the high spire', 'a bridge and lookout', 'terraced gardens', 'a second residence', 'the crown towers', 'the final lanterns'];
+const STOP = new Set('there their about would could should which where while these those other after before again never every being through because little still always really thing things something nothing another until though first right think known might without around within maybe people across didn doesn wasn haven shall whose whole under above below between since often perhaps rather almost along among during toward towards upon whether either neither enough quite became become becomes itself himself herself myself yourself words write writing'.split(' '));
+
+/* ─────────── storage (migrates the old single-page save) ─────────── */
+const KEY = 'wordkeep-v3';
+const uid = () => Math.random().toString(36).slice(2, 9);
+const mkPage = (text = '', title = '', style = 'citadel') => ({ id: uid(), title, text, style, updated: Date.now() });
+function load() {
+  let d = null;
+  try { d = JSON.parse(localStorage.getItem(KEY)); } catch {}
+  if (!d || !Array.isArray(d.pages) || !d.pages.length) {
+    let old = {};
+    try { old = JSON.parse(localStorage.getItem('wordkeep-v2') || '{}') || {}; } catch {}
+    const p = mkPage(typeof old.text === 'string' ? old.text : SAMPLE, '', STYLES[old.style] ? old.style : 'citadel');
+    d = { pages: [p], current: p.id, world: 'auto', snow: 'auto', spin: false, turn: 0 };
+  }
+  d.pages = d.pages.filter(p => p && typeof p.text === 'string').map(p => ({ ...p, style: STYLES[p.style] ? p.style : 'citadel', title: p.title || '' }));
+  if (!d.pages.length) d.pages = [mkPage()];
+  if (!d.pages.some(p => p.id === d.current)) d.current = d.pages[0].id;
+  if (!['auto', 'moon', 'lamp', 'dawn', 'sun'].includes(d.world)) d.world = 'auto';
+  d.turn = (d.turn | 0) % 4;
+  return d;
+}
+let db = load();
+const page = () => db.pages.find(p => p.id === db.current);
+let saveT;
+function persist() {
+  try { localStorage.setItem(KEY, JSON.stringify(db)); $('dot').classList.remove('busy'); $('dot').title = 'Saved on this device'; }
+  catch { $('dot').title = 'Could not save here. Export your text.'; }
+}
+function saveSoon() { $('dot').classList.add('busy'); clearTimeout(saveT); saveT = setTimeout(persist, 400); }
+
+const clockWorld = () => { const h = new Date().getHours(); return h >= 6 && h < 10 ? 'dawn' : h >= 10 && h < 17 ? 'sun' : h >= 17 && h < 21 ? 'lamp' : 'moon'; };
+const worldName = () => db.world === 'auto' ? clockWorld() : db.world;
+const winter = () => { const m = new Date().getMonth(); return m >= 10 || m <= 2; };
+const snowing = () => db.snow === 'auto' ? winter() : db.snow === 'on';
+const calm = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ─────────── reading the text ─────────── */
+const WORD_RE = /[\p{L}\p{N}]+(?:['’-][\p{L}\p{N}]+)*/gu;
+function analyze(text, style) {
+  const words = text.match(WORD_RE) || [];
+  const sentences = [];
+  const re = /[^.!?…\n]+(?:[.!?…]+["'”’)\]]*|(?=\n)|$)/g;
+  let m;
+  while ((m = re.exec(text))) {
+    if (!m[0]) { re.lastIndex++; continue; }
+    const raw = m[0], lead = raw.length - raw.trimStart().length, s = raw.trim();
+    const done = /[.!?…]["'”’)\]]*$/.test(s);
+    if (done && /\p{L}/u.test(s)) sentences.push({ s, start: m.index + lead, end: m.index + lead + s.length });
+  }
+  const paras = text.split(/\n\s*\n/).filter(s => s.trim()).length;
+  const level = THRESHOLDS.filter(t => words.length >= t).length - 1;
+  const freq = new Map();
+  for (const w of words) { const k = w.toLowerCase().replace(/['’].*$/, ''); if (k.length >= 5 && !STOP.has(k) && !/\d/.test(k)) freq.set(k, (freq.get(k) || 0) + 1); }
+  let best = '', n = 1;
+  for (const [k, v] of freq) if (v > n || (v === n && best && k.length > best.length && v > 1)) { best = k; n = v; }
+  const name = best ? best[0].toUpperCase() + best.slice(1) + ' ' + STYLES[style][1] : STYLES[style][0];
+  return { words: words.length, sentences, paras, level, name };
+}
+
+/* ─────────── the architect: voxels from words ─────────── */
+function noise(x, y, z) { let n = Math.imul(x + 517, 374761393) ^ Math.imul(y + 113, 668265263) ^ Math.imul(z + 991, 1274126177); n = Math.imul(n ^ (n >>> 13), 1274126177); return ((n ^ (n >>> 16)) >>> 0) / 4294967295; }
+function tint(c, f) { const n = parseInt(c.slice(1), 16); return '#' + [n >> 16, (n >> 8) & 255, n & 255].map(v => Math.min(255, Math.max(0, Math.round(v * f))).toString(16).padStart(2, '0')).join(''); }
+
+let model = { voxels: [], windows: 0, smoke: null, stats: null };
+function build() {
+  const pg = page(), style = pg.style, world = WORLDS[worldName()], p = world.pal;
+  const st = analyze(pg.text, style), level = st.level, words = st.words;
+  const m = new Map();
+  const key = (x, y, z) => ((x + 128) * 256 + (y + 128)) * 256 + (z + 128);
+  let wid = 0, smoke = null;
+  const put = (x, y, z, c, w = -1, kind = 0) => m.set(key(x, y, z), { x, y, z, c, w, kind });
+  const del = (x, y, z) => m.delete(key(x, y, z));
+  const box = (x, y, z, w, h, d, c) => { for (let a = x; a < x + w; a++) for (let b = y; b < y + h; b++) for (let k = z; k < z + d; k++) put(a, b, k, typeof c === 'function' ? c(a, b, k) : c); };
+  const stone = (x, y, z) => tint(y % 5 === 0 ? p.trim : p.stone, .93 + noise(x, y, z) * .12);
+  const arch = (x, y, z, w, h) => { for (let i = 0; i < w; i++) for (let j = 0; j < h - Math.abs(i - (w - 1) / 2) * .7; j++) del(x + i, y + j, z); };
+  const roof = (x, y, z, w, d, h, chimney) => {
+    for (let j = 0; j < h; j++) { const inset = Math.floor(j * Math.min(w, d) / (h * 2)), a = w - inset * 2, b = d - inset * 2; if (a > 0 && b > 0) box(x + inset, y + j, z + inset, a, 1, b, (j % 3 === 0 ? p.roof2 : p.roof)); }
+    box(x + Math.floor(w / 2), y + h, z + Math.floor(d / 2), 1, 2, 1, p.trim);
+    if (chimney && !smoke) { box(x + 1, y, z + 1, 1, Math.max(3, Math.ceil(h * .6)), 1, p.dark); smoke = [x + 1, y + Math.max(3, Math.ceil(h * .6)), z + 1]; }
+  };
+  const win = (x, y, z) => { const id = wid++; put(x, y, z, p.unlit, id, 1); put(x, y + 1, z, p.unlit, id, 1); put(x, y + 2, z, p.dark); };
+  const hall = (x, y, z, w, d, h, spire = false, chimney = false) => {
+    box(x, y, z, w, h, d, stone); box(x - 1, y + h, z - 1, w + 2, 1, d + 2, p.trim);
+    roof(x - 1, y + h + 1, z - 1, w + 2, d + 2, spire ? Math.ceil(w * 1.5) : Math.ceil(w * .6), chimney);
+    const wy = y + Math.max(2, h - 5);
+    for (let a = 2; a < w - 1; a += 3) { win(x + a, wy, z - 1); win(x + a, wy, z + d); }
+    for (let a = 2; a < d - 1; a += 3) { win(x - 1, wy, z + a); win(x + w, wy, z + a); }
+    for (const a of [x, x + w - 1]) for (const b of [z, z + d - 1]) box(a, y, b, 1, h, 1, p.trim);
+  };
+  const tower = (x, z, r, h, point = true, base = 1) => {
+    for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) { if (Math.abs(a) === r && Math.abs(b) === r) continue; for (let y = base; y < base + h; y++) put(x + a, y, z + b, stone(x + a, y, z + b)); }
+    for (let a = -r - 1; a <= r + 1; a++) for (let b = -r - 1; b <= r + 1; b++) if (Math.abs(a) + Math.abs(b) <= 2 * r + 1) put(x + a, base + h, z + b, p.trim);
+    if (point) { roof(x - r - 1, base + h + 1, z - r - 1, r * 2 + 3, r * 2 + 3, r * 3 + 4); const top = base + h + r * 3 + 5; box(x, top, z, 1, 4, 1, p.trim); box(x + 1, top + 2, z, 3, 2, 1, p.banner); }
+    else { for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) if ((Math.abs(a) === r || Math.abs(b) === r) && (a + b) % 2 === 0) box(x + a, base + h + 1, z + b, 1, 2, 1, p.trim); }
+    for (let y = base + 3; y < base + h - 2; y += 5) { win(x, y, z + r + 1); win(x + r + 1, y, z); win(x - r - 1, y, z); win(x, y, z - r - 1); }
+  };
+  const wall = (x, z, len, axis, h) => { for (let i = 0; i < len; i++) { const a = x + (axis === 'x' ? i : 0), b = z + (axis === 'z' ? i : 0); box(a, 1, b, 1, h, 1, stone); put(a, h + 1, b, p.trim); if (i % 2 === 0) put(a, h + 2, b, p.trim); } };
+  const tree = (x, z, s = 1) => { box(x, 1, z, 1, 3 + s, 1, p.trunk); for (let y = 0; y < 4 + s; y++) { const r = Math.max(0, Math.floor((5 + s - y) / 2)); for (let a = -r; a <= r; a++) for (let b = -r; b <= r; b++) if (Math.abs(a) + Math.abs(b) <= r + 1) put(x + a, y + 3, z + b, tint(p.leaf, .9 + noise(x + a, y, z + b) * .24)); } };
+
+  const sky = style === 'sky';
+  // island: shallow above a pond, or a deep floating rock in the sky
+  for (let x = -22; x <= 22; x++) for (let z = -19; z <= 19; z++) {
+    const rr = (x / 22) ** 2 + (z / 18) ** 2;
+    if (rr < .96 + noise(x, 0, z) * .08) {
+      const depth = sky ? 3 + Math.floor((1 - rr) * 16 + noise(x, 2, z) * 4) : 2;
+      for (let y = -depth; y <= 0; y++) put(x, y, z, y === 0 ? tint(p.grass, .95 + noise(x, 9, z) * .1) : tint(p.rock, .82 + noise(x, y, z) * .25), -1, y === 0 ? 0 : 3);
+      if (rr > .78 && noise(x, 0, z) > .86) put(x, 1, z, p.rock);
+    }
+  }
+  if (!sky) {
+    const ground = new Set(); for (const v of m.values()) if (v.y === 0) ground.add(v.x + ',' + v.z);
+    for (let x = -31; x <= 31; x++) for (let z = -28; z <= 28; z++) {
+      if ((x / 31) ** 2 + (z / 28) ** 2 >= 1 || ground.has(x + ',' + z)) continue;
+      const shore = ground.has((x - 1) + ',' + z) || ground.has((x + 1) + ',' + z) || ground.has(x + ',' + (z - 1)) || ground.has(x + ',' + (z + 1));
+      put(x, -1, z, shore ? p.foam : tint(p.water, .96 + noise(x, 5, z) * .08), -1, 2);
+      put(x, -2, z, p.rim, -1, 3);
+    }
+  }
+  [[-16, -9], [-18, 1], [16, -9], [18, 3], [-13, 12], [13, 12], [-18, 8], [17, 9], [4, -14]].forEach(([x, z], i) => tree(x, z, i % 2));
+  box(-3, 1, 7, 7, 1, 16, p.dark);
+  for (let z = 9; z <= 25; z++) { box(-2, 0, z, 5, 1, 1, p.stone); if (z % 3 === 0) { box(-3, 0, z, 1, 2, 1, p.trim); box(3, 0, z, 1, 2, 1, p.trim); } }
+  if (words === 0) { box(-3, 1, -3, 7, 1, 7, p.dark); for (let x = -3; x <= 3; x += 3) box(x, 2, -3, 1, 1, 1, p.trim); }
+  if (words > 0) { hall(-4, 1, -5, 9, 8, Math.min(9, 3 + Math.floor(words / 5)), false, true); arch(-1, 1, 2, 3, 4); box(-1, 1, 3, 3, 1, 2, p.trim); }
+  if (level >= 1) { wall(-10, 9, 21, 'x', 5); arch(-2, 1, 9, 5, 5); tower(-8, 9, 2, 7, false); tower(8, 9, 2, 7, false); box(-2, 6, 9, 5, 1, 1, p.trim); }
+  if (level >= 2) { if (style === 'abbey') { hall(-3, 1, -12, 7, 17, 10); hall(-10, 1, -6, 21, 6, 8); } else if (sky) { hall(-7, 1, -8, 15, 10, 10); hall(-4, 12, -5, 9, 7, 7, true); } else { hall(-6, 1, -9, 13, 11, 10); hall(-4, 12, -7, 9, 7, 7); } }
+  if (level >= 3) { tower(-9, -7, 3, style === 'abbey' ? 21 : 17, true); wall(-11, -8, 18, 'z', 5); }
+  if (level >= 4) { wall(11, -8, 18, 'z', 5); wall(-11, -10, 23, 'x', 5); tower(10, -9, 2, 12, style !== 'citadel'); for (let x = -8; x <= 8; x += 4) box(x, 1, 5, 2, 1, 2, p.trim); }
+  if (level >= 5) { if (style === 'abbey') { tower(0, -3, 3, 26, true); tower(-5, 3, 2, 17, true); tower(5, 3, 2, 17, true); } else if (sky) { tower(7, -5, 3, 26, true); tower(-5, 2, 2, 21, true); } else { tower(6, -5, 3, 24, true); tower(-4, -3, 2, 23, true); } }
+  if (level >= 6) { tower(15, -3, 2, sky ? 22 : 15, true); box(8, 10, -4, 8, 1, 3, p.trim); box(8, 11, -5, 8, 1, 1, p.dark); box(8, 11, -1, 8, 1, 1, p.dark); for (let x = 9; x < 16; x += 3) box(x, 6, -3, 1, 4, 1, p.stone); }
+  if (level >= 7) { hall(-16, 1, 0, 6, 8, 8); box(-16, 10, 0, 6, 1, 8, p.grass); tree(-14, 3); tower(-14, 6, 2, 13, false); }
+  if (level >= 8) { hall(-5, 1, -16, 11, 6, 12, sky); tower(-6, -14, 2, 17, true); }
+  if (level >= 9) { tower(7, -13, 2, 21, true); tower(-10, -2, 1, 26, true); }
+  if (level >= 10) tower(0, -12, 2, 29, true);
+  // paragraphs plant gardens in fixed slots, so edits never reroll the world
+  for (let i = 0; i < Math.min(st.paras, 12); i++) { const x = -8 + (i % 5) * 4, z = 12 + Math.floor(i / 5) * 2; if (Math.abs(x) < 4) continue; box(x, 1, z, 2, 1, 2, p.dark); put(x, 2, z, p.leaf); put(x + 1, 2, z, i % 2 ? p.fa : p.fb); }
+
+  // windows that survived later construction get renumbered in build order; sentence n lights window n
+  const voxels = [...m.values()];
+  const ids = [...new Set(voxels.filter(v => v.w >= 0).map(v => v.w))].sort((a, b) => a - b);
+  const rank = new Map(ids.map((w, i) => [w, i]));
+  for (const v of voxels) if (v.w >= 0) { v.w = rank.get(v.w); if (v.w < st.sentences.length) v.c = tint(p.lit, .92 + noise(v.w, 3, 1) * .12); }
+  model = { voxels, windows: ids.length, smoke, stats: st, world: worldName(), style };
+}
+
+/* ─────────── the rasterizer: true pixel iso, 8×8 cube sprites ─────────── */
+// projection: screen x = (x − z)·4, screen y = (x + z)·2 − y·4. View axis is (1,1,1), so
+// drawing cubes in ascending x+y+z order is a correct painter's algorithm.
+const U = [2, 1, 1, 0, 0, 1, 1, 2];
+let art = null;   // { canvas, W, H, ids:Int32Array, list, lights, water, smoke }
+const rgbCache = new Map();
+function rgb(hex) { let v = rgbCache.get(hex); if (!v) { const n = parseInt(hex.slice(1), 16); v = [n >> 16, (n >> 8) & 255, n & 255]; rgbCache.set(hex, v); } return v; }
+const pack = (r, g, b) => ((255 << 24) | (Math.min(255, b) << 16) | (Math.min(255, g) << 8) | Math.min(255, r)) >>> 0;
+const rot = (x, z) => { for (let i = 0; i < db.turn; i++) { const a = x; x = -z; z = a; } return [x, z]; };
+
+function raster() {
+  const vs = model.voxels, night = WORLDS[model.world].night;
+  const K = (x, y, z) => ((x + 128) * 256 + (y + 128)) * 256 + (z + 128);
+  const occ = new Set();
+  for (const v of vs) { const [rx, rz] = rot(v.x, v.z); v.rx = rx; v.rz = rz; occ.add(K(rx, v.y, rz)); }
+  const list = [];
+  let minX = 1e9, maxX = -1e9, minY = 1e9, maxY = -1e9;
+  for (let i = 0; i < vs.length; i++) {
+    const v = vs[i];
+    if (occ.has(K(v.rx + 1, v.y, v.rz)) && occ.has(K(v.rx, v.y + 1, v.rz)) && occ.has(K(v.rx, v.y, v.rz + 1))) continue;
+    v.ax = (v.rx - v.rz) * 4; v.ay = (v.rx + v.rz) * 2 - (v.y + 1) * 4; v.i = i;
+    minX = Math.min(minX, v.ax - 4); maxX = Math.max(maxX, v.ax + 4); minY = Math.min(minY, v.ay); maxY = Math.max(maxY, v.ay + 8);
+    list.push(v);
+  }
+  list.sort((a, b) => (a.rx + a.y + a.rz) - (b.rx + b.y + b.rz));
+  const pad = 12, top = 40;
+  const W = maxX - minX + pad * 2, H = maxY - minY + pad + top, OX = pad - minX, OY = top - minY;
+  const img = new ImageData(W, H), buf = new Uint32Array(img.data.buffer), ids = new Int32Array(W * H);
+  const sideL = night ? .78 : .86, sideR = night ? .6 : .7;
+  for (const v of list) {
+    const [r, g, b] = rgb(v.c);
+    const glow = v.w >= 0 && v.c !== WORLDS[model.world].pal.unlit;
+    const cTop = pack(r, g, b), cL = glow ? pack(r * .95, g * .95, b * .95) : pack(r * sideL, g * sideL, b * sideL), cR = glow ? pack(r * .85, g * .85, b * .85) : pack(r * sideR, g * sideR, b * sideR);
+    const x0 = v.ax + OX - 4, y0 = v.ay + OY, id = v.i + 1;
+    for (let c = 0; c < 8; c++) {
+      const u = U[c], l = 4 - u, px = x0 + c;
+      for (let yy = u; yy < l + 4; yy++) { const o = (y0 + yy) * W + px; buf[o] = yy < l ? cTop : c < 4 ? cL : cR; ids[o] = id; }
+    }
+  }
+  // edge light: a 1px rim where a top face meets open air reads as pixel-art outline
+  const rim = night ? .35 : .55;
+  for (let y = 1; y < H; y++) for (let x = 0; x < W; x++) {
+    const o = y * W + x, above = o - W;
+    if (ids[o] && !ids[above]) { const p = buf[o]; buf[o] = pack(Math.round((p & 255) * (1 + rim * .3)), Math.round(((p >> 8) & 255) * (1 + rim * .3)), Math.round(((p >> 16) & 255) * (1 + rim * .3))); }
+  }
+  // what's visible: lit windows (for glow + hover) and open water (for sparkle)
+  const lights = new Map(), water = [];
+  for (const v of list) {
+    if (v.w >= 0 && v.w < model.stats.sentences.length && !lights.has(v.w)) {
+      const cx = v.ax + OX, cy = v.ay + OY + 4;
+      if (ids[cy * W + cx] === v.i + 1 || ids[cy * W + cx - 1] === v.i + 1) lights.set(v.w, { x: cx, y: cy + (v.y % 2 ? 0 : 1) });
+    }
+  }
+  for (let o = 0; o < W * H; o += 3) { const id = ids[o]; if (id && vs[id - 1].kind === 2) water.push(o); }
+  let smoke = null;
+  if (model.smoke) { const [sx, sy, sz] = model.smoke, [rx, rz] = rot(sx, sz); smoke = { x: (rx - rz) * 4 + OX, y: (rx + rz) * 2 - sy * 4 + OY }; }
+  const cv = document.createElement('canvas'); cv.width = W; cv.height = H; cv.getContext('2d').putImageData(img, 0, 0);
+  art = { canvas: cv, W, H, ids, lights, water, smoke };
+}
+
+/* ─────────── the living scene ─────────── */
+const canvas = $('world'), ctx = canvas.getContext('2d');
+const cam = { zoom: 0, panX: 0, panY: 0, s: 1, ox: 0, oy: 0 };
+let fade = null, sparks = [], bursts = [], blooms = new Map(), glints = [], hoverW = -1, last = 0, rafOn = false;
+const R = (a => () => (a = (a * 16807) % 2147483647) / 2147483647)(7);
+const stars = Array.from({ length: 90 }, () => ({ x: R(), y: R() * .75, p: R() * 6.28, b: R() }));
+const flies = Array.from({ length: 10 }, () => ({ x: R(), y: R(), p: R() * 6.28 }));
+const flakes = Array.from({ length: 90 }, () => ({ x: R(), y: R(), v: .4 + R() * .6, d: R() * 6.28 }));
+const clouds = Array.from({ length: 5 }, (_, i) => ({ x: R(), y: .12 + i * .17 + R() * .06, w: 14 + Math.floor(R() * 18), v: .004 + R() * .006 }));
+const birds = Array.from({ length: 3 }, (_, i) => ({ y: .14 + R() * .2, o: R(), v: .025 + R() * .02, i }));
+let puffs = [];
+
+function layout() {
+  const r = canvas.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2);
+  const cw = Math.round(r.width * dpr), ch = Math.round(r.height * dpr);
+  if (canvas.width !== cw || canvas.height !== ch) { canvas.width = cw; canvas.height = ch; }
+  if (!art) return;
+  const small = r.width < 560, mt = (small ? 70 : 96) * dpr, mb = (small ? 64 : 80) * dpr, mx = (small ? 12 : 40) * dpr;
+  const fit = Math.max(1, Math.floor(Math.min((cw - mx * 2) / art.W, (ch - mt - mb) / art.H)));
+  cam.s = Math.max(1, Math.min(14, fit + cam.zoom));
+  cam.ox = Math.round(cw / 2 - art.W * cam.s / 2 + cam.panX * dpr);
+  cam.oy = Math.round(mt + (ch - mt - mb) / 2 - art.H * cam.s / 2 + cam.panY * dpr);
+  cam.dpr = dpr; cam.cw = cw; cam.ch = ch;
+}
+const px = (x, y, w, h) => ctx.fillRect(cam.ox + x * cam.s, cam.oy + y * cam.s, w * cam.s, h * cam.s);
+
+function draw(t) {
+  layout();
+  if (!art) return;
+  const W = WORLDS[model.world], p = W.pal, s = cam.s, cw = cam.cw, ch = cam.ch, time = calm ? 0 : t / 1000;
+  ctx.imageSmoothingEnabled = false;
+  const g = ctx.createLinearGradient(0, 0, 0, ch); g.addColorStop(0, W.sky[0]); g.addColorStop(1, W.sky[1]);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, cw, ch);
+  const dot = Math.max(2, Math.round(s * .75));
+
+  if (W.night) for (const st of stars) {
+    const a = model.world === 'lamp' ? .25 : .35 + .5 * (.5 + .5 * Math.sin(time * (1 + st.b) + st.p));
+    ctx.globalAlpha = st.b > .85 ? Math.min(1, a + .3) : a; ctx.fillStyle = st.b > .85 ? '#fff4d6' : '#d8cfee';
+    const sz = st.b > .85 ? dot * 1.5 : dot; ctx.fillRect(Math.round(st.x * cw / dot) * dot, Math.round(st.y * ch / dot) * dot, sz, sz);
+  }
+  ctx.globalAlpha = 1;
+  if (!W.night || model.style === 'sky') {
+    ctx.fillStyle = W.night ? 'rgba(185,169,217,.10)' : 'rgba(255,255,255,.75)';
+    for (const c of clouds) {
+      const span = cw + c.w * s * 4, x = ((c.x * span + time * c.v * cw) % span) - c.w * s * 2, y = Math.round(c.y * ch / s) * s;
+      const u = s * 2, bx = Math.round(x / u) * u; ctx.fillRect(bx, y, c.w * u, u * 2); ctx.fillRect(bx + u * 2, y - u * 2, Math.round(c.w * .6) * u, u * 2); ctx.fillRect(bx + u * 5, y - u * 3, Math.round(c.w * .3) * u, u);
+    }
+  }
+  if (!W.night && !calm) {
+    ctx.fillStyle = model.world === 'sun' ? '#6b5a3a' : '#3d5868';
+    for (const b of birds) {
+      const x = ((b.o + time * b.v) % 1.3 - .15) * cw, y = b.y * ch + Math.sin(time * .7 + b.i) * 10 * cam.dpr, f = Math.floor(time * 4 + b.i) % 2, u = dot;
+      const bx = Math.round(x / u) * u, by = Math.round(y / u) * u;
+      ctx.fillRect(bx, by, u, u); ctx.fillRect(bx - u, by - (f ? u : 0), u, u); ctx.fillRect(bx + u, by - (f ? u : 0), u, u); ctx.fillRect(bx - 2 * u, by - (f ? 2 * u : u), u, u); ctx.fillRect(bx + 2 * u, by - (f ? 2 * u : u), u, u);
+    }
+  }
+
+  // ground shadow under the diorama
+  ctx.save(); const skyS = model.style === 'sky'; ctx.globalAlpha = W.night ? (skyS ? .28 : .4) : (skyS ? .1 : .14); ctx.fillStyle = W.night ? '#000' : '#5a6a78';
+  ctx.beginPath(); ctx.ellipse(cam.ox + art.W * s / 2, cam.oy + art.H * s - (skyS ? 0 : 14 * s), art.W * s * (skyS ? .26 : .4), art.W * s * (skyS ? .03 : .06), 0, 0, 6.29); ctx.fill(); ctx.restore();
+
+  const bob = model.style === 'sky' && !calm ? Math.round(Math.sin(time * .8) * 1.5) : 0;
+  ctx.drawImage(art.canvas, cam.ox, cam.oy + bob * s, art.W * s, art.H * s);
+  if (fade) { const k = 1 - (t - fade.t0) / 400; if (k > 0 && fade.W === art.W && fade.H === art.H) { ctx.globalAlpha = k; ctx.drawImage(fade.canvas, cam.ox, cam.oy + bob * s, art.W * s, art.H * s); ctx.globalAlpha = 1; } else fade = null; }
+  const oyb = cam.oy; cam.oy += bob * s;
+
+  // window light: soft halos at night, a bloom when a sentence lands, a ring on hover
+  for (const [w, L] of art.lights) {
+    const bl = blooms.get(w), k = bl ? Math.max(0, 1 - (t - bl) / 650) : 0;
+    if (bl && k <= 0) blooms.delete(w);
+    if (W.night) { ctx.fillStyle = p.lit; ctx.globalAlpha = .12 + .06 * Math.sin(time * 2.3 + w * 1.7) + k * .5; px(L.x - 2, L.y - 2, 4, 5); ctx.globalAlpha = .08 + k * .3; px(L.x - 4, L.y - 3, 8, 7); }
+    else if (k > 0) { ctx.fillStyle = '#fff'; ctx.globalAlpha = k * .8; px(L.x - 2, L.y - 2, 4, 5); }
+    if (w === hoverW) { ctx.globalAlpha = .9; ctx.fillStyle = getComputedStyle(document.documentElement).getPropertyValue('--accent'); px(L.x - 3, L.y - 4, 6, 1); px(L.x - 3, L.y + 3, 6, 1); px(L.x - 3, L.y - 3, 1, 6); px(L.x + 2, L.y - 3, 1, 6); }
+    ctx.globalAlpha = 1;
+  }
+
+  if (!calm) {
+    // water glints
+    if (art.water.length && Math.random() < .35) glints.push({ o: art.water[(Math.random() * art.water.length) | 0], t0: t });
+    glints = glints.filter(gl => t - gl.t0 < 900);
+    ctx.fillStyle = W.night ? '#cfc6f0' : '#ffffff';
+    for (const gl of glints) { const k = 1 - Math.abs((t - gl.t0) / 450 - 1); ctx.globalAlpha = k * (W.night ? .5 : .85); const x = gl.o % art.W, y = (gl.o / art.W) | 0; px(x, y, 2, 1); }
+    ctx.globalAlpha = 1;
+    // chimney smoke
+    if (art.smoke) {
+      if (Math.random() < .08) puffs.push({ t0: t, dx: Math.random() * 2 });
+      puffs = puffs.filter(f => t - f.t0 < 4200);
+      ctx.fillStyle = p.smoke;
+      for (const f of puffs) { const a = (t - f.t0) / 4200, z = a < .3 ? 1 : 2; ctx.globalAlpha = (1 - a) * (W.night ? .35 : .6); px(Math.round(art.smoke.x + f.dx + a * 10 + Math.sin(a * 6) * 1.5), Math.round(art.smoke.y - 2 - a * 34), z, z); }
+      ctx.globalAlpha = 1;
+    }
+    // fireflies
+    if (W.night) for (const f of flies) {
+      const x = art.W * (.18 + .64 * (.5 + .45 * Math.sin(time * .21 + f.p * 3 + f.x * 9))), y = art.H * (.55 + .3 * (.5 + .5 * Math.sin(time * .17 + f.y * 9)));
+      ctx.globalAlpha = Math.max(0, Math.sin(time * 1.6 + f.p)); ctx.fillStyle = model.world === 'lamp' ? '#ffcf6a' : '#e9f59a'; px(Math.round(x), Math.round(y), 1, 1);
+      ctx.globalAlpha *= .25; px(Math.round(x) - 1, Math.round(y) - 1, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+  }
+  // sparks: each finished word flies home as a mote of light
+  sparks = sparks.filter(k => t - k.t0 < k.d);
+  for (const k of sparks) {
+    const a = (t - k.t0) / k.d;
+    for (let j = 0; j < 5; j++) {
+      const b = Math.max(0, a - j * .035), e = 1 - (1 - b) ** 3, tx = cam.ox + k.tx * s, ty = cam.oy + k.ty * s;
+      const mx = (k.fx + tx) / 2, my = Math.min(k.fy, ty) - ch * .18;
+      const x = (1 - e) ** 2 * k.fx + 2 * (1 - e) * e * mx + e * e * tx, y = (1 - e) ** 2 * k.fy + 2 * (1 - e) * e * my + e * e * ty;
+      ctx.globalAlpha = (1 - j / 5) * (a > .92 ? (1 - a) / .08 : 1); ctx.fillStyle = j ? p.lit : '#ffffff';
+      const sz = j ? s : s * 2; ctx.fillRect(Math.round(x / s) * s - sz / 2, Math.round(y / s) * s - sz / 2, sz, sz);
+    }
+    if (a > .97 && !k.done) { k.done = 1; bursts.push({ x: k.tx, y: k.ty, t0: t }); }
+  }
+  bursts = bursts.filter(b => t - b.t0 < 500);
+  for (const b of bursts) { const a = (t - b.t0) / 500, r = Math.round(1 + a * 4); ctx.globalAlpha = 1 - a; ctx.fillStyle = p.lit; px(b.x - r, b.y, 1, 1); px(b.x + r, b.y, 1, 1); px(b.x, b.y - r, 1, 1); px(b.x, b.y + r, 1, 1); }
+  ctx.globalAlpha = 1;
+  cam.oy = oyb;
+  if (snowing()) {
+    ctx.fillStyle = '#ffffff';
+    for (const f of flakes) {
+      const y = ((f.y + time * .04 * f.v) % 1) * ch, x = ((f.x + Math.sin(time * .5 + f.d) * .01) % 1) * cw;
+      ctx.globalAlpha = W.night ? .55 : .9; ctx.fillRect(Math.round(x / dot) * dot, Math.round(y / dot) * dot, dot * (f.v > .8 ? 2 : 1), dot * (f.v > .8 ? 2 : 1));
+    }
+    ctx.globalAlpha = 1;
+  }
+}
+
+function loop(t) {
+  if (document.hidden) { rafOn = false; return; }
+  if (t - last > 30) { last = t; draw(t); }
+  requestAnimationFrame(loop);
+}
+function kick() { if (calm) { requestAnimationFrame(t => draw(t)); return; } if (!rafOn) { rafOn = true; requestAnimationFrame(loop); } }
+document.addEventListener('visibilitychange', () => { if (!document.hidden) kick(); });
+
+/* ─────────── wiring ─────────── */
+let prevLevel = -1, prevSentences = 0;
+function refresh(opts = {}) {
+  if (opts.fade && art) fade = { canvas: art.canvas, W: art.W, H: art.H, t0: performance.now() };
+  const before = model.stats;
+  build(); raster(); ui();
+  const st = model.stats;
+  if (opts.typing && before) {
+    if (st.level > before.level) herald(STAGES[st.level]);
+    if (st.sentences.length > before.sentences.length) { const w = st.sentences.length - 1; blooms.set(w, performance.now()); }
+  }
+  kick();
+}
+function ui() {
+  const pg = page(), st = model.stats, world = worldName();
+  document.documentElement.dataset.world = world;
+  $('words').textContent = st.words.toLocaleString();
+  $('stageText').textContent = STAGES[st.level];
+  const next = THRESHOLDS[st.level + 1];
+  $('fill').style.width = (next ? Math.min(100, (st.words - THRESHOLDS[st.level]) / (next - THRESHOLDS[st.level]) * 100) : 100) + '%';
+  $('bar').title = next ? `${next - st.words} more words to ${NEXT[st.level]}` : 'Complete. Keep writing.';
+  $('title').placeholder = st.name;
+  $('castle').textContent = pg.title.trim() || st.name;
+  $('chapter').textContent = st.words ? `${Math.min(st.sentences.length, model.windows)} of ${model.windows} windows lit` : '';
+  document.querySelectorAll('[data-style]').forEach(b => { b.classList.toggle('on', b.dataset.style === pg.style); b.setAttribute('aria-pressed', b.dataset.style === pg.style); });
+  document.querySelectorAll('#worlds [data-world]').forEach(b => { b.classList.toggle('on', b.dataset.world === db.world); b.setAttribute('aria-pressed', b.dataset.world === db.world); });
+  $('snow').setAttribute('aria-checked', snowing());
+  $('spin').setAttribute('aria-checked', !!db.spin);
+  document.title = `${pg.title.trim() || st.name} · Wordkeep`;
+}
+let heraldT;
+function herald(text) { const h = $('herald'); h.textContent = text; h.classList.remove('go'); void h.offsetWidth; h.classList.add('go'); }
+
+function loadPage() { const pg = page(); $('text').value = pg.text; $('title').value = pg.title; cam.zoom = 0; cam.panX = cam.panY = 0; refresh(); }
+
+let buildT;
+$('text').addEventListener('input', e => {
+  const pg = page(), ta = e.target; pg.text = ta.value; pg.updated = Date.now(); saveSoon();
+  const i = ta.selectionStart, ch = ta.value[i - 1], prev = ta.value[i - 2];
+  if (ch && /[\s.,!?;:…]/.test(ch) && prev && /[\p{L}\p{N}]/u.test(prev) && e.inputType && e.inputType.startsWith('insert')) spark();
+  clearTimeout(buildT); buildT = setTimeout(() => refresh({ typing: true }), 140);
+});
+$('title').addEventListener('input', e => { page().title = e.target.value; page().updated = Date.now(); saveSoon(); ui(); });
+
+function spark() {
+  if (calm || !art) return;
+  layout();
+  const st = model.stats, lights = [...art.lights.entries()];
+  let target = lights.length ? lights[lights.length - 1][1] : null;
+  if (lights.length > 1 && Math.random() < .5) target = lights[(Math.random() * lights.length) | 0][1];
+  if (!target) target = { x: art.W / 2, y: art.H * .45 };
+  const stacked = innerWidth <= 700;
+  sparks.push({ t0: performance.now(), d: 760, fx: stacked ? cam.cw / 2 : 0, fy: stacked ? cam.ch : cam.ch * .62, tx: target.x, ty: target.y });
+  if (sparks.length > 14) sparks.shift();
+  kick();
+}
+
+document.querySelectorAll('[data-style]').forEach(b => b.addEventListener('click', () => { page().style = b.dataset.style; saveSoon(); cam.zoom = 0; cam.panX = cam.panY = 0; refresh(); }));
+document.querySelectorAll('#worlds [data-world]').forEach(b => b.addEventListener('click', () => { db.world = b.dataset.world; saveSoon(); refresh({ fade: true }); }));
+$('snow').addEventListener('click', () => { db.snow = snowing() ? 'off' : 'on'; saveSoon(); ui(); kick(); });
+let spinT;
+function setSpin() { clearInterval(spinT); if (db.spin) spinT = setInterval(() => { if (!document.hidden) turn(); }, 7000); }
+$('spin').addEventListener('click', () => { db.spin = !db.spin; saveSoon(); setSpin(); ui(); });
+function turn() { db.turn = (db.turn + 1) % 4; saveSoon(); if (art) fade = { canvas: art.canvas, W: art.W, H: art.H, t0: performance.now() }; raster(); kick(); }
+$('turn').addEventListener('click', turn);
+const zoom = d => { cam.zoom += d; layout(); if (cam.s === 1 && d < 0) cam.zoom -= d; kick(); };
+$('zin').addEventListener('click', () => zoom(1));
+$('zout').addEventListener('click', () => zoom(-1));
+$('fit').addEventListener('click', () => { cam.zoom = 0; cam.panX = cam.panY = 0; kick(); });
+$('focus').addEventListener('click', () => { const on = document.body.classList.toggle('focus'); $('focus').classList.toggle('on', on); setTimeout(kick, 30); });
+let wheelAcc = 0;
+canvas.addEventListener('wheel', e => { e.preventDefault(); wheelAcc += e.deltaY; if (Math.abs(wheelAcc) > 60) { zoom(wheelAcc < 0 ? 1 : -1); wheelAcc = 0; } }, { passive: false });
+
+// pan, and peek into windows
+let drag = null;
+function pick(e) {
+  if (!art) return -1;
+  const r = canvas.getBoundingClientRect(), x = Math.floor(((e.clientX - r.left) * cam.dpr - cam.ox) / cam.s), y = Math.floor(((e.clientY - r.top) * cam.dpr - cam.oy) / cam.s);
+  let best = -1, bd = 9;
+  for (const [w, L] of art.lights) { const d = Math.abs(L.x - x) + Math.abs(L.y - y); if (d < bd) { bd = d; best = w; } }
+  if (best < 0 && x >= 0 && y >= 0 && x < art.W && y < art.H) { const id = art.ids[y * art.W + x]; const v = id && model.voxels[id - 1]; if (v && v.w >= 0 && v.w < model.stats.sentences.length) best = v.w; }
+  return best;
+}
+function peek(w, e) {
+  const el = $('peek');
+  hoverW = w;
+  canvas.classList.toggle('peeking', w >= 0);
+  if (w < 0) { el.classList.remove('show'); return; }
+  const s = model.stats.sentences[w];
+  el.innerHTML = `<b>Window ${w + 1}</b>`; el.append(document.createTextNode(s.s.length > 180 ? s.s.slice(0, 177) + '…' : s.s));
+  const r = $('scene').getBoundingClientRect(), bw = Math.min(280, r.width - 24);
+  let x = e.clientX - r.left + 16, y = e.clientY - r.top + 16;
+  if (x + bw > r.width - 12) x = e.clientX - r.left - bw - 16;
+  if (y + 120 > r.height) y = e.clientY - r.top - 130;
+  el.style.left = Math.max(12, x) + 'px'; el.style.top = Math.max(12, y) + 'px'; el.classList.add('show');
+}
+canvas.addEventListener('pointerdown', e => { canvas.setPointerCapture(e.pointerId); drag = { x: e.clientX, y: e.clientY, sx: e.clientX, sy: e.clientY, moved: false }; });
+canvas.addEventListener('pointermove', e => {
+  if (drag) {
+    const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+    if (Math.abs(e.clientX - drag.sx) + Math.abs(e.clientY - drag.sy) > 5) { drag.moved = true; canvas.classList.add('drag'); peek(-1); }
+    if (drag.moved) { cam.panX += dx; cam.panY += dy; kick(); }
+    drag.x = e.clientX; drag.y = e.clientY; return;
+  }
+  if (e.pointerType === 'mouse') peek(pick(e), e);
+});
+canvas.addEventListener('pointerleave', () => { if (!drag) peek(-1); });
+canvas.addEventListener('pointerup', e => {
+  const tapped = drag && !drag.moved; drag = null; canvas.classList.remove('drag');
+  if (!tapped) return;
+  const w = pick(e);
+  if (w < 0) { peek(-1); return; }
+  if (e.pointerType !== 'mouse' && hoverW !== w) { peek(w, e); return; }   // touch: first tap peeks, second jumps
+  jump(w);
+});
+function jump(w) {
+  const s = model.stats.sentences[w], ta = $('text');
+  peek(-1);
+  if (document.body.classList.contains('focus')) $('focus').click();
+  ta.focus(); ta.setSelectionRange(s.start, s.start); ta.blur(); ta.focus(); ta.setSelectionRange(s.start, s.end);
+  const lh = parseFloat(getComputedStyle(ta).lineHeight) || 28, chars = Math.max(20, Math.floor(ta.clientWidth / 9.1));
+  const lines = ta.value.slice(0, s.start).split('\n').reduce((n, l) => n + Math.max(1, Math.ceil(l.length / chars)), 0) - 1;
+  ta.scrollTop = Math.max(0, lines * lh - ta.clientHeight / 3);
+}
+
+// sheets
+function openSheet(id) { const s = $(id); s.classList.add('open'); s.setAttribute('aria-hidden', 'false'); if (id === 'keepsSheet') listKeeps(); setTimeout(() => s.querySelector('[data-close]').focus(), 50); }
+function closeSheets() { document.querySelectorAll('.backdrop.open').forEach(s => { s.classList.remove('open'); s.setAttribute('aria-hidden', 'true'); }); }
+document.querySelectorAll('.backdrop').forEach(b => b.addEventListener('click', e => { if (e.target === b || e.target.closest('[data-close]')) closeSheets(); }));
+$('openKeeps').addEventListener('click', () => openSheet('keepsSheet'));
+$('openSettings').addEventListener('click', () => openSheet('settingsSheet'));
+function listKeeps() {
+  const ul = $('keepList'); ul.textContent = '';
+  [...db.pages].sort((a, b) => b.updated - a.updated).forEach(pg => {
+    const st = analyze(pg.text, pg.style), li = document.createElement('li');
+    li.className = 'keep' + (pg.id === db.current ? ' on' : '');
+    const open = document.createElement('button'), n = document.createElement('span'), w = document.createElement('span');
+    n.className = 'kn'; n.textContent = pg.title.trim() || st.name; w.className = 'kw'; w.textContent = st.words.toLocaleString() + 'w';
+    open.append(n, w); open.addEventListener('click', () => { persist(); db.current = pg.id; saveSoon(); loadPage(); closeSheets(); });
+    li.append(open);
+    if (db.pages.length > 1) {
+      const del = document.createElement('button'); del.className = 'del'; del.textContent = '✕'; del.setAttribute('aria-label', 'Delete ' + n.textContent);
+      del.addEventListener('click', () => { if (!del.dataset.arm) { del.dataset.arm = 1; del.textContent = 'Delete?'; del.style.width = 'auto'; del.style.padding = '0 12px'; del.style.borderRadius = '999px'; del.style.color = 'var(--accent)'; return; } db.pages = db.pages.filter(p => p.id !== pg.id); if (db.current === pg.id) { db.current = db.pages[0].id; loadPage(); } persist(); listKeeps(); });
+      li.append(del);
+    }
+    ul.append(li);
+  });
+}
+function addKeep(text) { const pg = mkPage(text, '', page().style); db.pages.push(pg); db.current = pg.id; persist(); loadPage(); closeSheets(); if (!text) $('text').focus(); }
+$('newKeep').addEventListener('click', () => addKeep(''));
+$('sampleKeep').addEventListener('click', () => addKeep(SAMPLE));
+function download(blob, name) { const a = document.createElement('a'), url = URL.createObjectURL(blob); a.href = url; a.download = name; document.body.append(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000); }
+const slug = () => ($('castle').textContent || 'wordkeep').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'wordkeep';
+$('exportTxt').addEventListener('click', () => { const pg = page(); download(new Blob([(pg.title.trim() ? pg.title.trim() + '\n\n' : '') + pg.text], { type: 'text/plain;charset=utf-8' }), slug() + '.txt'); });
+$('exportPng').addEventListener('click', () => {
+  const k = 4, W = WORLDS[model.world], c = document.createElement('canvas'); c.width = (art.W + 24) * k; c.height = (art.H + 24) * k;
+  const x = c.getContext('2d'); x.imageSmoothingEnabled = false;
+  const g = x.createLinearGradient(0, 0, 0, c.height); g.addColorStop(0, W.sky[0]); g.addColorStop(1, W.sky[1]); x.fillStyle = g; x.fillRect(0, 0, c.width, c.height);
+  x.drawImage(art.canvas, 12 * k, 12 * k, art.W * k, art.H * k);
+  c.toBlob(b => b && download(b, `${slug()}-${model.world}.png`), 'image/png');
+});
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') { if (document.querySelector('.backdrop.open')) closeSheets(); else if (document.body.classList.contains('focus')) $('focus').click(); peek(-1); }
+  if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === 's') { e.preventDefault(); persist(); herald('Kept'); }
+});
+window.addEventListener('pagehide', persist);
+new ResizeObserver(() => kick()).observe($('scene'));
+// the clock world drifts on its own: check every minute
+setInterval(() => { if (db.world === 'auto' && clockWorld() !== model.world) refresh({ fade: true }); }, 60000);
+
+setSpin();
+loadPage();
+</script>
+</body>
+</html>
