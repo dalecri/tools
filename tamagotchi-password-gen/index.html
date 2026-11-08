@@ -3,500 +3,542 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Tamagotchi Password Generator</title>
-<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+<title>Tamago Pass</title>
+<meta name="description" content="A password generator raised like a virtual pet. Stronger passwords evolve your pet.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Bungee+Shade&family=Silkscreen:wght@400;700&display=swap" rel="stylesheet">
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
   :root {
-    --bg: #bfb895;
-    --bg-alt: #b8b08e;
-    --bezel: #8a8a7a;
-    --bezel-dark: #6a6a5e;
-    --bezel-light: #d0ccb8;
-    --screen-bg: #2a2a2e;
-    --screen-deep: #0e0e10;
-    --text: #c8c8a0;
-    --text-dim: #5a5a4e;
-    --input-bg: #1a1a1e;
-    --bar-red: #c14040;
-    --bar-yellow: #d4a830;
-    --bar-green: #7bac3e;
+    --peg: #d9c39a;
+    --peg-hole: #8b7350;
+    --lcd: #a7b98c;
+    --lcd-ink: #1e2a1a;
+    --lcd-ghost: rgba(30, 42, 26, 0.07);
+    --ink: #1c1426;
+  }
+
+  /* ---------- Shell themes ---------- */
+  body[data-shell="cherry"] {
+    --shell: #ff5d7d; --shell-hi: #ffb0c0; --shell-lo: #c9264b;
+    --face: #ffe3ea; --face-lo: #f5bccb;
+    --card: #2b59c3; --card-hi: #4f7ce6; --ray: rgba(255,255,255,0.09);
+    --btn: #ffd23f; --btn-lo: #c99b00; --pcb: 0;
+  }
+  body[data-shell="grape"] {
+    --shell: rgba(142, 82, 222, 0.72); --shell-hi: rgba(214, 180, 255, 0.85); --shell-lo: rgba(84, 34, 150, 0.9);
+    --face: rgba(238, 226, 255, 0.92); --face-lo: rgba(196, 170, 240, 0.95);
+    --card: #ff9f1c; --card-hi: #ffbf5e; --ray: rgba(255,255,255,0.14);
+    --btn: #3ee6c1; --btn-lo: #10a283; --pcb: 0.55;
+  }
+  body[data-shell="lime"] {
+    --shell: #8bd94a; --shell-hi: #c8f59a; --shell-lo: #4f9a1c;
+    --face: #f3ffe3; --face-lo: #cfeeb0;
+    --card: #e63973; --card-hi: #ff6b98; --ray: rgba(255,255,255,0.10);
+    --btn: #ff7a2f; --btn-lo: #c24c08; --pcb: 0;
+  }
+  body[data-shell="ice"] {
+    --shell: rgba(170, 214, 255, 0.55); --shell-hi: rgba(240, 250, 255, 0.9); --shell-lo: rgba(90, 140, 200, 0.75);
+    --face: rgba(245, 251, 255, 0.9); --face-lo: rgba(200, 225, 248, 0.95);
+    --card: #1f1f3a; --card-hi: #3a3a6b; --ray: rgba(130,200,255,0.08);
+    --btn: #ff4fa3; --btn-lo: #b4156b; --pcb: 0.7;
   }
 
   body {
     min-height: 100vh;
     display: flex;
+    flex-direction: column;
     align-items: center;
-    justify-content: center;
-    background: repeating-conic-gradient(var(--bg) 0% 25%, var(--bg-alt) 0% 50%) 0 0 / 8px 8px;
-    font-family: 'Press Start 2P', monospace;
-    padding: 20px;
+    padding: 0 16px 40px;
+    font-family: 'Silkscreen', monospace;
+    color: var(--ink);
+    background-color: var(--peg);
+    background-image:
+      radial-gradient(circle at 12px 12px, var(--peg-hole) 3px, rgba(0,0,0,0.12) 4px, transparent 5px),
+      linear-gradient(180deg, rgba(255,255,255,0.12), rgba(0,0,0,0.08));
+    background-size: 24px 24px, 100% 100%;
+    overflow-x: hidden;
   }
 
-  /* CRT Monitor Shell */
-  .monitor {
-    width: 400px;
-    background: var(--bezel);
-    border-radius: 18px;
-    border: 3px solid var(--bezel-dark);
+  /* ---------- Peg hook ---------- */
+  .hook {
+    width: 10px; height: 54px;
+    background: linear-gradient(90deg, #6d6d6d, #e8e8e8 40%, #9a9a9a 70%, #5b5b5b);
+    border-radius: 0 0 5px 5px;
+    box-shadow: 4px 6px 6px rgba(0,0,0,0.25);
+    position: relative; z-index: 3;
+  }
+  .hook::before { /* backplate */
+    content: ''; position: absolute; top: -2px; left: 50%; transform: translateX(-50%);
+    width: 26px; height: 10px; border-radius: 3px;
+    background: linear-gradient(#bbb, #777);
+  }
+
+  /* ---------- Blister card ---------- */
+  .card {
+    position: relative;
+    width: min(420px, 100%);
+    margin-top: -18px;
+    border-radius: 22px;
+    padding: 46px 22px 22px;
+    background:
+      repeating-conic-gradient(from 0deg at 50% 52%, var(--ray) 0deg 7deg, transparent 7deg 14deg),
+      radial-gradient(circle at 50% 52%, var(--card-hi), var(--card) 70%);
     box-shadow:
-      inset 0 2px 0 var(--bezel-light),
-      inset 0 -2px 0 var(--bezel-dark),
-      0 10px 40px rgba(0,0,0,0.55);
+      inset 0 0 0 4px rgba(255,255,255,0.18),
+      0 18px 30px rgba(60, 40, 10, 0.35),
+      0 2px 0 rgba(0,0,0,0.2);
+    transform: rotate(-1.2deg);
+    transform-origin: 50% 0;
+    animation: sway 6s ease-in-out infinite;
+    transition: background 0.5s;
+  }
+  @keyframes sway { 0%,100% { transform: rotate(-1.2deg); } 50% { transform: rotate(0.8deg); } }
+
+  .euro-slot {
+    position: absolute; top: 14px; left: 50%; transform: translateX(-50%);
+    width: 64px; height: 18px; border-radius: 9px;
+    background: var(--peg);
+    box-shadow: inset 0 3px 4px rgba(0,0,0,0.45);
+  }
+  .euro-slot::after { /* little round part of the slot */
+    content: ''; position: absolute; left: 50%; top: -7px; transform: translateX(-50%);
+    width: 20px; height: 20px; border-radius: 50%; background: var(--peg);
+    box-shadow: inset 0 3px 4px rgba(0,0,0,0.45);
   }
 
-  .monitor-top { height: 16px; }
-
-  .screen-recess {
-    margin: 0 14px;
-    background: var(--screen-deep);
-    border-radius: 8px;
-    padding: 5px;
-    box-shadow: inset 0 0 16px rgba(0,0,0,0.9);
-  }
-
-  .screen {
-    background: var(--screen-bg);
-    border-radius: 4px;
-    position: relative;
-    overflow: hidden;
-    display: flex;
-    flex-direction: column;
-  }
-
-  /* Scanlines */
-  .screen::before {
-    content: '';
-    position: absolute; inset: 0;
-    pointer-events: none; z-index: 10;
-    background: repeating-linear-gradient(
-      0deg, transparent, transparent 2px,
-      rgba(0,0,0,0.1) 2px, rgba(0,0,0,0.1) 4px
-    );
-    border-radius: 4px;
-  }
-
-  /* Vignette */
-  .screen::after {
-    content: '';
-    position: absolute; inset: 0;
-    pointer-events: none; z-index: 9;
-    border-radius: 4px;
-    box-shadow: inset 0 0 50px rgba(0,0,0,0.45);
-  }
-
-  /* Checkered header bar */
-  .dither-bar {
-    height: 20px;
-    background-image: repeating-conic-gradient(
-      rgba(90,90,78,0.33) 0% 25%, transparent 0% 50%
-    );
-    background-size: 6px 6px;
-    border-bottom: 1px solid var(--text-dim);
-  }
-
-  /* Title bar */
-  .title-bar {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 10px;
-    border-bottom: 1px solid rgba(90,90,78,0.27);
-  }
-  .title-bar-text { font-size: 7px; color: var(--text); letter-spacing: 1px; }
-  .title-bar-btns { display: flex; gap: 4px; }
-  .title-bar-btn {
-    width: 10px; height: 10px;
-    border: 1px solid var(--text-dim);
-    display: flex; align-items: center; justify-content: center;
-    font-size: 6px; color: var(--text-dim); line-height: 1;
-  }
-
-  /* Creature info */
-  .creature-info {
-    text-align: center;
-    padding: 12px 0 0 0;
-  }
-  .creature-name { font-size: 10px; color: var(--text); letter-spacing: 2px; }
-  .creature-level { font-size: 6px; color: var(--text-dim); margin-top: 4px; letter-spacing: 1px; }
-
-  /* Pet viewport */
-  .pet-viewport {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    min-height: 200px;
-    position: relative;
-    padding: 8px 0;
-  }
-
-  /* Dithered floor */
-  .pet-viewport::after {
-    content: '';
-    position: absolute;
-    bottom: 0; left: 0; right: 0;
-    height: 20px;
-    background-image: repeating-conic-gradient(
-      rgba(90,90,78,0.13) 0% 25%, transparent 0% 50%
-    );
-    background-size: 4px 4px;
-  }
-
-  /* Pixel grid for the pet */
-  .pixel-grid {
-    position: relative;
-    image-rendering: pixelated;
-    margin: 0 auto;
-    animation: petIdle 2.5s ease-in-out infinite;
-    z-index: 1;
-  }
-  .pixel-grid.bounce { animation: petBounce 0.6s ease-in-out; }
-  .pixel-grid .px {
-    position: absolute;
-  }
-
-  @keyframes petIdle {
-    0%, 100% { transform: translateY(0); }
-    50% { transform: translateY(-5px); }
-  }
-  @keyframes petBounce {
-    0%, 100% { transform: translateY(0) scale(1); }
-    30% { transform: translateY(-14px) scale(1.06); }
-    60% { transform: translateY(3px) scale(0.97); }
-  }
-
-  /* Evolution pips */
-  .pips {
-    display: flex;
-    justify-content: center;
-    gap: 5px;
-    padding: 6px 0;
-  }
-  .pip {
-    width: 8px; height: 8px;
-    border: 1px solid var(--text-dim);
-    background: transparent;
-    transition: all 0.3s;
-  }
-  .pip.active {
-    background: var(--text);
-    border-color: var(--text);
-  }
-
-  /* Controls panel */
-  .controls {
-    border-top: 1px solid rgba(90,90,78,0.27);
-    padding: 10px 12px 12px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-  }
-
-  /* Entropy */
-  .entropy-header {
-    display: flex;
-    justify-content: space-between;
-    font-size: 6px;
-    color: var(--text-dim);
-    letter-spacing: 1px;
-    margin-bottom: 4px;
-  }
-  .entropy-track {
-    width: 100%;
-    height: 6px;
-    background: var(--input-bg);
-    border: 1px solid var(--text-dim);
-  }
-  .entropy-fill {
-    height: 100%;
-    background: var(--bar-red);
-    transition: width 0.3s, background 0.3s;
-    width: 0%;
-  }
-
-  /* Input */
-  .pw-input-wrap {
-    border: 2px solid var(--text-dim);
-    border-top-color: #3a3a2e;
-    border-left-color: #3a3a2e;
-    border-bottom-color: #7a7a6e;
-    border-right-color: #7a7a6e;
-    background: var(--input-bg);
-    padding: 6px 8px;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-  .pw-prompt { font-size: 7px; color: var(--text-dim); }
-  .pw-input {
-    flex: 1;
-    background: none;
-    border: none;
-    outline: none;
-    color: var(--text);
-    font-size: 8px;
-    font-family: 'Press Start 2P', monospace;
-    letter-spacing: 1px;
-    padding: 0;
-  }
-  .pw-input::placeholder { color: var(--text-dim); }
-
-  /* Buttons */
-  .btn-row { display: flex; gap: 4px; }
-  .retro-btn {
-    flex: 1;
-    padding: 8px 0;
-    background: var(--input-bg);
-    border: 2px solid var(--text-dim);
-    border-top-color: #7a7a6e;
-    border-left-color: #7a7a6e;
-    color: var(--text);
-    font-size: 7px;
-    font-family: 'Press Start 2P', monospace;
-    letter-spacing: 1px;
-    cursor: pointer;
-    image-rendering: pixelated;
-  }
-  .retro-btn:active {
-    border-top-color: #3a3a2e;
-    border-left-color: #3a3a2e;
-    border-bottom-color: #7a7a6e;
-    border-right-color: #7a7a6e;
-    background: #3a3a3e;
-  }
-
-  /* Monitor bottom */
-  .monitor-bottom {
-    display: flex;
-    justify-content: center;
-    padding: 12px 0 10px 0;
-  }
-  .power-btn {
-    width: 26px; height: 26px;
-    border: 2px solid var(--bezel-dark);
-    border-radius: 4px;
-    display: flex; align-items: center; justify-content: center;
-    background: var(--bezel);
-    box-shadow: inset 0 1px 0 var(--bezel-light);
-  }
-  .power-icon {
-    width: 12px; height: 12px;
-    border: 2px solid var(--bezel-dark);
-    border-radius: 50%;
-    position: relative;
-  }
-  .power-icon::before {
-    content: '';
-    position: absolute;
-    top: -1px; left: 50%;
-    transform: translateX(-50%);
-    width: 2px; height: 5px;
-    background: var(--bezel-dark);
-  }
   .brand {
     text-align: center;
-    padding-bottom: 10px;
-    font-size: 5px;
-    color: var(--bezel-dark);
-    letter-spacing: 3px;
+    font-family: 'Bungee Shade', 'Bungee', sans-serif;
+    font-size: clamp(38px, 11vw, 52px);
+    line-height: 0.95;
+    color: #fff;
+    letter-spacing: 1px;
+    text-shadow: 3px 3px 0 var(--ink);
+  }
+  .tagline {
+    margin: 8px auto 0;
+    width: fit-content;
+    padding: 4px 10px;
+    background: var(--ink);
+    color: #fff;
+    font-size: 11px;
+    letter-spacing: 1px;
+    transform: rotate(-2deg);
+  }
+
+  .starburst {
+    position: absolute;
+    top: 64px; right: -14px;
+    width: 92px; height: 92px;
+    display: grid; place-items: center;
+    text-align: center;
+    font-family: 'Bungee', sans-serif;
+    font-size: 12px; line-height: 1.05;
+    color: var(--ink);
+    background: #ffe600;
+    clip-path: polygon(50% 0%, 61% 14%, 79% 9%, 80% 27%, 97% 33%, 86% 49%, 97% 66%, 79% 72%, 78% 91%, 61% 85%, 50% 100%, 39% 85%, 21% 91%, 21% 72%, 3% 66%, 14% 49%, 3% 33%, 21% 27%, 21% 9%, 39% 14%);
+    transform: rotate(14deg);
+    animation: pulse 1.8s ease-in-out infinite;
+    z-index: 4;
+  }
+  @keyframes pulse { 0%,100% { transform: rotate(14deg) scale(1); } 50% { transform: rotate(14deg) scale(1.07); } }
+
+  .age {
+    position: absolute; top: 70px; left: 14px;
+    width: 46px; height: 46px; border-radius: 50%;
+    background: #fff; border: 3px solid var(--ink);
+    display: grid; place-items: center; text-align: center;
+    font-family: 'Bungee', sans-serif; font-size: 9px; line-height: 1;
+    transform: rotate(-10deg);
+    z-index: 4;
+  }
+  .age b { display: block; font-size: 15px; }
+
+  /* ---------- Plastic blister bubble ---------- */
+  .blister {
+    position: relative;
+    margin: 18px auto 0;
+    width: 100%;
+    max-width: 340px;
+    padding: 26px 0 22px;
+    border-radius: 120px 120px 46px 46px;
+    background: linear-gradient(135deg, rgba(255,255,255,0.35), rgba(255,255,255,0.06) 40%, rgba(255,255,255,0.12));
+    box-shadow:
+      inset 0 0 0 2px rgba(255,255,255,0.55),
+      inset 0 0 22px rgba(255,255,255,0.25),
+      0 6px 14px rgba(0,0,0,0.18);
+    display: flex; justify-content: center;
+  }
+  .blister::after { /* glare streak over the plastic */
+    content: '';
+    position: absolute; inset: 14px auto auto 34px;
+    width: 26px; height: 60%;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(255,255,255,0.55), rgba(255,255,255,0));
+    transform: rotate(18deg);
+    pointer-events: none; z-index: 6;
+  }
+
+  /* ---------- The egg device ---------- */
+  .device { position: relative; display: flex; flex-direction: column; align-items: center; }
+
+  .chain {
+    width: 6px; height: 22px;
+    background: radial-gradient(circle, #ddd 2px, #888 3px, transparent 3.5px) 0 0 / 6px 6px repeat-y;
+  }
+  .ring {
+    width: 24px; height: 24px; margin-bottom: -8px;
+    border-radius: 50%;
+    border: 4px solid #c9c9c9;
+    box-shadow: inset 0 0 0 1px #888, 0 0 0 1px #888;
+    position: relative; z-index: 1;
+  }
+
+  .egg {
+    position: relative;
+    width: 270px; height: 318px;
+    border-radius: 50% 50% 47% 47% / 60% 60% 40% 40%;
+    background:
+      radial-gradient(ellipse at 32% 22%, var(--shell-hi), transparent 42%),
+      radial-gradient(ellipse at 60% 90%, var(--shell-lo), transparent 60%),
+      var(--shell);
+    box-shadow:
+      inset -10px -14px 24px rgba(0,0,0,0.2),
+      inset 8px 10px 16px rgba(255,255,255,0.35),
+      0 10px 18px rgba(0,0,0,0.3);
+    display: flex; flex-direction: column; align-items: center;
+    padding-top: 44px;
+    transition: background 0.5s;
+    z-index: 2;
+  }
+  .egg::before { /* see-through circuit board on clear shells */
+    content: '';
+    position: absolute; inset: 18px 22px;
+    border-radius: inherit;
+    opacity: var(--pcb);
+    background:
+      repeating-linear-gradient(90deg, transparent 0 14px, rgba(30,120,60,0.55) 14px 16px),
+      repeating-linear-gradient(0deg, transparent 0 22px, rgba(30,120,60,0.45) 22px 24px),
+      radial-gradient(circle at 30% 70%, #c0a040 4px, transparent 5px),
+      radial-gradient(circle at 72% 64%, #c0a040 4px, transparent 5px),
+      rgba(40, 140, 80, 0.35);
+    pointer-events: none;
+    transition: opacity 0.5s;
+  }
+
+  .face {
+    position: relative;
+    width: 216px;
+    padding: 12px 0 14px;
+    border-radius: 46% 46% 40% 40% / 30% 30% 50% 50%;
+    background: linear-gradient(180deg, var(--face), var(--face-lo));
+    box-shadow: inset 0 2px 4px rgba(255,255,255,0.8), inset 0 -3px 6px rgba(0,0,0,0.12), 0 1px 2px rgba(0,0,0,0.15);
+    display: flex; flex-direction: column; align-items: center;
+    z-index: 1;
+  }
+  .face-label {
+    font-family: 'Bungee', sans-serif;
+    font-size: 10px; letter-spacing: 3px;
+    color: var(--shell-lo);
+    margin-bottom: 6px;
+  }
+
+  /* ---------- LCD ---------- */
+  .bezel {
+    padding: 7px;
+    border-radius: 12px;
+    background: #3a3a44;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.6), 0 1px 0 rgba(255,255,255,0.6);
+  }
+  .lcd {
+    position: relative;
+    width: 176px;
+    background: var(--lcd);
+    border-radius: 4px;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.25), inset 2px 2px 0 rgba(0,0,0,0.15);
+    color: var(--lcd-ink);
+    overflow: hidden;
+  }
+  .lcd::after { /* faint glass sheen */
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(160deg, rgba(255,255,255,0.18), transparent 45%);
+    pointer-events: none;
+  }
+  .lcd.invert { filter: invert(1) hue-rotate(180deg); }
+
+  .icons {
+    display: flex; justify-content: space-between;
+    padding: 4px 6px 0;
+    font-size: 9px; font-weight: 700; line-height: 1;
+  }
+  .icons span { opacity: 0.12; transition: opacity 0.15s; }
+  .icons span.on { opacity: 1; }
+
+  canvas#pet { display: block; width: 176px; height: 88px; image-rendering: pixelated; }
+
+  .stats {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 0 6px 4px;
+    font-size: 9px; line-height: 1;
+  }
+  .hearts { display: flex; gap: 2px; }
+  .heart { width: 9px; height: 8px; opacity: 0.12; }
+  .heart.on { opacity: 1; }
+  .heart svg { display: block; width: 100%; height: 100%; fill: var(--lcd-ink); }
+
+  .meter {
+    margin: 0 6px 5px;
+    height: 5px;
+    border: 1px solid var(--lcd-ink);
+    padding: 1px;
+  }
+  .meter i {
+    display: block; height: 100%; width: 0%;
+    background: repeating-linear-gradient(90deg, var(--lcd-ink) 0 3px, transparent 3px 4px);
+    transition: width 0.25s steps(8);
+  }
+
+  .pw-strip {
+    margin-top: 6px;
+    width: 176px;
+    display: flex; align-items: center; gap: 4px;
+    padding: 5px 6px;
+    background: var(--lcd);
+    border-radius: 3px;
+    box-shadow: inset 0 0 8px rgba(0,0,0,0.25), inset 1px 1px 0 rgba(0,0,0,0.15);
+  }
+  .pw-strip label { font-size: 9px; font-weight: 700; color: var(--lcd-ink); }
+  .pw-input {
+    flex: 1; min-width: 0;
+    background: none; border: none; outline: none;
+    font-family: 'Silkscreen', monospace;
+    font-size: 11px; letter-spacing: 0.5px;
+    color: var(--lcd-ink);
+  }
+  .pw-input::placeholder { color: rgba(30,42,26,0.4); }
+
+  /* ---------- Buttons ---------- */
+  .buttons {
+    display: flex; gap: 26px;
+    margin-top: 18px;
+    z-index: 1;
+  }
+  .btn-wrap { display: flex; flex-direction: column; align-items: center; gap: 5px; }
+  .btn-wrap:nth-child(2) { transform: translateY(10px); }
+  .pbtn {
+    width: 34px; height: 34px;
+    border-radius: 50%;
+    border: none;
+    cursor: pointer;
+    background: radial-gradient(circle at 35% 30%, #fff8 0 4px, transparent 6px), var(--btn);
+    box-shadow: 0 4px 0 var(--btn-lo), 0 6px 6px rgba(0,0,0,0.3), inset 0 -2px 3px rgba(0,0,0,0.15);
+    transition: transform 0.06s, box-shadow 0.06s;
+  }
+  .pbtn:active, .pbtn.pressed { transform: translateY(4px); box-shadow: 0 0 0 var(--btn-lo), 0 2px 3px rgba(0,0,0,0.3); }
+  .pbtn:focus-visible { outline: 3px dashed var(--ink); outline-offset: 3px; }
+  .btn-label {
+    font-size: 9px; font-weight: 700; letter-spacing: 1px;
+    color: var(--ink);
+    background: rgba(255,255,255,0.65);
+    padding: 1px 4px; border-radius: 3px;
+  }
+
+  .speaker {
+    margin-top: 20px;
+    display: grid; grid-template-columns: repeat(5, 4px); gap: 4px;
+    z-index: 1;
+  }
+  .speaker i { width: 4px; height: 4px; border-radius: 50%; background: rgba(0,0,0,0.3); }
+
+  /* ---------- Card bottom: collect-all strip ---------- */
+  .collect {
+    margin-top: 20px;
+    background: #fff;
+    border: 3px solid var(--ink);
+    border-radius: 12px;
+    padding: 10px 12px 12px;
+    box-shadow: 4px 4px 0 var(--ink);
+  }
+  .collect h2 {
+    font-family: 'Bungee', sans-serif;
+    font-size: 13px; letter-spacing: 1px;
+    margin-bottom: 8px;
+  }
+  .row { display: flex; align-items: center; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+  .row + .row { margin-top: 10px; }
+  .row > span { font-size: 10px; font-weight: 700; }
+  .swatches, .lens { display: flex; gap: 6px; }
+  .swatch {
+    width: 30px; height: 34px;
+    border-radius: 50% 50% 46% 46% / 60% 60% 40% 40%;
+    border: 2px solid var(--ink);
+    cursor: pointer;
+    transition: transform 0.15s;
+  }
+  .swatch:hover { transform: translateY(-3px) rotate(-6deg); }
+  .swatch[aria-pressed="true"] { box-shadow: 0 0 0 3px #fff, 0 0 0 5px var(--ink); }
+  .swatch[data-s="cherry"] { background: #ff5d7d; }
+  .swatch[data-s="grape"]  { background: linear-gradient(135deg, #c6a2ff, #8e52de); }
+  .swatch[data-s="lime"]   { background: #8bd94a; }
+  .swatch[data-s="ice"]    { background: linear-gradient(135deg, #f0faff, #9ccaf5); }
+  .chip {
+    font-family: 'Silkscreen', monospace; font-size: 11px; font-weight: 700;
+    padding: 5px 8px;
+    border: 2px solid var(--ink); border-radius: 6px;
+    background: #fff; color: var(--ink);
+    cursor: pointer;
+  }
+  .chip[aria-pressed="true"] { background: var(--ink); color: #fff; }
+  .swatch:focus-visible, .chip:focus-visible { outline: 3px dashed var(--ink); outline-offset: 2px; }
+
+  .fine {
+    margin-top: 14px;
+    font-size: 9px; line-height: 1.5;
+    color: rgba(255,255,255,0.85);
+    text-align: center;
+  }
+  .fine kbd { font-family: inherit; border: 1px solid currentColor; border-radius: 3px; padding: 0 3px; }
+
+  @media (max-width: 380px) {
+    .card { padding-left: 12px; padding-right: 12px; }
+    .blister { padding-top: 18px; padding-bottom: 12px; }
+    .device { transform: scale(0.88); margin: -18px 0 -20px; }
+    .starburst { width: 70px; height: 70px; font-size: 9px; right: -8px; top: 40px; }
+    .tagline { font-size: 10px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    .card, .starburst { animation: none; }
   }
 </style>
 </head>
-<body>
+<body data-shell="cherry">
 
-<div class="monitor">
-  <div class="monitor-top"></div>
-  <div class="screen-recess">
-    <div class="screen">
-      <div class="dither-bar"></div>
+<div class="hook" aria-hidden="true"></div>
 
-      <div class="title-bar">
-        <span class="title-bar-text">TAMAGO.EXE</span>
-        <div class="title-bar-btns">
-          <div class="title-bar-btn">-</div>
-          <div class="title-bar-btn">x</div>
-        </div>
-      </div>
+<main class="card">
+  <div class="euro-slot" aria-hidden="true"></div>
+  <div class="age" aria-hidden="true"><div><b>8+</b>AGES</div></div>
+  <div class="starburst" aria-hidden="true">NOW<br>128<br>BIT!</div>
 
-      <div class="creature-info">
-        <div class="creature-name" id="creatureName">SAD BLOB</div>
-        <div class="creature-level" id="creatureLevel">LV.1 PATHETIC</div>
-      </div>
+  <h1 class="brand">TAMAGO<br>PASS</h1>
+  <p class="tagline">raise a password. watch it evolve.</p>
 
-      <div class="pet-viewport">
-        <div class="pixel-grid" id="pixelGrid"></div>
-      </div>
-
-      <div class="pips" id="pips"></div>
-
-      <div class="controls">
-        <div>
-          <div class="entropy-header">
-            <span>ENTROPY</span>
-            <span id="entropyBits">0 BITS</span>
+  <div class="blister">
+    <div class="device">
+      <div class="chain" aria-hidden="true"></div>
+      <div class="ring" aria-hidden="true"></div>
+      <div class="egg">
+        <div class="face">
+          <div class="face-label">TAMAGO</div>
+          <div class="bezel">
+            <div class="lcd" id="lcd">
+              <div class="icons" aria-label="Character types">
+                <span id="icLower" title="lowercase">abc</span>
+                <span id="icUpper" title="uppercase">ABC</span>
+                <span id="icDigit" title="digits">123</span>
+                <span id="icSym" title="symbols">#?!</span>
+              </div>
+              <canvas id="pet" width="176" height="88" aria-label="Your password pet"></canvas>
+              <div class="meter" aria-hidden="true"><i id="meter"></i></div>
+              <div class="stats">
+                <div class="hearts" id="hearts" aria-hidden="true"></div>
+                <span id="status" aria-live="polite">EGG</span>
+              </div>
+            </div>
           </div>
-          <div class="entropy-track">
-            <div class="entropy-fill" id="entropyFill"></div>
+          <div class="pw-strip">
+            <label for="pw">PW</label>
+            <input class="pw-input" id="pw" type="password" placeholder="feed me..." autocomplete="off" spellcheck="false">
           </div>
         </div>
 
-        <div class="pw-input-wrap">
-          <span class="pw-prompt">&gt;</span>
-          <input class="pw-input" id="pwInput" type="password" placeholder="TYPE PASSWORD..." autocomplete="off" spellcheck="false">
+        <div class="buttons">
+          <div class="btn-wrap"><button class="pbtn" id="btnA" aria-label="Hatch a new password"></button><span class="btn-label">HATCH</span></div>
+          <div class="btn-wrap"><button class="pbtn" id="btnB" aria-label="Show or hide password"></button><span class="btn-label" id="peekLabel">PEEK</span></div>
+          <div class="btn-wrap"><button class="pbtn" id="btnC" aria-label="Copy password"></button><span class="btn-label">COPY</span></div>
         </div>
-
-        <div class="btn-row">
-          <button class="retro-btn" id="btnGenerate">GENERATE</button>
-          <button class="retro-btn" id="btnToggle">SHOW</button>
-          <button class="retro-btn" id="btnCopy">COPY</button>
-        </div>
+        <div class="speaker" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i><i></i></div>
       </div>
     </div>
   </div>
 
-  <div class="monitor-bottom">
-    <div class="power-btn"><div class="power-icon"></div></div>
-  </div>
-  <div class="brand">TAMAGO-OS v1.0</div>
-</div>
+  <section class="collect">
+    <h2>COLLECT ALL 4 SHELLS!</h2>
+    <div class="row">
+      <span>SHELL</span>
+      <div class="swatches" role="group" aria-label="Shell color">
+        <button class="swatch" data-s="cherry" aria-label="Cherry shell" aria-pressed="true"></button>
+        <button class="swatch" data-s="grape" aria-label="Clear grape shell" aria-pressed="false"></button>
+        <button class="swatch" data-s="lime" aria-label="Lime shell" aria-pressed="false"></button>
+        <button class="swatch" data-s="ice" aria-label="Clear ice shell" aria-pressed="false"></button>
+      </div>
+    </div>
+    <div class="row">
+      <span>HATCH LENGTH</span>
+      <div class="lens" role="group" aria-label="Generated password length">
+        <button class="chip" data-len="16" aria-pressed="false">16</button>
+        <button class="chip" data-len="20" aria-pressed="true">20</button>
+        <button class="chip" data-len="24" aria-pressed="false">24</button>
+        <button class="chip" data-len="32" aria-pressed="false">32</button>
+      </div>
+    </div>
+  </section>
+
+  <p class="fine">
+    Batteries not included. Hatched on your device with crypto.getRandomValues, never sent anywhere.<br>
+    Strength is a rough entropy estimate. Keys: <kbd>Enter</kbd> hatch · <kbd>Esc</kbd> peek
+  </p>
+</main>
 
 <script>
-// --- DATA ---
+// ===================== CREATURES (16x16, palette indexed) =====================
 const C = null;
 const CREATURES = {
-  sadBlob: {
-    name: "SAD BLOB",
-    palette: { 1:"#7b8e3e",2:"#5a6e2e",3:"#3d4d1f",4:"#1a1a1a",5:"#c8c8a0" },
-    grid: [
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,1,1,1,1,C,C,C,C,C,C],
-      [C,C,C,C,C,1,1,1,1,1,1,C,C,C,C,C],
-      [C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],
-      [C,C,C,C,1,4,4,1,1,4,4,1,C,C,C,C],
-      [C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],
-      [C,C,C,1,1,1,1,4,4,1,1,1,1,C,C,C],
-      [C,C,C,1,2,2,2,2,2,2,2,2,1,C,C,C],
-      [C,C,C,C,3,3,3,3,3,3,3,3,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
-    ]
-  },
-  happySlime: {
-    name: "SLIMEY",
-    palette: { 1:"#54d654",2:"#3ab43a",3:"#228b22",4:"#1a1a1a",5:"#fff" },
-    grid: [
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,1,1,1,1,C,C,C,C,C,C],
-      [C,C,C,C,C,1,1,1,1,1,1,C,C,C,C,C],
-      [C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],
-      [C,C,C,1,1,1,1,1,1,1,1,1,1,C,C,C],
-      [C,C,C,1,1,4,4,1,1,4,4,1,1,C,C,C],
-      [C,C,C,1,1,4,5,1,1,4,5,1,1,C,C,C],
-      [C,C,C,1,1,1,1,1,1,1,1,1,1,C,C,C],
-      [C,C,1,1,1,1,4,4,4,1,1,1,1,1,C,C],
-      [C,C,1,2,2,2,2,2,2,2,2,2,2,1,C,C],
-      [C,C,C,3,3,3,3,3,3,3,3,3,3,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
-    ]
-  },
-  pixelCat: {
-    name: "BYTEKITTY",
-    palette: { 1:"#f5a623",2:"#d4851f",3:"#1a1a1a",4:"#fff",5:"#ff6b9d",6:"#e08a1e" },
-    grid: [
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,1,1,C,C,C,C,C,C,1,1,C,C,C,C],
-      [C,1,6,1,C,C,C,C,C,C,1,6,1,C,C,C],
-      [C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
-      [C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
-      [C,1,1,3,3,1,1,1,1,3,3,1,1,C,C,C],
-      [C,1,1,3,4,1,1,1,1,3,4,1,1,C,C,C],
-      [C,1,1,1,1,1,5,5,1,1,1,1,1,C,C,C],
-      [C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
-      [C,C,1,1,1,1,1,1,1,1,1,1,C,C,C,C],
-      [C,C,C,1,1,1,1,1,1,1,1,C,C,C,C,C],
-      [C,C,C,1,1,C,1,1,C,1,1,C,C,C,C,C],
-      [C,C,C,1,1,C,1,1,C,1,1,C,C,C,C,C],
-      [C,C,C,2,2,C,2,2,C,2,2,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
-    ]
-  },
-  wolf: {
-    name: "FENRIR",
-    palette: { 1:"#7788aa",2:"#556688",3:"#334466",4:"#1a1a1a",5:"#fff",6:"#ff4444",7:"#aabbcc" },
-    grid: [
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,1,1,C,C,C,C,C,C,1,1,C,C,C,C],
-      [C,1,7,1,1,C,C,C,C,1,7,1,C,C,C,C],
-      [C,1,7,1,1,1,1,1,1,1,1,7,1,C,C,C],
-      [C,C,1,1,1,1,1,1,1,1,1,1,C,C,C,C],
-      [C,C,1,4,5,1,1,1,4,5,1,1,C,C,C,C],
-      [C,C,1,4,6,1,1,1,4,6,1,1,C,C,C,C],
-      [C,C,1,1,1,1,4,1,1,1,1,1,C,C,C,C],
-      [C,C,1,1,1,4,4,4,1,1,1,1,C,C,C,C],
-      [C,C,C,2,1,1,1,1,1,1,2,C,C,C,C,C],
-      [C,C,C,2,2,1,1,1,1,2,2,C,C,C,C,C],
-      [C,C,C,2,C,2,2,2,C,2,C,C,C,C,C,C],
-      [C,C,C,3,C,3,C,3,C,3,C,C,C,C,C,C],
-      [C,C,C,3,C,3,C,3,C,3,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
-    ]
-  },
-  dragon: {
-    name: "PYROSCALE",
-    palette: { 1:"#e63946",2:"#c1121f",3:"#780000",4:"#1a1a1a",5:"#ffd60a",6:"#ff9500",7:"#fff" },
-    grid: [
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,5,5,C,C,C,C,C,C,C,5,5,C,C,C,C],
-      [C,6,5,1,C,C,C,C,C,1,5,6,C,C,C,C],
-      [C,C,1,1,1,1,1,1,1,1,1,C,C,C,C,C],
-      [C,C,1,1,1,1,1,1,1,1,1,C,C,5,C,C],
-      [C,C,1,4,7,1,1,1,4,7,1,C,5,5,C,C],
-      [C,C,1,4,5,1,1,1,4,5,1,1,5,C,C,C],
-      [C,C,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
-      [C,C,2,1,1,5,5,5,1,1,1,1,1,5,C,C],
-      [C,C,2,2,1,6,6,6,1,1,1,1,5,5,C,C],
-      [C,C,C,2,2,1,1,1,1,2,2,1,5,C,C,C],
-      [C,C,C,3,1,C,1,1,C,1,3,C,C,C,C,C],
-      [C,C,C,3,1,C,3,3,C,1,3,C,C,C,C,C],
-      [C,C,3,3,C,C,3,3,C,C,3,3,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
-    ]
-  },
-  mechaBeast: {
-    name: "MECH-X",
-    palette: { 1:"#00f0ff",2:"#0088cc",3:"#005577",4:"#1a1a1a",5:"#ff00ff",6:"#fff",7:"#00ff88",8:"#aaeeff" },
-    grid: [
-      [C,C,C,5,C,C,C,C,C,C,5,C,C,C,C,C],
-      [C,C,5,1,5,C,C,C,C,5,1,5,C,C,C,C],
-      [C,C,1,2,1,1,1,1,1,1,2,1,C,C,C,C],
-      [C,C,1,2,2,2,2,2,2,2,2,1,C,C,C,C],
-      [C,1,1,5,6,2,2,2,5,6,2,1,1,C,C,C],
-      [C,1,1,5,7,2,8,2,5,7,2,1,1,C,C,C],
-      [C,1,2,2,2,2,2,2,2,2,2,2,1,C,C,C],
-      [C,1,2,2,7,7,7,7,7,2,2,2,1,C,C,C],
-      [C,C,3,2,2,2,2,2,2,2,2,3,C,C,C,C],
-      [5,1,3,3,2,7,2,2,7,2,3,3,1,5,C,C],
-      [C,1,C,3,3,2,2,2,2,3,3,C,1,C,C,C],
-      [C,7,C,3,C,3,3,3,C,3,C,C,7,C,C,C],
-      [C,C,C,1,C,1,C,1,C,1,C,C,C,C,C,C],
-      [C,C,1,5,C,5,1,5,C,5,1,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
-      [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]
-    ]
-  }
+  sadBlob: { name: "SAD BLOB", palette: { 1:"#7b8e3e",2:"#5a6e2e",3:"#3d4d1f",4:"#1a1a1a",5:"#c8c8a0" }, grid: [
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,1,1,1,1,C,C,C,C,C,C],[C,C,C,C,C,1,1,1,1,1,1,C,C,C,C,C],
+    [C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],[C,C,C,C,1,4,4,1,1,4,4,1,C,C,C,C],[C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],
+    [C,C,C,1,1,1,1,4,4,1,1,1,1,C,C,C],[C,C,C,1,2,2,2,2,2,2,2,2,1,C,C,C],[C,C,C,C,3,3,3,3,3,3,3,3,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]]},
+  happySlime: { name: "SLIMEY", palette: { 1:"#54d654",2:"#3ab43a",3:"#228b22",4:"#1a1a1a",5:"#fff" }, grid: [
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,C,C,C,C,1,1,1,1,C,C,C,C,C,C],
+    [C,C,C,C,C,1,1,1,1,1,1,C,C,C,C,C],[C,C,C,C,1,1,1,1,1,1,1,1,C,C,C,C],[C,C,C,1,1,1,1,1,1,1,1,1,1,C,C,C],
+    [C,C,C,1,1,4,4,1,1,4,4,1,1,C,C,C],[C,C,C,1,1,4,5,1,1,4,5,1,1,C,C,C],[C,C,C,1,1,1,1,1,1,1,1,1,1,C,C,C],
+    [C,C,1,1,1,1,4,4,4,1,1,1,1,1,C,C],[C,C,1,2,2,2,2,2,2,2,2,2,2,1,C,C],[C,C,C,3,3,3,3,3,3,3,3,3,3,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]]},
+  pixelCat: { name: "BYTEKITTY", palette: { 1:"#f5a623",2:"#d4851f",3:"#1a1a1a",4:"#fff",5:"#ff6b9d",6:"#e08a1e" }, grid: [
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,1,1,C,C,C,C,C,C,1,1,C,C,C,C],[C,1,6,1,C,C,C,C,C,C,1,6,1,C,C,C],
+    [C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],[C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],[C,1,1,3,3,1,1,1,1,3,3,1,1,C,C,C],
+    [C,1,1,3,4,1,1,1,1,3,4,1,1,C,C,C],[C,1,1,1,1,1,5,5,1,1,1,1,1,C,C,C],[C,1,1,1,1,1,1,1,1,1,1,1,1,C,C,C],
+    [C,C,1,1,1,1,1,1,1,1,1,1,C,C,C,C],[C,C,C,1,1,1,1,1,1,1,1,C,C,C,C,C],[C,C,C,1,1,C,1,1,C,1,1,C,C,C,C,C],
+    [C,C,C,1,1,C,1,1,C,1,1,C,C,C,C,C],[C,C,C,2,2,C,2,2,C,2,2,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]]},
+  wolf: { name: "FENRIR", palette: { 1:"#7788aa",2:"#556688",3:"#334466",4:"#1a1a1a",5:"#fff",6:"#ff4444",7:"#aabbcc" }, grid: [
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,C,1,1,C,C,C,C,C,C,1,1,C,C,C,C],[C,1,7,1,1,C,C,C,C,1,7,1,C,C,C,C],
+    [C,1,7,1,1,1,1,1,1,1,1,7,1,C,C,C],[C,C,1,1,1,1,1,1,1,1,1,1,C,C,C,C],[C,C,1,4,5,1,1,1,4,5,1,1,C,C,C,C],
+    [C,C,1,4,6,1,1,1,4,6,1,1,C,C,C,C],[C,C,1,1,1,1,4,1,1,1,1,1,C,C,C,C],[C,C,1,1,1,4,4,4,1,1,1,1,C,C,C,C],
+    [C,C,C,2,1,1,1,1,1,1,2,C,C,C,C,C],[C,C,C,2,2,1,1,1,1,2,2,C,C,C,C,C],[C,C,C,2,C,2,2,2,C,2,C,C,C,C,C,C],
+    [C,C,C,3,C,3,C,3,C,3,C,C,C,C,C,C],[C,C,C,3,C,3,C,3,C,3,C,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]]},
+  dragon: { name: "PYROSCALE", palette: { 1:"#e63946",2:"#c1121f",3:"#780000",4:"#1a1a1a",5:"#ffd60a",6:"#ff9500",7:"#fff" }, grid: [
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],[C,5,5,C,C,C,C,C,C,C,5,5,C,C,C,C],[C,6,5,1,C,C,C,C,C,1,5,6,C,C,C,C],
+    [C,C,1,1,1,1,1,1,1,1,1,C,C,C,C,C],[C,C,1,1,1,1,1,1,1,1,1,C,C,5,C,C],[C,C,1,4,7,1,1,1,4,7,1,C,5,5,C,C],
+    [C,C,1,4,5,1,1,1,4,5,1,1,5,C,C,C],[C,C,1,1,1,1,1,1,1,1,1,1,1,C,C,C],[C,C,2,1,1,5,5,5,1,1,1,1,1,5,C,C],
+    [C,C,2,2,1,6,6,6,1,1,1,1,5,5,C,C],[C,C,C,2,2,1,1,1,1,2,2,1,5,C,C,C],[C,C,C,3,1,C,1,1,C,1,3,C,C,C,C,C],
+    [C,C,C,3,1,C,3,3,C,1,3,C,C,C,C,C],[C,C,3,3,C,C,3,3,C,C,3,3,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]]},
+  mechaBeast: { name: "MECH-X", palette: { 1:"#00f0ff",2:"#0088cc",3:"#005577",4:"#1a1a1a",5:"#ff00ff",6:"#fff",7:"#00ff88",8:"#aaeeff" }, grid: [
+    [C,C,C,5,C,C,C,C,C,C,5,C,C,C,C,C],[C,C,5,1,5,C,C,C,C,5,1,5,C,C,C,C],[C,C,1,2,1,1,1,1,1,1,2,1,C,C,C,C],
+    [C,C,1,2,2,2,2,2,2,2,2,1,C,C,C,C],[C,1,1,5,6,2,2,2,5,6,2,1,1,C,C,C],[C,1,1,5,7,2,8,2,5,7,2,1,1,C,C,C],
+    [C,1,2,2,2,2,2,2,2,2,2,2,1,C,C,C],[C,1,2,2,7,7,7,7,7,2,2,2,1,C,C,C],[C,C,3,2,2,2,2,2,2,2,2,3,C,C,C,C],
+    [5,1,3,3,2,7,2,2,7,2,3,3,1,5,C,C],[C,1,C,3,3,2,2,2,2,3,3,C,1,C,C,C],[C,7,C,3,C,3,3,3,C,3,C,C,7,C,C,C],
+    [C,C,C,1,C,1,C,1,C,1,C,C,C,C,C,C],[C,C,1,5,C,5,1,5,C,5,1,C,C,C,C,C],[C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C],
+    [C,C,C,C,C,C,C,C,C,C,C,C,C,C,C,C]]}
 };
 
 const STAGES = [
@@ -508,7 +550,30 @@ const STAGES = [
   { key:"mechaBeast", min:100, label:"LEGENDARY" }
 ];
 
-// --- LOGIC ---
+// Small LCD-only sprites (1 = ink)
+const EGG = [
+  "....####....","..##....##..",".#..##....#.",".#..##....#.","#..........#","#.....##...#",
+  "#.....##...#","#..........#","#.##.......#",".#.##.....#.",".#........#.","..##....##..","....####...."
+];
+const POOP = ["..#...", ".#.#..", ".###..", "#####.", "######"];
+const ZZZ = ["###", "..#", ".#.", "###"];
+
+// Convert each colour sprite into 3 LCD tones based on brightness:
+// dark details = full ink, body = half ink, near-white highlights = clear.
+function toneOf(hex) {
+  const n = parseInt(hex.replace("#", "").padEnd(6, hex.slice(-1)), 16);
+  const h = hex.length === 4 ? hex.slice(1).split("").map(c => parseInt(c + c, 16)) : [(n >> 16) & 255, (n >> 8) & 255, n & 255];
+  const L = (0.299 * h[0] + 0.587 * h[1] + 0.114 * h[2]) / 255;
+  if (L < 0.14) return 1;
+  if (L > 0.8) return 0;
+  return L < 0.33 ? 0.85 : 0.5;
+}
+const MONO = {};
+for (const [k, c] of Object.entries(CREATURES)) {
+  MONO[k] = c.grid.map(row => row.map(v => v === null ? null : toneOf(c.palette[v])));
+}
+
+// ===================== LOGIC =====================
 function calcEntropy(pw) {
   if (!pw) return 0;
   let pool = 0;
@@ -518,134 +583,229 @@ function calcEntropy(pw) {
   if (/[^a-zA-Z0-9]/.test(pw)) pool += 33;
   return Math.floor(pw.length * Math.log2(pool || 1));
 }
+const stageIndexFor = e => STAGES.reduce((acc, s, i) => e >= s.min ? i : acc, 0);
 
-function getStage(entropy) {
-  let s = STAGES[0];
-  for (const stage of STAGES) {
-    if (entropy >= stage.min) s = stage;
-  }
-  return s;
-}
-
-function generatePassword(len = 20) {
+function generatePassword(len) {
   const chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()-_=+[]{}|;:,.<>?";
-  const arr = new Uint32Array(len);
-  crypto.getRandomValues(arr);
-  return Array.from(arr, v => chars[v % chars.length]).join("");
+  const limit = Math.floor(2 ** 32 / chars.length) * chars.length; // avoid modulo bias
+  const out = [];
+  const buf = new Uint32Array(1);
+  while (out.length < len) {
+    crypto.getRandomValues(buf);
+    if (buf[0] < limit) out.push(chars[buf[0] % chars.length]);
+  }
+  return out.join("");
 }
 
-// --- RENDERING ---
-const GRID_SIZE = 16;
-const PX = Math.floor(176 / GRID_SIZE); // 11px per pixel
-
+// ===================== LCD RENDERING =====================
 const $ = id => document.getElementById(id);
-let currentStageKey = "sadBlob";
-let showPassword = false;
-let copyTimeout = null;
+const cvs = $("pet"), ctx = cvs.getContext("2d");
+const DOT = 4, COLS = 44, ROWS = 22, FLOOR = 20; // 44x22 dot matrix
+const dpr = Math.max(1, window.devicePixelRatio || 1);
+cvs.width = 176 * dpr; cvs.height = 88 * dpr;
+ctx.scale(dpr, dpr);
 
-function renderGrid(creatureKey) {
-  const creature = CREATURES[creatureKey];
-  const grid = $("pixelGrid");
-  grid.innerHTML = "";
-  grid.style.width = PX * GRID_SIZE + "px";
-  grid.style.height = PX * GRID_SIZE + "px";
+const INK = "#1e2a1a";
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 
-  for (let y = 0; y < GRID_SIZE; y++) {
-    for (let x = 0; x < GRID_SIZE; x++) {
-      const cell = creature.grid[y][x];
-      if (cell !== null) {
-        const el = document.createElement("div");
-        el.className = "px";
-        el.style.left = x * PX + "px";
-        el.style.top = y * PX + "px";
-        el.style.width = PX + "px";
-        el.style.height = PX + "px";
-        el.style.backgroundColor = creature.palette[cell];
-        grid.appendChild(el);
-      }
+const state = {
+  stage: -1,          // -1 = egg (empty input)
+  x: 14, dir: 1,      // pet position in dots
+  bob: 0,
+  bubble: null,       // { text: "!", until: ts }
+  poopAt: 0, poop: false,
+  flashUntil: 0,
+  lastInput: 0,
+  wobble: 0
+};
+
+function dot(x, y, a) {
+  if (x < 0 || y < 0 || x >= COLS || y >= ROWS || !a) return;
+  ctx.globalAlpha = a;
+  ctx.fillRect(x * DOT, y * DOT, DOT - 1, DOT - 1);
+}
+function drawStrings(rows, ox, oy) {
+  rows.forEach((r, y) => [...r].forEach((ch, x) => ch === "#" && dot(ox + x, oy + y, 1)));
+}
+
+function draw(now) {
+  ctx.clearRect(0, 0, 176, 88);
+  ctx.fillStyle = INK;
+  // ghost dots: the unlit matrix you can see on real LCDs
+  for (let y = 0; y < ROWS; y++) for (let x = 0; x < COLS; x++) dot(x, y, 0.06);
+
+  // floor line
+  for (let x = 0; x < COLS; x += 2) dot(x, FLOOR + 1, 0.35);
+
+  if (state.stage < 0) {
+    const w = state.wobble ? (state.wobble % 2 ? 1 : -1) : 0;
+    drawStrings(EGG, 16 + w, FLOOR - EGG.length + 1);
+    // sleepy Zs drift above the egg
+    const zy = 2 + Math.floor((now / 600) % 3);
+    drawStrings(ZZZ, 31, zy);
+  } else {
+    const sprite = MONO[STAGES[state.stage].key];
+    // find sprite's bottom row so it stands on the floor
+    let bottom = 15;
+    while (bottom > 0 && sprite[bottom].every(v => v === null)) bottom--;
+    const oy = FLOOR - bottom + (state.bob ? -1 : 0);
+    for (let y = 0; y < 16; y++) for (let x = 0; x < 16; x++) {
+      const sx = state.dir > 0 ? x : 15 - x;
+      const v = sprite[y][sx];
+      if (v !== null) dot(state.x + x, oy + y, v);
     }
+    if (state.poop) drawStrings(POOP, state.x < 20 ? 36 : 2, FLOOR - POOP.length + 1);
   }
+
+  if (state.bubble && now < state.bubble.until) {
+    const t = state.bubble.text;
+    const bx = Math.min(COLS - 6, Math.max(1, (state.stage < 0 ? 28 : state.x + 14)));
+    drawGlyph(t, bx, 1);
+  }
+  ctx.globalAlpha = 1;
 }
 
-function renderPips(stageIndex) {
-  const pips = $("pips");
-  pips.innerHTML = "";
-  for (let i = 0; i < STAGES.length; i++) {
-    const pip = document.createElement("div");
-    pip.className = "pip" + (i <= stageIndex ? " active" : "");
-    pips.appendChild(pip);
-  }
+// tiny 3x5 glyphs for bubbles
+const GLYPHS = {
+  "!": ["#", "#", "#", ".", "#"],
+  "?": ["##.", "..#", ".#.", "...", ".#."],
+  "♥": ["#.#", "###", "###", ".#.", "..."],
+  ".": ["...", "...", "...", "...", "#.#"]
+};
+function drawGlyph(t, x, y) {
+  const g = GLYPHS[t] || GLYPHS["!"];
+  // bubble box
+  const w = g[0].length + 2, h = 7;
+  for (let i = 0; i < w; i++) { dot(x + i, y, 0.9); dot(x + i, y + h - 1, 0.9); }
+  for (let j = 0; j < h; j++) { dot(x, y + j, 0.9); dot(x + w - 1, y + j, 0.9); }
+  drawStrings(g, x + 1, y + 1);
 }
 
-function triggerBounce() {
-  const grid = $("pixelGrid");
-  grid.classList.add("bounce");
-  grid.addEventListener("animationend", () => {
-    grid.classList.remove("bounce");
-  }, { once: true });
+function tick(now) {
+  const lcd = $("lcd");
+  lcd.classList.toggle("invert", now < state.flashUntil && Math.floor(now / 110) % 2 === 0);
+  draw(now);
+  requestAnimationFrame(tick);
+}
+
+// Pet "brain": slow step-walk like the original toy
+setInterval(() => {
+  if (state.stage < 0) {
+    state.wobble = Math.random() < 0.35 ? 3 : 0;
+    if (state.wobble) setTimeout(() => state.wobble = 0, 400);
+    return;
+  }
+  state.bob = (state.bob + 1) % 2;
+  if (reduceMotion) return;
+  if (Math.random() < 0.2) state.dir *= -1;
+  state.x += state.dir;
+  if (state.x < 1) { state.x = 1; state.dir = 1; }
+  if (state.x > COLS - 17) { state.x = COLS - 17; state.dir = -1; }
+  // a weak pet left alone makes a mess
+  if (state.stage === 0 && !state.poop && performance.now() - state.lastInput > 5000) {
+    state.poop = true; say("?");
+  }
+}, 520);
+
+function say(text, ms = 1300) { state.bubble = { text, until: performance.now() + ms }; }
+
+// ===================== UI =====================
+const heartSVG = '<svg viewBox="0 0 9 8"><path d="M1 0h2v1h1v1h1V1h1V0h2v1h1v3H8v1H7v1H6v1H5v1H4V7H3V6H2V5H1V4H0V1h1z"/></svg>';
+$("hearts").innerHTML = STAGES.map(() => `<span class="heart">${heartSVG}</span>`).join("");
+
+const statusEl = $("status");
+let statusLock = 0;
+function setStatus(txt, lockMs = 0) {
+  if (performance.now() < statusLock && !lockMs) return;
+  statusEl.textContent = txt;
+  if (lockMs) statusLock = performance.now() + lockMs;
 }
 
 function update() {
-  const pw = $("pwInput").value;
-  const entropy = calcEntropy(pw);
-  const stage = getStage(entropy);
-  const stageIndex = STAGES.findIndex(s => s.key === stage.key);
-  const creature = CREATURES[stage.key];
-  const barPercent = Math.min((entropy / 128) * 100, 100);
+  const pw = $("pw").value;
+  const e = calcEntropy(pw);
+  const next = pw ? stageIndexFor(e) : -1;
 
-  // Bar color
-  let barColor;
-  if (stageIndex <= 1) barColor = "var(--bar-red)";
-  else if (stageIndex <= 3) barColor = "var(--bar-yellow)";
-  else barColor = "var(--bar-green)";
+  $("icLower").classList.toggle("on", /[a-z]/.test(pw));
+  $("icUpper").classList.toggle("on", /[A-Z]/.test(pw));
+  $("icDigit").classList.toggle("on", /[0-9]/.test(pw));
+  $("icSym").classList.toggle("on", /[^a-zA-Z0-9]/.test(pw));
+  $("meter").style.width = Math.min(100, e / 128 * 100) + "%";
+  [...$("hearts").children].forEach((h, i) => h.classList.toggle("on", i <= next));
 
-  $("creatureName").textContent = creature.name;
-  $("creatureLevel").textContent = "LV." + (stageIndex + 1) + " " + stage.label;
-  $("entropyBits").textContent = entropy + " BITS";
-  $("entropyFill").style.width = barPercent + "%";
-  $("entropyFill").style.background = barColor;
-
-  renderPips(stageIndex);
-
-  if (stage.key !== currentStageKey) {
-    currentStageKey = stage.key;
-    renderGrid(stage.key);
-    triggerBounce();
+  state.lastInput = performance.now();
+  if (next !== state.stage) {
+    const prev = state.stage;
+    state.stage = next;
+    if (next > prev) {
+      if (!reduceMotion) state.flashUntil = performance.now() + 660;
+      say(next === STAGES.length - 1 ? "♥" : "!");
+      state.poop = false;
+    } else if (next >= 0) {
+      say(".");
+    }
   }
+  setStatus(next < 0 ? "EGG" : `${e}b ${STAGES[next].label}`);
+  $("pet").setAttribute("aria-label",
+    next < 0 ? "An unhatched egg. Type a password to hatch it."
+             : `${CREATURES[STAGES[next].key].name}, level ${next + 1} ${STAGES[next].label}, about ${e} bits of entropy`);
 }
 
-// --- INIT ---
-renderGrid("sadBlob");
-renderPips(0);
+let hatchLen = 20;
+let peek = false;
+function setPeek(v) {
+  peek = v;
+  $("pw").type = peek ? "text" : "password";
+  $("peekLabel").textContent = peek ? "HIDE" : "PEEK";
+}
+function press(btn) { btn.classList.add("pressed"); setTimeout(() => btn.classList.remove("pressed"), 120); }
 
-$("pwInput").addEventListener("input", update);
-
-$("btnGenerate").addEventListener("click", () => {
-  const pw = generatePassword(20);
-  $("pwInput").value = pw;
-  showPassword = true;
-  $("pwInput").type = "text";
-  $("btnToggle").textContent = "HIDE";
+function hatch() {
+  press($("btnA"));
+  $("pw").value = generatePassword(hatchLen);
+  setPeek(true);
   update();
+}
+async function copy() {
+  press($("btnC"));
+  const pw = $("pw").value;
+  if (!pw) { say("?"); return; }
+  try { await navigator.clipboard.writeText(pw); }
+  catch {
+    const ta = Object.assign(document.createElement("textarea"), { value: pw });
+    document.body.appendChild(ta); ta.select(); document.execCommand("copy"); ta.remove();
+  }
+  say("♥", 1500);
+  setStatus("COPIED!", 1400);
+  setTimeout(update, 1450);
+}
+
+$("pw").addEventListener("input", update);
+$("btnA").addEventListener("click", hatch);
+$("btnB").addEventListener("click", () => { press($("btnB")); setPeek(!peek); });
+$("btnC").addEventListener("click", copy);
+document.addEventListener("keydown", ev => {
+  if (ev.key === "Enter") { ev.preventDefault(); hatch(); }
+  if (ev.key === "Escape") { press($("btnB")); setPeek(!peek); }
 });
 
-$("btnToggle").addEventListener("click", () => {
-  showPassword = !showPassword;
-  $("pwInput").type = showPassword ? "text" : "password";
-  $("btnToggle").textContent = showPassword ? "HIDE" : "SHOW";
-});
+// Shell + length pickers
+const savedShell = (() => { try { return localStorage.getItem("tamagoShell"); } catch { return null; } })();
+function setShell(s) {
+  document.body.dataset.shell = s;
+  document.querySelectorAll(".swatch").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.s === s)));
+  try { localStorage.setItem("tamagoShell", s); } catch {}
+}
+document.querySelectorAll(".swatch").forEach(b => b.addEventListener("click", () => setShell(b.dataset.s)));
+if (savedShell && document.querySelector(`.swatch[data-s="${savedShell}"]`)) setShell(savedShell);
 
-$("btnCopy").addEventListener("click", () => {
-  const pw = $("pwInput").value;
-  if (!pw) return;
-  navigator.clipboard.writeText(pw);
-  $("btnCopy").textContent = "OK!";
-  clearTimeout(copyTimeout);
-  copyTimeout = setTimeout(() => {
-    $("btnCopy").textContent = "COPY";
-  }, 1500);
-});
+document.querySelectorAll(".chip").forEach(b => b.addEventListener("click", () => {
+  hatchLen = +b.dataset.len;
+  document.querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", String(c === b)));
+}));
+
+update();
+requestAnimationFrame(tick);
 </script>
-
 </body>
 </html>
