@@ -1,464 +1,417 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Paint Pomodoro — Natural Watercolor Studio</title>
-  
-  <!-- Tailwind CSS CDN -->
-  <script src="https://cdn.tailwindcss.com"></script>
-  
-  <!-- Google Fonts: Playfair Display for fine-art serif feel & Plus Jakarta Sans -->
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,400&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-  
-  <!-- Lucide Icons -->
-  <script src="https://unpkg.com/lucide@latest"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Paint Pomodoro</title>
+<meta name="theme-color" content="#1E1826">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Press+Start+2P&display=swap" rel="stylesheet">
+<style>
+  /* ── Quiet Pixel v3 foundation ───────────────────────────── */
+  @font-face {
+    font-family: 'Alpha Lyrae';
+    src: url('/my-style-guide/assets/fonts/AlphaLyrae-Medium.woff2') format('woff2'),
+         url('/my-style-guide/assets/fonts/AlphaLyrae-Medium.woff') format('woff');
+    font-weight: 400 700; font-display: swap;
+  }
+  :root {
+    --ease: cubic-bezier(.4,0,.2,1);
+    --paper: #F4EFE6;
+    --lit: 0;
+  }
+  :root[data-theme="dark"] {
+    --void: #1E1826; --surface: #2A2233; --surface-2: #251F2D;
+    --text: #EDE7F2; --muted: #9B8FA8; --line: #3D3448;
+    --lamp: #E8873A; --dawn: #7FB8D9; --moon: #B9A9D9; --sun: #F2C94C;
+    --frame: #120E17; --spot: 255, 226, 186; --spot-max: .20;
+    --shadow: rgba(0,0,0,.6);
+  }
+  :root[data-theme="light"] {
+    --void: #F4EDDB; --surface: #FFFBF0; --surface-2: #ECE1C4;
+    --text: #3A3226; --muted: #8A7A56; --line: #DCCB9C;
+    --lamp: #D9772E; --dawn: #3C7FA6; --moon: #7A66A6; --sun: #C99A2E;
+    --frame: #3A3226; --spot: 255, 248, 230; --spot-max: .55;
+    --shadow: rgba(58,50,38,.35);
+  }
+  :root { --accent: var(--lamp); }
+  :root[data-mode="break"] { --accent: var(--dawn); }
+  :root[data-mode="sketch"] { --accent: var(--sun); }
 
-  <style>
-    body {
-      font-family: 'Playfair Display', Georgia, serif;
-      user-select: none;
-      -webkit-user-select: none;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .font-sans-ui {
-      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    }
-    .font-mono-num {
-      font-family: 'JetBrains Mono', monospace;
-    }
-    /* Custom paper grain overlay */
-    .paper-texture {
-      background-color: #edeae4;
-      background-image: radial-gradient(#d6cebe 0.75px, transparent 0.75px), radial-gradient(#d6cebe 0.75px, #edeae4 0.75px);
-      background-size: 30px 30px;
-      background-position: 0 0, 15px 15px;
-    }
-    /* Smooth custom scrollbars */
-    ::-webkit-scrollbar {
-      width: 6px;
-      height: 6px;
-    }
-    ::-webkit-scrollbar-track {
-      background: rgba(0, 0, 0, 0.03);
-      border-radius: 8px;
-    }
-    ::-webkit-scrollbar-thumb {
-      background: rgba(120, 113, 108, 0.25);
-      border-radius: 8px;
-    }
-    ::-webkit-scrollbar-thumb:hover {
-      background: rgba(120, 113, 108, 0.45);
-    }
-    /* Range input styling */
-    input[type=range] {
-      accent-color: #44403c;
-    }
-  </style>
+  * { box-sizing: border-box; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+  }
+  html, body { margin: 0; overflow-x: clip; }
+  body {
+    min-height: 100dvh;
+    display: flex; flex-direction: column;
+    background: var(--void); color: var(--text);
+    font-family: 'Space Mono', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+    -webkit-tap-highlight-color: transparent;
+    user-select: none; -webkit-user-select: none;
+    transition: background .5s var(--ease), color .5s var(--ease);
+    overflow-x: hidden;
+  }
+  button { font-family: inherit; color: inherit; cursor: pointer; }
+  button:focus-visible, input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  svg.i { width: 18px; height: 18px; fill: none; stroke: currentColor; stroke-width: 1.75; stroke-linecap: round; stroke-linejoin: round; flex-shrink: 0; }
+  .pixel { font-family: 'Press Start 2P', monospace; }
+  h1, h2, h3 { margin: 0; font-weight: 500; font-family: 'Alpha Lyrae', 'Space Mono', monospace; text-wrap: balance; }
+
+  /* ── top bar ─────────────────────────────────────────────── */
+  .top {
+    display: flex; align-items: center; gap: 10px;
+    padding: 14px max(16px, env(safe-area-inset-right)) 6px max(16px, env(safe-area-inset-left));
+    position: relative; z-index: 5;
+  }
+  .wordmark { white-space: nowrap; display: flex; align-items: center; gap: 10px; font-size: 15px; letter-spacing: .01em; }
+  .wordmark .dot { width: 10px; height: 10px; border-radius: 2px; background: var(--accent); box-shadow: 0 0 12px var(--accent); transition: background .5s var(--ease), box-shadow .5s var(--ease); }
+  .top-right { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+  .pips { display: flex; align-items: center; gap: 4px; margin-right: 8px; }
+  .pips i { width: 8px; height: 8px; border-radius: 1px; background: var(--line); transition: background .4s var(--ease); }
+  .pips i.on { background: var(--lamp); }
+  @media (max-width: 420px) { .pips b { display: none; } .pips { margin-right: 2px; } .wordmark h1 { font-size: 13px !important; } }
+  .pips b { font-size: 10px; font-weight: 400; color: var(--muted); margin-left: 4px; min-width: 2ch; }
+  .icon-btn {
+    height: 36px; min-width: 36px; padding: 0 10px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+    background: var(--surface-2); border: 1px solid transparent;
+    font-size: 11px; color: var(--muted);
+    transition: background .2s var(--ease), color .2s var(--ease), transform .12s var(--ease);
+  }
+  .icon-btn:hover { background: var(--surface); color: var(--text); }
+  .icon-btn:active { transform: scale(.94); }
+  .icon-btn .count { color: var(--text); }
+
+  /* ── studio layout ───────────────────────────────────────── */
+  .studio { flex: 1; display: grid; place-items: center; padding: 8px 16px 28px; }
+  .studio-inner {
+    width: 100%; max-width: 1120px;
+    display: grid; grid-template-columns: 1fr; justify-items: center; gap: 26px;
+  }
+  @media (min-width: 900px) {
+    .studio-inner { grid-template-columns: auto minmax(300px, 340px); align-items: center; justify-content: center; gap: 64px; }
+  }
+
+  /* ── stage: spotlight + frame + mat + canvas ─────────────── */
+  .stage { position: relative; padding-top: 18px; }
+  .stage::before {
+    content: ''; position: absolute; left: 50%; top: -60px; transform: translateX(-50%);
+    width: 150%; height: 130%; pointer-events: none; z-index: 0;
+    background: radial-gradient(ellipse 30% 42% at 50% 44%, rgba(var(--spot), calc(.05 + var(--spot-max) * var(--lit))) 0%, transparent 100%);
+    transition: background .8s var(--ease);
+  }
+  .lamp-bar {
+    position: absolute; left: 50%; top: 0; transform: translateX(-50%);
+    width: 84px; height: 7px; border-radius: 0 0 6px 6px; background: var(--frame); z-index: 2;
+    box-shadow: 0 2px 0 rgba(255,255,255,.04);
+  }
+  .lamp-bar::after {
+    content: ''; position: absolute; left: 8px; right: 8px; bottom: -2px; height: 2px; border-radius: 2px;
+    background: rgba(var(--spot), calc(.25 + .75 * var(--lit)));
+    box-shadow: 0 0 10px rgba(var(--spot), calc(.3 * var(--lit)));
+  }
+  .frame {
+    --size: min(88vw, 52vh, 600px);
+    position: relative; z-index: 1;
+    width: var(--size); aspect-ratio: 1;
+    padding: calc(var(--size) * .028);
+    background: var(--frame);
+    border-radius: 4px;
+    box-shadow: 0 40px 70px -28px var(--shadow), 0 2px 0 rgba(255,255,255,.05) inset, 0 0 0 1px rgba(255,255,255,.03) inset;
+  }
+  @media (min-width: 900px) { .frame { --size: min(54vw, 72vh, 620px); } }
+  .mat {
+    position: relative; width: 100%; height: 100%;
+    padding: 6.5%;
+    background-color: var(--paper);
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='180' height='180'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.85' numOctaves='3' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 .45 0 0 0 0 .38 0 0 0 0 .3 0 0 0 .09 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+    box-shadow: inset 0 3px 10px rgba(0,0,0,.28), inset 0 0 0 1px rgba(0,0,0,.08);
+  }
+  .mat canvas { display: block; width: 100%; height: 100%; }
+  #offscreenCanvas { display: none; }
+  .start-btn {
+    position: absolute; inset: 0; margin: auto; width: 76px; height: 76px; border-radius: 50%;
+    border: 1px dashed rgba(58,50,38,.35); background: transparent; color: rgba(58,50,38,.55);
+    display: grid; place-items: center;
+    transition: opacity .4s var(--ease), transform .2s var(--ease), color .2s var(--ease), border-color .2s var(--ease);
+  }
+  .start-btn:hover { color: rgba(58,50,38,.9); border-color: rgba(58,50,38,.6); transform: scale(1.05); }
+  .start-btn svg.i { width: 26px; height: 26px; margin-left: 3px; }
+  .start-btn.gone { opacity: 0; pointer-events: none; transform: scale(.9); }
+  .mat-hit { position: absolute; inset: 0; background: transparent; border: 0; padding: 0; }
+  .progress-rail {
+    position: absolute; left: 0; right: 0; bottom: -14px; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; z-index: 1;
+  }
+  .progress-rail span { display: block; height: 100%; width: 0%; background: var(--accent); transition: background .5s var(--ease); }
+
+  /* ── side panel ──────────────────────────────────────────── */
+  .panel { width: min(100%, 420px); display: flex; flex-direction: column; gap: 18px; }
+  .status { display: flex; align-items: center; justify-content: space-between; }
+  .chip {
+    font-size: 8px; letter-spacing: .06em; padding: 7px 9px 6px; border-radius: 6px;
+    color: var(--accent); background: color-mix(in srgb, var(--accent) 14%, transparent);
+    transition: color .5s var(--ease), background .5s var(--ease);
+  }
+  .pct { font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .time {
+    font-size: clamp(56px, 9vw, 84px); line-height: .95; letter-spacing: -.04em; font-weight: 400;
+    font-variant-numeric: tabular-nums; text-align: left;
+  }
+  .time .colon { opacity: .35; }
+  .running .time .colon { animation: blink 1s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: .12; } }
+  .controls { display: flex; align-items: center; gap: 8px; }
+  .play {
+    height: 52px; flex: 1; border-radius: 14px; border: 0;
+    background: var(--accent); color: var(--void);
+    display: inline-flex; align-items: center; justify-content: center; gap: 10px;
+    font-size: 13px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    box-shadow: 0 10px 24px -12px var(--accent);
+    transition: background .5s var(--ease), transform .12s var(--ease), box-shadow .5s var(--ease);
+  }
+  .play:active { transform: scale(.97); }
+  .play svg.i { fill: currentColor; stroke: none; }
+  .ctl {
+    height: 52px; width: 52px; border-radius: 14px; border: 1px solid var(--line); background: transparent; color: var(--muted);
+    display: inline-grid; place-items: center;
+    transition: color .2s var(--ease), border-color .2s var(--ease), background .2s var(--ease), transform .12s var(--ease), width .25s var(--ease);
+  }
+  .ctl:hover { color: var(--text); background: var(--surface-2); }
+  .ctl:active { transform: scale(.94); }
+  .ctl:disabled { opacity: .35; pointer-events: none; }
+  .ctl.armed { width: 92px; color: var(--lamp); border-color: var(--lamp); font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: .06em; }
+  .ctl.sketch.on { color: var(--sun); border-color: var(--sun); }
+
+  /* placard = museum wall label */
+  .placard {
+    background: var(--surface); border: 1px solid var(--line); border-radius: 14px;
+    padding: 18px 18px 16px; position: relative; overflow: hidden;
+    transition: background .5s var(--ease), border-color .5s var(--ease);
+  }
+  .placard h2 { font-size: 18px; line-height: 1.3; min-height: 1.3em; word-break: break-word; }
+  .placard .by { font-size: 12px; color: var(--muted); margin-top: 6px; min-height: 1.4em; }
+  .swatches { display: flex; gap: 6px; margin-top: 14px; }
+  .swatches i {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px dashed var(--line); background: transparent;
+    transform: scale(.82); transition: background .6s var(--ease), border-color .6s var(--ease), transform .4s var(--ease);
+  }
+  .swatches i.on { border: 1px solid rgba(0,0,0,.12); transform: scale(1); }
+  .reveal { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .6s var(--ease); }
+  .reveal > div { overflow: hidden; }
+  .placard.done .reveal { grid-template-rows: 1fr; }
+  .medium { font-size: 11px; color: var(--muted); margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+  .desc { font-size: 12px; line-height: 1.7; margin: 8px 0 0; }
+  .actions { display: flex; gap: 8px; margin-top: 16px; }
+  .btn {
+    flex: 1; height: 40px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2);
+    font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase;
+    transition: background .2s var(--ease), transform .12s var(--ease), border-color .2s var(--ease);
+  }
+  .btn:hover { background: var(--void); }
+  .btn:active { transform: scale(.97); }
+  .btn.primary { background: var(--dawn); border-color: var(--dawn); color: var(--void); }
+
+  /* ── overlays ────────────────────────────────────────────── */
+  .scrim { position: fixed; inset: 0; z-index: 40; background: rgba(10,8,14,.55); opacity: 0; pointer-events: none; transition: opacity .28s var(--ease); }
+  .scrim.open { opacity: 1; pointer-events: auto; }
+  .drawer {
+    position: fixed; top: 0; bottom: 0; right: 0; z-index: 50; width: min(380px, 92vw);
+    background: var(--surface); border-left: 1px solid var(--line);
+    box-shadow: -24px 0 48px -24px rgba(0,0,0,.5);
+    transform: translateX(105%); visibility: hidden; transition: transform .32s var(--ease), visibility 0s .32s;
+    display: flex; flex-direction: column;
+  }
+  .drawer.open { transform: none; visibility: visible; transition: transform .32s var(--ease); }
+  .sheet-head { display: flex; align-items: center; justify-content: space-between; padding: 18px 18px 12px; }
+  .sheet-head h3 { font-size: 16px; }
+  .drawer-body { flex: 1; overflow-y: auto; padding: 4px 18px 18px; display: flex; flex-direction: column; gap: 22px; }
+  .group-label { font-size: 10px; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 10px; }
+  .row { display: grid; grid-template-columns: 74px 1fr 46px; align-items: center; gap: 10px; font-size: 12px; min-height: 34px; }
+  .row output { text-align: right; color: var(--muted); font-size: 11px; font-variant-numeric: tabular-nums; }
+  input[type=range] { width: 100%; accent-color: var(--accent); }
+  .seg { display: grid; gap: 6px; }
+  .seg.c3 { grid-template-columns: repeat(3, 1fr); }
+  .seg.c5 { grid-template-columns: repeat(5, 1fr); }
+  .seg button {
+    height: 64px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface-2); color: var(--muted);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+    font-size: 10px; transition: border-color .2s var(--ease), color .2s var(--ease), background .2s var(--ease);
+  }
+  .seg button svg { width: 22px; height: 22px; }
+  .seg button.on { border-color: var(--accent); color: var(--text); background: color-mix(in srgb, var(--accent) 10%, var(--surface-2)); }
+  .seg.c5 button span { display: none; }
+  .seg.c5 button { height: 48px; }
+  .switch { width: 44px; height: 26px; border-radius: 99px; border: 1px solid var(--line); background: var(--surface-2); position: relative; padding: 0; justify-self: end; transition: background .25s var(--ease), border-color .25s var(--ease); }
+  .switch::after { content: ''; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--muted); transition: transform .25s var(--ease), background .25s var(--ease); }
+  .switch[aria-checked="true"] { background: color-mix(in srgb, var(--accent) 25%, var(--surface-2)); border-color: var(--accent); }
+  .switch[aria-checked="true"]::after { transform: translateX(18px); background: var(--accent); }
+  .row.toggle { grid-template-columns: 1fr auto; }
+  .drawer-foot { padding: 14px 18px calc(14px + env(safe-area-inset-bottom)); border-top: 1px solid var(--line); }
+  .drawer-foot .btn { width: 100%; height: 46px; background: var(--accent); border-color: var(--accent); color: var(--void); }
+
+  .gallery {
+    position: fixed; z-index: 50; left: 50%; top: 50%; width: min(860px, 94vw); max-height: 88dvh;
+    transform: translate(-50%, -46%) scale(.98); opacity: 0; pointer-events: none;
+    background: var(--void); border: 1px solid var(--line); border-radius: 18px;
+    box-shadow: 0 40px 80px -30px rgba(0,0,0,.7);
+    transition: transform .3s var(--ease), opacity .3s var(--ease);
+    display: flex; flex-direction: column;
+  }
+  .gallery.open { transform: translate(-50%, -50%); opacity: 1; pointer-events: auto; }
+  .wall { overflow-y: auto; padding: 8px 22px 26px; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 26px 20px; }
+  .piece { background: none; border: 0; padding: 0; text-align: left; display: flex; flex-direction: column; gap: 10px; }
+  .piece:disabled { cursor: default; }
+  .piece .pf { aspect-ratio: 1; padding: 7px; background: var(--frame); border-radius: 3px; box-shadow: 0 16px 30px -16px var(--shadow); transition: transform .2s var(--ease); }
+  .piece:not(:disabled):hover .pf { transform: translateY(-3px); }
+  .piece .pm { width: 100%; height: 100%; padding: 9%; background: var(--paper); box-shadow: inset 0 2px 5px rgba(0,0,0,.25); }
+  .piece img { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .piece .locked { width: 100%; height: 100%; display: flex; flex-direction: column; }
+  .piece .locked i { flex: 1; opacity: .5; }
+  .piece .t { font-size: 11px; line-height: 1.4; word-break: break-word; }
+  .piece .a { font-size: 10px; color: var(--muted); margin-top: -6px; }
+  .piece.current .pf { outline: 2px solid var(--accent); outline-offset: 3px; }
+
+  .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+</style>
 </head>
+<body>
 
-<body class="relative h-screen w-full paper-texture overflow-hidden flex flex-col justify-between p-3 sm:p-5 md:p-7 text-stone-800">
+<header class="top">
+  <div class="wordmark"><span class="dot"></span><h1 style="font-size:15px">Paint Pomodoro</h1></div>
+  <div class="top-right">
+    <div class="pips" id="pips" title="Focus sessions today"><i></i><i></i><i></i><i></i><b id="pipCount">0</b></div>
+    <button class="icon-btn" id="openGalleryBtn" aria-label="Collection" title="Collection (G)">
+      <svg class="i" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      <span class="count" id="collectionBadgeCount">0/5</span>
+    </button>
+    <button class="icon-btn" id="themeBtn" aria-label="Toggle theme" title="Theme">
+      <svg class="i" viewBox="0 0 24 24" id="themeIcon"></svg>
+    </button>
+    <button class="icon-btn" id="openSettingsBtn" aria-label="Studio settings" title="Studio (S)">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0"/><circle cx="16" cy="6" r="2"/><circle cx="10" cy="12" r="2"/><circle cx="18" cy="18" r="2"/></svg>
+    </button>
+  </div>
+</header>
 
-  <!-- Subtle canvas vignette backdrop -->
-  <div class="fixed inset-0 pointer-events-none opacity-40 mix-blend-multiply bg-[radial-gradient(circle_at_center,_transparent_40%,_rgba(120,113,108,0.18)_100%)]"></div>
+<main class="studio">
+  <div class="studio-inner">
 
-  <!-- Header Navigation Bar -->
-  <header class="relative w-full flex justify-between items-center z-10 max-w-6xl mx-auto shrink-0 py-1 md:py-2">
-    <div class="flex items-center gap-3">
-      <div class="w-9 h-9 md:w-11 md:h-11 rounded-full bg-white/90 flex items-center justify-center border border-stone-200/80 shadow-sm transition-transform hover:scale-105">
-        <i data-lucide="sparkles" class="w-4 h-4 md:w-5 md:h-5 text-stone-700"></i>
-      </div>
-      <div>
-        <h1 class="text-xs sm:text-sm md:text-lg font-bold tracking-wider uppercase text-stone-800">Paint Pomodoro</h1>
-        <p class="text-[8px] sm:text-[9px] md:text-xs text-stone-500 font-sans-ui font-semibold uppercase tracking-widest">Natural Watercolor & Masterpieces</p>
-      </div>
-    </div>
-
-    <!-- Right Header Controls -->
-    <div class="flex items-center gap-2 md:gap-3">
-      <div id="quickModeBadge" class="hidden items-center gap-1.5 bg-[#f7ede8] border border-[#ebd2c9] text-[#a45344] text-[9px] md:text-xs font-sans-ui font-bold px-3 py-1 rounded-full tracking-wider shadow-inner">
-        <i data-lucide="zap" class="w-3 h-3 text-[#a45344]"></i>
-        <span>QUICK WASH ACTIVE</span>
-      </div>
-
-      <button 
-        id="openGalleryBtn"
-        class="flex items-center gap-1.5 bg-white/85 hover:bg-white border border-stone-200/80 px-3 py-1.5 md:px-4 md:py-2 rounded-full text-xs font-semibold text-stone-700 transition-all font-sans-ui shadow-sm hover:shadow active:scale-95"
-        title="View unlocked art collection"
-      >
-        <i data-lucide="book-open" class="w-3.5 h-3.5 md:w-4 md:h-4 text-stone-600"></i>
-        <span>Collection</span>
-        <span id="collectionBadgeCount" class="ml-1 bg-stone-200 text-stone-700 text-[10px] px-1.5 py-0.2 rounded-full font-mono-num font-bold">0/5</span>
-      </button>
-      
-      <button 
-        id="openSettingsBtn"
-        class="p-2 md:p-2.5 rounded-full bg-white/85 hover:bg-white border border-stone-200/80 transition-all text-stone-700 shadow-sm hover:shadow active:scale-95"
-        title="Open Studio Configuration"
-      >
-        <i data-lucide="sliders" class="w-4 h-4 md:w-5 md:h-5"></i>
-      </button>
-    </div>
-  </header>
-
-  <!-- Main Canvas Studio Arena -->
-  <main class="relative flex-grow flex flex-col items-center justify-center w-full my-2 max-w-6xl mx-auto overflow-hidden">
-    
-    <!-- Floating Painting Canvas Centerpiece -->
-    <div class="relative w-[68vmin] h-[68vmin] max-w-[460px] max-h-[460px] flex items-center justify-center shrink-0">
-      
-      <!-- Radial Bloom Behind Canvas -->
-      <div class="absolute inset-4 rounded-full bg-stone-300/40 blur-3xl -z-10"></div>
-
-      <canvas
-        id="paintCanvas"
-        width="1200"
-        height="1200"
-        class="w-full h-full object-contain pointer-events-none drop-shadow-md rounded-2xl transition-all duration-500"
-      ></canvas>
-
-      <canvas
-        id="offscreenCanvas"
-        width="1200"
-        height="1200"
-        class="hidden"
-      ></canvas>
-
-      <!-- Empty State Guide -->
-      <div id="startPrompt" class="absolute inset-0 flex flex-col items-center justify-center text-center p-4 transition-opacity duration-300">
-        <p class="text-xs md:text-sm font-bold tracking-widest text-stone-500 uppercase font-sans-ui">Click focus to start the wash</p>
-        <p class="text-[10px] md:text-xs text-stone-400 mt-1 max-w-[240px] font-sans-ui font-medium leading-relaxed">
-          Style: <span id="promptStyle" class="font-bold text-stone-600 underline">watercolor</span> &bull; Path: <span id="promptPattern" class="font-bold text-stone-600 underline">center</span>
-        </p>
-      </div>
-    </div>
-
-    <!-- Completed Artwork Details Panel -->
-    <div id="artMetadataPanel" class="mt-3 text-center max-w-sm md:max-w-md transition-all duration-700 shrink-0 opacity-0 translate-y-3 pointer-events-none h-0 overflow-hidden">
-      <h2 id="metaTitle" class="text-base md:text-lg lg:text-xl font-bold text-stone-900 leading-tight">Artwork Title</h2>
-      <p id="metaArtist" class="text-[11px] md:text-xs lg:text-sm text-stone-600 mt-0.5">Artist, Year (Medium)</p>
-      <p id="metaDesc" class="text-[10px] md:text-xs text-stone-500 mt-1.5 font-sans-ui font-medium leading-relaxed max-w-[320px] md:max-w-[380px] mx-auto">Description of the artwork.</p>
-      
-      <div class="mt-3.5 flex gap-2.5 justify-center font-sans-ui">
-        <button
-          id="metaBreakBtn"
-          class="py-1.5 px-4 rounded-full text-[10px] md:text-xs font-bold bg-stone-800 hover:bg-stone-900 text-white transition-all shadow-sm uppercase tracking-wider active:scale-95"
-        >
-          Start Break
-        </button>
-        <button
-          id="metaNextBtn"
-          class="py-1.5 px-4 rounded-full text-[10px] md:text-xs font-bold bg-stone-200 hover:bg-stone-300 text-stone-800 transition-all uppercase tracking-wider active:scale-95"
-        >
-          Next Masterpiece
-        </button>
-      </div>
-    </div>
-
-    <!-- Floating Control Panel Dock -->
-    <div id="controlDock" class="absolute bottom-2 right-2 md:bottom-4 md:right-4 w-[215px] sm:w-[250px] md:w-[270px] z-20 transition-all">
-      <div class="bg-white/85 backdrop-blur-md border border-stone-200/90 p-3.5 md:p-4 rounded-3xl shadow-lg hover:shadow-xl transition-all duration-300">
-        
-        <!-- Dock Header -->
-        <div class="flex justify-between items-center mb-1">
-          <span id="timerModeLabel" class="text-[9px] md:text-[10px] font-bold tracking-widest uppercase text-stone-500 font-sans-ui">
-            Focus Block
-          </span>
-          <button 
-            id="toggleCollapseBtn"
-            class="text-stone-400 hover:text-stone-700 p-1 rounded-md transition-colors"
-            title="Toggle compact card view"
-          >
-            <i id="collapseChevron" data-lucide="chevron-down" class="w-4 h-4"></i>
+    <section class="stage" aria-label="Canvas">
+      <div class="lamp-bar"></div>
+      <div class="frame">
+        <div class="mat">
+          <canvas id="paintCanvas" width="1200" height="1200"></canvas>
+          <canvas id="offscreenCanvas" width="1200" height="1200"></canvas>
+          <button class="mat-hit" id="matHit" aria-label="Start or pause"></button>
+          <button class="start-btn" id="startBtn" aria-label="Start focus">
+            <svg class="i" viewBox="0 0 24 24"><path d="M7 4l13 8-13 8z"/></svg>
           </button>
         </div>
+        <div class="progress-rail"><span id="rail"></span></div>
+      </div>
+    </section>
 
-        <!-- Expanded Dock Body -->
-        <div id="dockExpandedContent" class="space-y-3 font-sans-ui transition-all">
-          <div class="text-center py-0.5">
-            <span id="timerDisplay" class="text-4xl sm:text-5xl font-extralight tracking-tight font-mono-num text-stone-900">
-              25:00
-            </span>
+    <section class="panel">
+      <div class="status">
+        <span class="chip pixel" id="modeChip">FOCUS</span>
+        <span class="pct" id="pct">000%</span>
+      </div>
+
+      <div class="time" id="timeWrap"><span id="tMin">25</span><span class="colon">:</span><span id="tSec">00</span></div>
+
+      <div class="controls">
+        <button class="ctl" id="resetBtn" aria-label="Reset canvas" title="Reset (R)">
+          <svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>
+        </button>
+        <button class="play" id="mainActionBtn">
+          <svg class="i" viewBox="0 0 24 24" id="playIcon"></svg>
+          <span id="mainActionLabel">Focus</span>
+        </button>
+        <button class="ctl" id="skipBtn" aria-label="Finish wash now" title="Finish now">
+          <svg class="i" viewBox="0 0 24 24"><path d="M5 4l10 8-10 8z"/><path d="M19 5v14"/></svg>
+        </button>
+        <button class="ctl sketch" id="quickSketchBtn" aria-label="Quick sketch, 15 seconds" title="Quick sketch (Q)">
+          <svg class="i" viewBox="0 0 24 24"><path d="M13 2 3 14h9l-1 8 10-12h-9l1-8z"/></svg>
+        </button>
+      </div>
+
+      <article class="placard" id="placard">
+        <h2 id="metaTitle"></h2>
+        <div class="by" id="metaArtist"></div>
+        <div class="swatches" id="swatches"><i></i><i></i><i></i><i></i><i></i></div>
+        <div class="reveal"><div>
+          <div class="medium" id="metaMedium"></div>
+          <p class="desc" id="metaDesc"></p>
+          <div class="actions">
+            <button class="btn" id="metaNextBtn">Next canvas</button>
           </div>
+        </div></div>
+      </article>
+    </section>
 
-          <div class="grid grid-cols-2 gap-2">
-            <button
-              id="mainActionBtn"
-              class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-stone-850 bg-stone-900 hover:bg-black text-white transition-all uppercase tracking-wider shadow-sm active:scale-95"
-            >
-              <i id="mainActionIcon" data-lucide="play" class="w-3.5 h-3.5"></i>
-              <span id="mainActionLabel">Focus</span>
-            </button>
+  </div>
+</main>
 
-            <button
-              id="resetPromptBtn"
-              class="flex items-center justify-center gap-1.5 py-2.5 rounded-xl text-xs font-bold bg-white hover:bg-stone-50 text-stone-700 border border-stone-200/90 transition-all uppercase tracking-wider active:scale-95"
-            >
-              <i data-lucide="rotate-ccw" class="w-3.5 h-3.5"></i>
-              <span>Reset</span>
-            </button>
-          </div>
+<div class="scrim" id="scrim"></div>
 
-          <div class="pt-2.5 border-t border-stone-200/60 space-y-1.5">
-            <button
-              id="quickSketchBtn"
-              class="w-full py-2 rounded-xl text-[9px] md:text-[10px] font-bold bg-[#faf6f4] hover:bg-[#f5ece8] text-[#a45344] border border-[#e5cbc3] transition-all flex items-center justify-center gap-1.5 shadow-sm uppercase tracking-widest active:scale-95"
-            >
-              <i data-lucide="sparkles" class="w-3 h-3 text-[#a45344]"></i>
-              <span>Quick Sketch (15s)</span>
-            </button>
-
-            <button
-              id="skipBlockBtn"
-              class="w-full py-1.5 rounded-lg text-[9px] font-bold bg-white/70 text-stone-600 hover:text-stone-900 border border-stone-200/80 transition-all flex items-center justify-center gap-1 active:scale-95"
-            >
-              <i data-lucide="skip-forward" class="w-3 h-3"></i>
-              <span>Complete Wash Early</span>
-            </button>
-          </div>
-        </div>
-
-        <!-- Collapsed Mini Dock Content -->
-        <div id="dockCollapsedContent" class="hidden items-center justify-between mt-1 font-sans-ui">
-          <span id="miniTimerDisplay" class="text-lg md:text-xl font-mono-num font-semibold text-stone-800">25:00</span>
-          <div class="flex items-center gap-1.5">
-            <button 
-              id="miniQuickBtn"
-              class="p-1.5 rounded-lg bg-[#f5ebe8] text-[#a45344] hover:bg-[#ebd9d4] border border-[#d9b2a9]/50 transition-colors"
-              title="Quick Sketch Mode"
-            >
-              <i data-lucide="zap" class="w-3.5 h-3.5"></i>
-            </button>
-            <button 
-              id="miniPlayBtn"
-              class="p-1.5 rounded-lg bg-stone-850 bg-stone-900 text-white hover:bg-black transition-colors"
-            >
-              <i id="miniPlayIcon" data-lucide="play" class="w-3.5 h-3.5"></i>
-            </button>
-          </div>
-        </div>
-
+<!-- Studio settings drawer -->
+<aside class="drawer" id="settingsDrawer" aria-label="Studio settings">
+  <div class="sheet-head">
+    <h3>Studio</h3>
+    <button class="icon-btn" id="closeSettingsBtn" aria-label="Close"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
+  </div>
+  <div class="drawer-body">
+    <div>
+      <div class="group-label">Timer</div>
+      <label class="row">Focus<input id="inputFocusMin" type="range" min="5" max="60" step="5" value="25"><output id="labelFocusMin">25m</output></label>
+      <label class="row">Break<input id="inputBreakMin" type="range" min="1" max="30" step="1" value="5"><output id="labelBreakMin">5m</output></label>
+    </div>
+    <div>
+      <div class="group-label">Medium</div>
+      <div class="seg c3" id="renderStyleGroup">
+        <button data-style="watercolor"><svg class="i" viewBox="0 0 24 24"><path d="M12 3s6 6.5 6 11a6 6 0 0 1-12 0c0-4.5 6-11 6-11z"/></svg><span>Wash</span></button>
+        <button data-style="sharpness"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="8" stroke-dasharray="2 3"/><circle cx="12" cy="12" r="3"/></svg><span>Haze</span></button>
+        <button data-style="pointillism"><svg class="i" viewBox="0 0 24 24"><circle cx="7" cy="7" r="1"/><circle cx="12" cy="7" r="1"/><circle cx="17" cy="7" r="1"/><circle cx="7" cy="12" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="17" cy="12" r="1"/><circle cx="7" cy="17" r="1"/><circle cx="12" cy="17" r="1"/><circle cx="17" cy="17" r="1"/></svg><span>Stipple</span></button>
       </div>
     </div>
-  </main>
-
-  <!-- Studio Status Footer -->
-  <footer class="relative w-full flex justify-between items-center text-[9px] sm:text-[10px] md:text-xs font-sans-ui font-bold text-stone-500 uppercase tracking-widest max-w-6xl mx-auto shrink-0 z-10 py-1">
-    <div id="progressStatus">Progress: 0% wash density</div>
-    <div class="flex items-center gap-3">
-      <span id="currentArtLabel">The Starry Night</span>
-      <span>&bull;</span>
-      <span id="unveiledFooterCount">Unveiled: 0/5</span>
+    <div>
+      <div class="group-label">Path · <span id="pathName">center</span></div>
+      <div class="seg c5" id="growthPatternGroup">
+        <button data-pattern="center" aria-label="Center bleed"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="2"/><circle cx="12" cy="12" r="6" stroke-dasharray="2 2.5"/><circle cx="12" cy="12" r="10" stroke-dasharray="1 3"/></svg><span>Center</span></button>
+        <button data-pattern="top-down" aria-label="Top to bottom"><svg class="i" viewBox="0 0 24 24"><path d="M4 5h16M4 9h16M4 13h10"/><path d="M12 16v5m-3-3 3 3 3-3"/></svg><span>Top-down</span></button>
+        <button data-pattern="scatter" aria-label="Scatter"><svg class="i" viewBox="0 0 24 24"><circle cx="6" cy="7" r="1"/><circle cx="15" cy="5" r="1"/><circle cx="18" cy="13" r="1"/><circle cx="9" cy="14" r="1"/><circle cx="13" cy="19" r="1"/><circle cx="5" cy="19" r="1"/></svg><span>Scatter</span></button>
+        <button data-pattern="spiral" aria-label="Spiral out"><svg class="i" viewBox="0 0 24 24"><path d="M12 12a1.5 1.5 0 0 1 3 0 3 3 0 0 1-6 0 4.5 4.5 0 0 1 9 0 6 6 0 0 1-12 0 7.5 7.5 0 0 1 15 0"/></svg><span>Spiral</span></button>
+        <button data-pattern="inward" aria-label="Inward squeeze"><svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 3v5m0 8v5M3 12h5m8 0h5"/></svg><span>Inward</span></button>
+      </div>
     </div>
-  </footer>
-
-  <!-- MODAL 1: Studio Configuration Panel -->
-  <div id="settingsModal" class="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-all">
-    <div class="bg-[#fcfaf7] border border-stone-200 w-full max-w-md rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[88vh]">
-      
-      <!-- Modal Header -->
-      <div class="p-4 md:p-5 border-b border-stone-200 flex justify-between items-center bg-stone-50/70 shrink-0">
-        <h2 class="text-xs font-bold text-stone-700 uppercase tracking-widest flex items-center gap-2">
-          <i data-lucide="sliders" class="w-4 h-4 text-stone-600"></i>
-          <span>Studio Configuration</span>
-        </h2>
-        <button id="closeSettingsBtn" class="p-1.5 rounded-full hover:bg-stone-200 text-stone-500 transition-colors">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-      <!-- Navigation Tab Bar -->
-      <div class="flex bg-stone-100/80 p-1.5 gap-1 shrink-0 font-sans-ui border-b border-stone-200/50">
-        <button id="tabTimerBtn" class="flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all bg-white text-stone-900 shadow-sm">
-          <i data-lucide="clock" class="w-3.5 h-3.5"></i>
-          <span>Timer</span>
-        </button>
-        <button id="tabGrowthBtn" class="flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all text-stone-500 hover:text-stone-800">
-          <i data-lucide="palette" class="w-3.5 h-3.5"></i>
-          <span>Style</span>
-        </button>
-        <button id="tabPhysicsBtn" class="flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all text-stone-500 hover:text-stone-800">
-          <i data-lucide="sliders" class="w-3.5 h-3.5"></i>
-          <span>Bleed Physics</span>
-        </button>
-      </div>
-
-      <!-- Tab Content Area -->
-      <div class="p-5 font-sans-ui overflow-y-auto flex-grow space-y-5">
-        
-        <!-- Tab 1: Timer Settings -->
-        <div id="panelTimer" class="space-y-4">
-          <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Interval Durations</span>
-          
-          <div>
-            <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1.5">
-              Focus Block (minutes)
-            </label>
-            <div class="flex items-center gap-3">
-              <input id="inputFocusMin" type="range" min="5" max="60" step="5" value="25" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
-              <span id="labelFocusMin" class="text-xs font-bold w-10 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">25m</span>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-1.5">
-              Break Block (minutes)
-            </label>
-            <div class="flex items-center gap-3">
-              <input id="inputBreakMin" type="range" min="1" max="30" step="1" value="5" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
-              <span id="labelBreakMin" class="text-xs font-bold w-10 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">5m</span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 2: Style & Growth Path -->
-        <div id="panelGrowth" class="hidden space-y-5">
-          <div>
-            <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-2">Growth Direction</span>
-            <div class="grid grid-cols-2 sm:grid-cols-3 gap-2" id="growthPatternGroup">
-              <button data-pattern="center" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-stone-900 text-white border-stone-900 shadow-sm">Center Bleed</button>
-              <button data-pattern="top-down" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Top-to-Bottom</button>
-              <button data-pattern="scatter" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Scatter Feed</button>
-              <button data-pattern="spiral" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Spiral Out</button>
-              <button data-pattern="inward" class="pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50">Inward Squeeze</button>
-            </div>
-          </div>
-
-          <div>
-            <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider mb-2">Render Mode</span>
-            <div class="space-y-2" id="renderStyleGroup">
-              <button data-style="watercolor" class="style-btn w-full text-left p-3 rounded-2xl border transition-all bg-stone-50 border-stone-800 ring-1 ring-stone-800/20">
-                <span class="text-xs font-bold text-stone-900 block">💧 Watercolor Bleed (Default)</span>
-                <span class="text-[9.5px] text-stone-500 mt-0.5 block leading-relaxed">Organic pigment saturation spreading outward with dark pooling rims and wet fluid diffusion.</span>
-              </button>
-              <button data-style="sharpness" class="style-btn w-full text-left p-3 rounded-2xl border transition-all bg-white border-stone-200 hover:bg-stone-50/50">
-                <span class="text-xs font-bold text-stone-800 block">🔍 Progressive Sharpness Decay</span>
-                <span class="text-[9.5px] text-stone-500 mt-0.5 block leading-relaxed">Atmospheric canvas haze and soft blur that clears progressively into high-definition sharpness.</span>
-              </button>
-              <button data-style="pointillism" class="style-btn w-full text-left p-3 rounded-2xl border transition-all bg-white border-stone-200 hover:bg-stone-50/50">
-                <span class="text-xs font-bold text-stone-800 block">🎨 Pointillism / Stipple Detailing</span>
-                <span class="text-[9.5px] text-stone-500 mt-0.5 block leading-relaxed">Pure stipple impressionism built dot-by-dot through separated microscopic pigment points.</span>
-              </button>
-            </div>
-          </div>
-        </div>
-
-        <!-- Tab 3: Bleed Physics Parameters -->
-        <div id="panelPhysics" class="hidden space-y-5">
-          <span class="block text-[10px] font-bold text-stone-500 uppercase tracking-wider">Fluid Dynamics</span>
-
-          <div>
-            <label class="block text-[9.5px] font-bold text-stone-500 uppercase tracking-wider mb-1">
-              Bleed Wetness (Pigment Opacity)
-            </label>
-            <div class="flex items-center gap-3">
-              <input id="inputBleedWetness" type="range" min="0.3" max="1.5" step="0.1" value="0.7" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
-              <span id="labelBleedWetness" class="text-xs font-bold w-12 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">70%</span>
-            </div>
-          </div>
-
-          <div>
-            <label class="block text-[9.5px] font-bold text-stone-500 uppercase tracking-wider mb-1">
-              Bleed Spread (Splat Radius Scale)
-            </label>
-            <div class="flex items-center gap-3">
-              <input id="inputBleedSpread" type="range" min="0.3" max="2.0" step="0.1" value="0.5" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
-              <span id="labelBleedSpread" class="text-xs font-bold w-12 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">0.5x</span>
-            </div>
-          </div>
-
-          <div class="flex items-center justify-between p-3 bg-stone-50 rounded-2xl border border-stone-200">
-            <div>
-              <span class="block text-xs font-bold text-stone-800">Dark rim fringe pooled edge</span>
-              <span class="block text-[9px] text-stone-500 mt-0.5">Simulate authentic pigment concentration at wet borders</span>
-            </div>
-            <input id="inputBleedFringe" type="checkbox" checked class="w-4 h-4 rounded border-stone-300 text-stone-800 focus:ring-stone-800 cursor-pointer">
-          </div>
-
-          <div>
-            <label class="block text-[9.5px] font-bold text-stone-500 uppercase tracking-wider mb-1">
-              Total Droplets (Density)
-            </label>
-            <div class="flex items-center gap-3">
-              <input id="inputMaxSplats" type="range" min="50000" max="200000" step="10000" value="120000" class="flex-grow h-1.5 bg-stone-200 rounded-lg cursor-pointer">
-              <span id="labelMaxSplats" class="text-xs font-bold w-12 text-center font-mono-num text-stone-700 bg-stone-100 py-1 px-1.5 rounded border border-stone-200">120k</span>
-            </div>
-          </div>
-        </div>
-
-      </div>
-
-      <!-- Modal Footer -->
-      <div class="p-4 md:p-5 border-t border-stone-200 bg-stone-50/70 shrink-0 flex gap-2 font-sans-ui">
-        <button id="cancelSettingsBtn" class="flex-1 py-2.5 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200 transition-all active:scale-95">
-          Cancel
-        </button>
-        <button id="saveSettingsBtn" class="flex-1 py-2.5 rounded-xl text-xs font-bold text-white bg-stone-800 hover:bg-stone-900 transition-all shadow-sm active:scale-95">
-          Save & Apply
-        </button>
-      </div>
-
+    <div>
+      <div class="group-label">Bleed</div>
+      <label class="row">Wetness<input id="inputBleedWetness" type="range" min="0.3" max="1.5" step="0.1" value="0.7"><output id="labelBleedWetness">70%</output></label>
+      <label class="row">Spread<input id="inputBleedSpread" type="range" min="0.3" max="2.0" step="0.1" value="0.5"><output id="labelBleedSpread">0.5x</output></label>
+      <label class="row">Density<input id="inputMaxSplats" type="range" min="50000" max="200000" step="10000" value="120000"><output id="labelMaxSplats">120k</output></label>
+      <div class="row toggle"><span>Dark rim</span><button class="switch" id="inputBleedFringe" role="switch" aria-checked="true" aria-label="Dark rim"></button></div>
     </div>
   </div>
+  <div class="drawer-foot"><button class="btn" id="saveSettingsBtn">Apply</button></div>
+</aside>
 
-  <!-- MODAL 2: Art Collection Gallery -->
-  <div id="galleryModal" class="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-50 hidden items-center justify-center p-4 transition-all">
-    <div class="bg-[#fcfaf7] border border-stone-200 w-full max-w-md md:max-w-xl rounded-3xl shadow-2xl overflow-hidden flex flex-col max-h-[85vh]">
-      
-      <div class="p-4 md:p-5 border-b border-stone-200 flex justify-between items-center bg-stone-50/70 shrink-0">
-        <div>
-          <h2 class="text-xs font-bold text-stone-800 uppercase tracking-widest flex items-center gap-1.5">
-            <i data-lucide="award" class="w-4 h-4 text-stone-600"></i>
-            <span>Unveiled Masterpieces</span>
-          </h2>
-          <p class="text-[9px] text-stone-500 font-sans-ui mt-0.5">Complete focus sessions to unveil each historical masterpiece</p>
-        </div>
-        <button id="closeGalleryBtn" class="p-1.5 rounded-full hover:bg-stone-200 text-stone-500 transition-colors">
-          <i data-lucide="x" class="w-4 h-4"></i>
-        </button>
-      </div>
-
-      <!-- Gallery Grid of Works -->
-      <div class="p-4 md:p-5 overflow-y-auto flex-grow">
-        <div id="galleryGrid" class="grid grid-cols-2 sm:grid-cols-3 gap-3">
-          <!-- Populated dynamically via JS -->
-        </div>
-      </div>
-
-      <div class="p-3.5 border-t border-stone-200/70 bg-stone-50/50 text-center font-sans-ui">
-        <button id="dismissGalleryBtn" class="py-1.5 px-6 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-200 transition-colors active:scale-95">
-          Close Gallery
-        </button>
-      </div>
-
-    </div>
+<!-- Gallery wall -->
+<section class="gallery" id="galleryModal" aria-label="Collection">
+  <div class="sheet-head">
+    <h3>Collection <span style="color:var(--muted);font-size:12px" id="galleryCount"></span></h3>
+    <button class="icon-btn" id="closeGalleryBtn" aria-label="Close"><svg class="i" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </div>
+  <div class="wall" id="galleryGrid"></div>
+</section>
 
-  <!-- MODAL 3: Reset Confirmation Dialog -->
-  <div id="resetModal" class="fixed inset-0 bg-stone-900/50 backdrop-blur-sm z-[60] hidden items-center justify-center p-4">
-    <div class="bg-[#fcfaf7] border border-stone-200 w-full max-w-xs rounded-3xl p-5 shadow-2xl text-center font-sans-ui">
-      <div class="w-10 h-10 rounded-full bg-red-50 text-red-600 flex items-center justify-center mx-auto mb-3">
-        <i data-lucide="rotate-ccw" class="w-5 h-5"></i>
-      </div>
-      <h3 class="text-xs md:text-sm font-bold uppercase tracking-wider text-stone-800 mb-1">Reset Current Canvas?</h3>
-      <p class="text-[10.5px] text-stone-500 leading-relaxed mb-4">
-        This will clear existing watercolor wash layers and restart the countdown for this session.
-      </p>
-      <div class="flex gap-2">
-        <button id="cancelResetBtn" class="flex-1 py-2 rounded-xl text-xs font-semibold text-stone-600 hover:bg-stone-100 transition-all active:scale-95">
-          Keep Painting
-        </button>
-        <button id="confirmResetBtn" class="flex-1 py-2 rounded-xl text-xs font-bold text-white bg-red-600 hover:bg-red-700 transition-all active:scale-95 shadow-sm">
-          Reset Now
-        </button>
-      </div>
-    </div>
-  </div>
+<div class="sr" aria-live="polite" id="live"></div>
 
-  <!-- Script Logic -->
-  <script>
+<script>
     // Authentic artwork library with genuine Great Wave off Kanagawa (Hokusai)
     const ART_COLLECTION = [
       {
@@ -513,7 +466,7 @@
       }
     ];
 
-    // State management
+    // ── State (names kept so the render engine below reads them unchanged) ──
     let mode = 'focus'; // 'focus' | 'break'
     let focusDuration = 25 * 60;
     let breakDuration = 5 * 60;
@@ -521,16 +474,14 @@
     let isActive = false;
     let isPaused = false;
     let isTestMode = false;
-    let isUiCollapsed = false;
 
     let currentArtIndex = 0;
     let unlockedArtIds = [];
     let isImgLoaded = false;
     let isCompleted = false;
 
-    // Applied Physics & Style Settings
-    let growthPattern = 'center'; // 'center' | 'top-down' | 'scatter' | 'spiral' | 'inward'
-    let renderStyle = 'watercolor'; // 'watercolor' | 'sharpness' | 'pointillism'
+    let growthPattern = 'center';
+    let renderStyle = 'watercolor';
     let bleedWetness = 0.7;
     let bleedSpread = 0.5;
     let bleedFringe = true;
@@ -539,73 +490,90 @@
     let sporadicFactor = 0.35;
     let boundaryFluctuation = 0.55;
 
-    // Staged temporary settings for modals
-    let tempSettings = {
-      focusMin: 25,
-      breakMin: 5,
-      growthPattern: 'center',
-      renderStyle: 'watercolor',
-      bleedWetness: 0.7,
-      bleedSpread: 0.5,
-      bleedFringe: true,
-      maxSplats: 120000
-    };
-
-    // Canvas references & render loop
     const canvas = document.getElementById('paintCanvas');
     const ctx = canvas.getContext('2d');
     const offscreenCanvas = document.getElementById('offscreenCanvas');
-    const offscreenCtx = offscreenCanvas.getContext('2d');
-    
+    const offscreenCtx = offscreenCanvas.getContext('2d', { willReadFrequently: true });
+
     let drawnSplats = 0;
     let animationFrameId = null;
     let timerInterval = null;
     let offscreenImg = new Image();
 
-    // Web Audio Sound Engine
-    function playTone(type) {
+    // ── Persistence ───────────────────────────────────────────
+    const STORE_KEY = 'paint-pomodoro.v2';
+    const settings = { focusMin: 25, breakMin: 5, growthPattern: 'center', renderStyle: 'watercolor', bleedWetness: 0.7, bleedSpread: 0.5, bleedFringe: true, maxSplats: 120000 };
+    let theme = 'dark';
+    let sessions = { day: '', count: 0 };
+    const swatchCache = {};
+
+    function today() { const d = new Date(); return `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`; }
+    function loadStore() {
       try {
-        const AudioContext = window.AudioContext || window.webkitAudioContext;
-        if (!AudioContext) return;
-        const audioCtx = new AudioContext();
-        
-        if (type === 'click') {
-          const osc = audioCtx.createOscillator();
-          const gain = audioCtx.createGain();
-          osc.type = 'triangle';
-          osc.frequency.setValueAtTime(360, audioCtx.currentTime);
-          osc.frequency.exponentialRampToValueAtTime(220, audioCtx.currentTime + 0.04);
-          gain.gain.setValueAtTime(0.02, audioCtx.currentTime);
-          gain.gain.linearRampToValueAtTime(0.001, audioCtx.currentTime + 0.04);
-          osc.connect(gain);
-          gain.connect(audioCtx.destination);
-          osc.start();
-          osc.stop(audioCtx.currentTime + 0.045);
-        } else if (type === 'success') {
-          // Melodic chord for masterpiece reveal
-          [523.25, 659.25, 783.99, 1046.50].forEach((freq, i) => {
-            const osc = audioCtx.createOscillator();
-            const gain = audioCtx.createGain();
-            osc.type = 'sine';
-            osc.frequency.setValueAtTime(freq, audioCtx.currentTime + i * 0.08);
-            gain.gain.setValueAtTime(0.05, audioCtx.currentTime + i * 0.08);
-            gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + i * 0.08 + 0.4);
-            osc.connect(gain);
-            gain.connect(audioCtx.destination);
-            osc.start(audioCtx.currentTime + i * 0.08);
-            osc.stop(audioCtx.currentTime + i * 0.08 + 0.42);
-          });
-        }
-      } catch (err) {
-        // Audio policy fallback
-      }
+        const s = JSON.parse(localStorage.getItem(STORE_KEY) || '{}');
+        if (s.settings) Object.assign(settings, s.settings);
+        if (Array.isArray(s.unlocked)) unlockedArtIds = s.unlocked.filter(id => ART_COLLECTION.some(a => a.id === id));
+        if (s.theme) theme = s.theme;
+        if (s.sessions) sessions = s.sessions;
+        if (s.swatches) Object.assign(swatchCache, s.swatches);
+        if (Number.isInteger(s.art) && ART_COLLECTION[s.art]) currentArtIndex = s.art;
+      } catch (e) {}
+      if (sessions.day !== today()) sessions = { day: today(), count: 0 };
+    }
+    function saveStore() {
+      try {
+        localStorage.setItem(STORE_KEY, JSON.stringify({ settings, unlocked: unlockedArtIds, theme, sessions, swatches: swatchCache, art: currentArtIndex }));
+      } catch (e) {}
+    }
+    function applySettings() {
+      focusDuration = settings.focusMin * 60;
+      breakDuration = settings.breakMin * 60;
+      growthPattern = settings.growthPattern;
+      renderStyle = settings.renderStyle;
+      bleedWetness = settings.bleedWetness;
+      bleedSpread = settings.bleedSpread;
+      bleedFringe = settings.bleedFringe;
+      maxSplats = settings.maxSplats;
     }
 
+    // ── Sound (single shared context) ─────────────────────────
+    let audioCtx = null;
+    function playTone(type) {
+      try {
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if (!AC) return;
+        if (!audioCtx) audioCtx = new AC();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const t0 = audioCtx.currentTime;
+        if (type === 'click') {
+          const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+          osc.type = 'triangle';
+          osc.frequency.setValueAtTime(360, t0);
+          osc.frequency.exponentialRampToValueAtTime(220, t0 + 0.04);
+          gain.gain.setValueAtTime(0.02, t0);
+          gain.gain.linearRampToValueAtTime(0.001, t0 + 0.04);
+          osc.connect(gain); gain.connect(audioCtx.destination);
+          osc.start(); osc.stop(t0 + 0.045);
+        } else {
+          const notes = type === 'success' ? [523.25, 659.25, 783.99, 1046.5] : [783.99, 659.25, 523.25];
+          notes.forEach((freq, i) => {
+            const osc = audioCtx.createOscillator(), gain = audioCtx.createGain();
+            osc.type = 'sine';
+            osc.frequency.setValueAtTime(freq, t0 + i * 0.08);
+            gain.gain.setValueAtTime(0.05, t0 + i * 0.08);
+            gain.gain.exponentialRampToValueAtTime(0.001, t0 + i * 0.08 + 0.4);
+            osc.connect(gain); gain.connect(audioCtx.destination);
+            osc.start(t0 + i * 0.08); osc.stop(t0 + i * 0.08 + 0.42);
+          });
+        }
+      } catch (err) {}
+    }
+
+    // ── Render engine (original, unchanged apart from UI hooks) ──
     // Preload art image with guaranteed procedural gradient fallback
     function loadCurrentArtwork() {
       isImgLoaded = false;
       const art = ART_COLLECTION[currentArtIndex];
-      document.getElementById('currentArtLabel').textContent = art.title;
 
       offscreenImg = new Image();
       offscreenImg.crossOrigin = 'anonymous';
@@ -618,6 +586,7 @@
         const y = (offscreenCanvas.height - offscreenImg.height * scale) / 2;
         offscreenCtx.drawImage(offscreenImg, x, y, offscreenImg.width * scale, offscreenImg.height * scale);
         isImgLoaded = true;
+        onArtReady();
       };
 
       offscreenImg.onerror = () => {
@@ -636,6 +605,7 @@
         offscreenCtx.fillStyle = radial;
         offscreenCtx.fillRect(0, 0, offscreenCanvas.width, offscreenCanvas.height);
         isImgLoaded = true;
+        onArtReady();
       };
     }
 
@@ -826,7 +796,7 @@
         }
 
         // Apply progressive canvas blur decay if sharpness mode is active
-        if (renderStyle === 'sharpness' && isActive) {
+        if (renderStyle === 'sharpness' && isActive && mode === 'focus') {
           const blurVal = Math.max(0, (1 - progress) * 12);
           canvas.style.filter = `blur(${blurVal}px) drop-shadow(0 4px 6px rgba(0,0,0,0.08))`;
         } else {
@@ -834,10 +804,121 @@
         }
 
         // Update progress badge
-        document.getElementById('progressStatus').textContent = `Progress: ${Math.round(progress * 100)}% wash density`;
+        uiFrame();
       }
 
       animationFrameId = requestAnimationFrame(updateCanvas);
+    }
+
+    // ── Palette extraction (reads the offscreen art once per load) ──
+    function onArtReady() {
+      const art = ART_COLLECTION[currentArtIndex];
+      if (!swatchCache[art.id]) {
+        try {
+          const W = offscreenCanvas.width, H = offscreenCanvas.height;
+          const data = offscreenCtx.getImageData(0, 0, W, H).data;
+          const buckets = new Map();
+          for (let y = 30; y < H; y += 23) {
+            for (let x = 30; x < W; x += 23) {
+              const k = (y * W + x) * 4;
+              const r = data[k], g = data[k + 1], b = data[k + 2];
+              const key = (r >> 5) << 6 | (g >> 5) << 3 | (b >> 5);
+              const e = buckets.get(key) || [0, 0, 0, 0];
+              e[0] += r; e[1] += g; e[2] += b; e[3]++;
+              buckets.set(key, e);
+            }
+          }
+          const ranked = [...buckets.values()].sort((a, b) => b[3] - a[3]).map(e => [e[0] / e[3], e[1] / e[3], e[2] / e[3]]);
+          const picked = [];
+          for (const c of ranked) {
+            if (picked.every(p => Math.hypot(p[0] - c[0], p[1] - c[1], p[2] - c[2]) > 70)) picked.push(c);
+            if (picked.length === 5) break;
+          }
+          if (picked.length === 5) {
+            swatchCache[art.id] = picked.map(c => '#' + c.map(v => Math.round(v).toString(16).padStart(2, '0')).join(''));
+            saveStore();
+          }
+        } catch (e) {}
+      }
+      paintSwatches(true);
+    }
+    function swatchesFor(art) {
+      if (swatchCache[art.id]) return swatchCache[art.id];
+      const g = art.theme.baseGrad;
+      return [g[0], g[1], g[2], g[3], art.theme.accent];
+    }
+
+    // ── ASCII "decode" for the wall label ─────────────────────
+    const GLYPHS = '#%&*+=/\\<>?~';
+    function hashStr(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return h >>> 0; }
+    function orderFor(text, seed) {
+      const idx = [];
+      [...text].forEach((c, i) => { if (c !== ' ') idx.push(i); });
+      let s = hashStr(seed) || 1;
+      for (let i = idx.length - 1; i > 0; i--) {
+        s = Math.imul(s ^ (s >>> 15), 2246822507) >>> 0;
+        const j = s % (i + 1);
+        [idx[i], idx[j]] = [idx[j], idx[i]];
+      }
+      return idx;
+    }
+    const orderCache = {};
+    function decode(text, frac, seed, tick) {
+      const key = seed + '|' + text;
+      const order = orderCache[key] || (orderCache[key] = orderFor(text, key));
+      const n = Math.round(Math.max(0, Math.min(1, frac)) * order.length);
+      const shown = new Set(order.slice(0, n));
+      return [...text].map((c, i) => (c === ' ' || shown.has(i)) ? c : GLYPHS[(hashStr(key + i) + tick * (i % 3 + 1)) % GLYPHS.length]).join('');
+    }
+
+    // ── UI ───────────────────────────────────────────────────
+    const $ = id => document.getElementById(id);
+    const ICONS = {
+      play: '<path d="M7 4l13 8-13 8z"/>',
+      pause: '<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/>',
+      moon: '<path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/>',
+      sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'
+    };
+    let lastLabel = { t: '', a: '', pct: -1, sw: -1 };
+
+    function paintFrac() {
+      if (isCompleted || mode === 'break') return 1;
+      return Math.min(1, drawnSplats / maxSplats);
+    }
+
+    // Called once per animation frame from the render loop
+    function uiFrame() {
+      const p = paintFrac();
+      document.documentElement.style.setProperty('--lit', p.toFixed(3));
+      $('rail').style.width = (p * 100).toFixed(1) + '%';
+      const pct = Math.round(p * 100);
+      if (pct !== lastLabel.pct) { $('pct').textContent = String(pct).padStart(3, '0') + '%'; lastLabel.pct = pct; }
+      renderLabel(p);
+      paintSwatches();
+    }
+
+    function renderLabel(p) {
+      const art = ART_COLLECTION[currentArtIndex];
+      const live = isActive && !isPaused;
+      const tick = live ? Math.floor(performance.now() / 450) : 0;
+      const done = isCompleted || mode === 'break';
+      const t = done ? art.title : decode(art.title, (p - 0.08) / 0.82, art.id, tick);
+      const a = done ? `${art.artist}, ${art.year}` : decode(`${art.artist}, ${art.year}`, (p - 0.45) / 0.5, art.id + 'a', tick);
+      if (t !== lastLabel.t) { $('metaTitle').textContent = t; lastLabel.t = t; }
+      if (a !== lastLabel.a) { $('metaArtist').textContent = a; lastLabel.a = a; }
+    }
+
+    function paintSwatches(force) {
+      const p = paintFrac();
+      const lit = Math.min(5, Math.floor(p * 6 + 1e-9));
+      if (!force && lit === lastLabel.sw) return;
+      lastLabel.sw = lit;
+      const cols = swatchesFor(ART_COLLECTION[currentArtIndex]);
+      [...$('swatches').children].forEach((el, i) => {
+        const on = i < lit;
+        el.classList.toggle('on', on);
+        el.style.background = on ? cols[i] : 'transparent';
+      });
     }
 
     function formatTime(seconds) {
@@ -845,447 +926,356 @@
       const s = (seconds % 60).toString().padStart(2, '0');
       return `${m}:${s}`;
     }
-
     function updateTimerUI() {
-      const formatted = formatTime(timeRemaining);
-      document.getElementById('timerDisplay').textContent = formatted;
-      document.getElementById('miniTimerDisplay').textContent = formatted;
+      $('tMin').textContent = Math.floor(timeRemaining / 60).toString().padStart(2, '0');
+      $('tSec').textContent = (timeRemaining % 60).toString().padStart(2, '0');
+      const tag = isCompleted ? '✓' : (mode === 'break' ? 'Break' : 'Focus');
+      document.title = (isActive || isPaused) ? `${formatTime(timeRemaining)} · ${tag}` : (isCompleted ? '✓ Unveiled · Paint Pomodoro' : 'Paint Pomodoro');
     }
 
-    function handleSessionCompleted() {
-      isActive = false;
-      isPaused = false;
-      isCompleted = true;
-      playTone('success');
-
-      const activeArt = ART_COLLECTION[currentArtIndex];
-      if (mode === 'focus') {
-        if (!unlockedArtIds.includes(activeArt.id)) {
-          unlockedArtIds.push(activeArt.id);
-          updateCollectionCount();
-        }
-      }
-
-      // Show art metadata panel
-      document.getElementById('metaTitle').textContent = activeArt.title;
-      document.getElementById('metaArtist').textContent = `${activeArt.artist}, ${activeArt.year} (${activeArt.medium})`;
-      document.getElementById('metaDesc').textContent = activeArt.desc;
-
-      const metaPanel = document.getElementById('artMetadataPanel');
-      metaPanel.classList.remove('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
-      metaPanel.classList.add('opacity-100', 'translate-y-0');
-
-      updateMainButtonUI();
+    function renderMode() {
+      const root = document.documentElement;
+      root.dataset.mode = isTestMode && mode === 'focus' ? 'sketch' : mode;
+      let chip = mode === 'break' ? 'BREAK' : (isTestMode ? 'SKETCH' : 'FOCUS');
+      if (isCompleted && mode === 'focus') chip = 'UNVEILED';
+      $('modeChip').textContent = chip;
+      $('quickSketchBtn').classList.toggle('on', isTestMode);
     }
 
+    function updateMainButtonUI() {
+      const running = isActive && !isPaused;
+      $('playIcon').innerHTML = running ? ICONS.pause : ICONS.play;
+      let label;
+      if (running) label = 'Pause';
+      else if (isPaused) label = 'Resume';
+      else if (isCompleted && mode === 'focus') label = 'Break';
+      else label = mode === 'focus' ? 'Focus' : 'Break';
+      $('mainActionLabel').textContent = label;
+      document.body.classList.toggle('running', running);
+      $('startBtn').classList.toggle('gone', isActive || drawnSplats > 0 || isCompleted);
+      $('skipBtn').disabled = !(isActive) || isCompleted;
+      $('placard').classList.toggle('done', isCompleted && mode === 'focus');
+      renderMode();
+    }
+
+    function renderPlacardMeta() {
+      const art = ART_COLLECTION[currentArtIndex];
+      $('metaMedium').textContent = art.medium;
+      $('metaDesc').textContent = art.desc;
+      lastLabel = { t: '', a: '', pct: -1, sw: -1 };
+      paintSwatches(true);
+    }
+
+    function updateCollectionCount() {
+      $('collectionBadgeCount').textContent = `${unlockedArtIds.length}/${ART_COLLECTION.length}`;
+    }
+    function renderPips() {
+      const n = sessions.count;
+      const filled = n === 0 ? 0 : ((n - 1) % 4) + 1;
+      [...$('pips').querySelectorAll('i')].forEach((el, i) => el.classList.toggle('on', i < filled));
+      $('pipCount').textContent = n ? '×' + n : '';
+    }
+    function applyTheme() {
+      document.documentElement.dataset.theme = theme;
+      $('themeIcon').innerHTML = theme === 'dark' ? ICONS.sun : ICONS.moon;
+      document.querySelector('meta[name=theme-color]').content = theme === 'dark' ? '#1E1826' : '#F4EDDB';
+    }
+    function announce(msg) { $('live').textContent = msg; }
+
+    // ── Timer (wall-clock based so background tabs stay accurate) ──
+    let endAt = 0;
     function startTimerLoop() {
       if (timerInterval) clearInterval(timerInterval);
       timerInterval = setInterval(() => {
         if (isActive && !isPaused && timeRemaining > 0) {
-          timeRemaining--;
-          updateTimerUI();
-          if (timeRemaining === 0) {
-            handleSessionCompleted();
+          const next = Math.max(0, Math.ceil((endAt - Date.now()) / 1000));
+          if (next !== timeRemaining) {
+            timeRemaining = next;
+            updateTimerUI();
+            if (timeRemaining === 0) handleSessionCompleted();
           }
         }
-      }, 1000);
+      }, 200);
     }
 
-    function updateMainButtonUI() {
-      const icon = document.getElementById('mainActionIcon');
-      const label = document.getElementById('mainActionLabel');
-      const miniIcon = document.getElementById('miniPlayIcon');
+    function handleSessionCompleted() {
+      const art = ART_COLLECTION[currentArtIndex];
+      isActive = false;
+      isPaused = false;
+      timeRemaining = 0;
 
-      if (isActive && !isPaused) {
-        label.textContent = 'Pause';
-        icon.setAttribute('data-lucide', 'pause');
-        miniIcon.setAttribute('data-lucide', 'pause');
+      if (mode === 'focus') {
+        isCompleted = true;
+        playTone('success');
+        if (!unlockedArtIds.includes(art.id)) unlockedArtIds.push(art.id);
+        if (!isTestMode) {
+          if (sessions.day !== today()) sessions = { day: today(), count: 0 };
+          sessions.count++;
+        }
+        updateCollectionCount();
+        renderPips();
+        saveStore();
+        announce(`${art.title} unveiled`);
       } else {
-        label.textContent = isPaused ? 'Resume' : (mode === 'focus' ? 'Focus' : 'Break');
-        icon.setAttribute('data-lucide', 'play');
-        miniIcon.setAttribute('data-lucide', 'play');
+        // Break over: back to a fresh canvas, ready to focus
+        playTone('chime');
+        mode = 'focus';
+        exitSketch();
+        selectNextArt();
+        announce('Break over');
+        return;
       }
-
-      // Prompt overlay toggle
-      const prompt = document.getElementById('startPrompt');
-      if (isActive || drawnSplats > 0) {
-        prompt.classList.add('opacity-0', 'pointer-events-none');
-      } else {
-        prompt.classList.remove('opacity-0', 'pointer-events-none');
-      }
-
-      lucide.createIcons();
+      updateTimerUI();
+      updateMainButtonUI();
     }
 
     function toggleTimer() {
       playTone('click');
+      if (isCompleted && mode === 'focus') { startBreak(); return; }
       if (!isActive) {
+        if (timeRemaining <= 0) timeRemaining = mode === 'focus' ? focusDuration : breakDuration;
         isActive = true;
         isPaused = false;
-        isCompleted = false;
+        endAt = Date.now() + timeRemaining * 1000;
       } else {
         isPaused = !isPaused;
+        if (!isPaused) endAt = Date.now() + timeRemaining * 1000;
       }
+      updateTimerUI();
       updateMainButtonUI();
     }
 
+    function startBreak() {
+      mode = 'break';
+      isCompleted = false;
+      timeRemaining = isTestMode ? 5 : breakDuration;
+      isActive = true;
+      isPaused = false;
+      endAt = Date.now() + timeRemaining * 1000;
+      updateTimerUI();
+      updateMainButtonUI();
+    }
+
+    function clearCanvas() {
+      drawnSplats = 0;
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      canvas.style.filter = '';
+    }
+
     function resetCurrentCanvas() {
-      playTone('click');
       isActive = false;
       isPaused = false;
       isCompleted = false;
-      timeRemaining = isTestMode ? 15 : (mode === 'focus' ? focusDuration : breakDuration);
-      drawnSplats = 0;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      
-      const metaPanel = document.getElementById('artMetadataPanel');
-      metaPanel.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
-      metaPanel.classList.remove('opacity-100', 'translate-y-0');
-
+      if (mode === 'break') mode = 'focus';
+      timeRemaining = isTestMode ? 15 : focusDuration;
+      clearCanvas();
+      renderPlacardMeta();
       updateTimerUI();
       updateMainButtonUI();
-      document.getElementById('resetModal').classList.add('hidden');
-      document.getElementById('resetModal').classList.remove('flex');
+    }
+
+    function exitSketch() {
+      if (!isTestMode) return;
+      isTestMode = false;
+      focusDuration = settings.focusMin * 60;
+      breakDuration = settings.breakMin * 60;
     }
 
     function triggerQuickSketch() {
       playTone('click');
+      if (isTestMode && !isActive && !isCompleted) { exitSketch(); resetCurrentCanvas(); return; }
+      if (isCompleted || mode === 'break') { mode = 'focus'; selectNextArt(true); }
       isTestMode = true;
       mode = 'focus';
       focusDuration = 15;
       breakDuration = 5;
       timeRemaining = 15;
-      drawnSplats = 0;
+      clearCanvas();
       isCompleted = false;
       isActive = true;
       isPaused = false;
-
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
-      document.getElementById('quickModeBadge').classList.remove('hidden');
-      document.getElementById('quickModeBadge').classList.add('flex');
-      document.getElementById('timerModeLabel').textContent = 'Quick Sketch (15s)';
-
-      const metaPanel = document.getElementById('artMetadataPanel');
-      metaPanel.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
-
+      endAt = Date.now() + timeRemaining * 1000;
+      renderPlacardMeta();
       updateTimerUI();
       updateMainButtonUI();
     }
 
-    function selectRandomArt() {
-      let nextIndex;
-      do {
-        nextIndex = Math.floor(Math.random() * ART_COLLECTION.length);
-      } while (nextIndex === currentArtIndex && ART_COLLECTION.length > 1);
-
-      currentArtIndex = nextIndex;
-      drawnSplats = 0;
+    function setArt(index) {
+      currentArtIndex = index;
       isCompleted = false;
-      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      isActive = false;
+      isPaused = false;
+      clearCanvas();
       loadCurrentArtwork();
-
-      const metaPanel = document.getElementById('artMetadataPanel');
-      metaPanel.classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
-
-      timeRemaining = isTestMode ? 15 : (mode === 'focus' ? focusDuration : breakDuration);
+      timeRemaining = isTestMode ? 15 : focusDuration;
+      renderPlacardMeta();
+      saveStore();
       updateTimerUI();
       updateMainButtonUI();
     }
 
-    function updateCollectionCount() {
-      const countStr = `${unlockedArtIds.length}/${ART_COLLECTION.length}`;
-      document.getElementById('collectionBadgeCount').textContent = countStr;
-      document.getElementById('unveiledFooterCount').textContent = `Unveiled: ${countStr}`;
+    // Prefer pieces you haven't unveiled yet
+    function selectNextArt(keepSketch) {
+      if (!keepSketch) exitSketch();
+      const pool = ART_COLLECTION.map((a, i) => i).filter(i => i !== currentArtIndex);
+      const locked = pool.filter(i => !unlockedArtIds.includes(ART_COLLECTION[i].id));
+      const from = locked.length ? locked : pool;
+      setArt(from.length ? from[Math.floor(Math.random() * from.length)] : currentArtIndex);
     }
 
-    function renderGalleryModal() {
-      const grid = document.getElementById('galleryGrid');
-      grid.innerHTML = '';
-
-      ART_COLLECTION.forEach((art) => {
-        const isUnlocked = unlockedArtIds.includes(art.id);
-        const card = document.createElement('div');
-        
-        if (isUnlocked) {
-          card.className = 'relative rounded-2xl overflow-hidden border border-stone-200/90 bg-white shadow-sm hover:shadow-md transition-all font-sans-ui';
-          card.innerHTML = `
-            <div class="aspect-[4/3] overflow-hidden bg-stone-100 relative">
-              <img src="${art.url}" alt="${art.title}" class="w-full h-full object-cover">
-              <span class="absolute top-1.5 right-1.5 bg-emerald-700/90 text-white text-[8px] font-bold px-1.5 py-0.5 rounded-full uppercase tracking-wider">Unveiled</span>
-            </div>
-            <div class="p-2.5">
-              <h3 class="text-[10px] md:text-[11px] font-bold text-stone-800 truncate">${art.title}</h3>
-              <p class="text-[8.5px] md:text-[9.5px] text-stone-500 truncate">${art.artist} (${art.year})</p>
-            </div>
-          `;
-        } else {
-          card.className = 'relative rounded-2xl overflow-hidden border border-stone-200/60 border-dashed bg-stone-100/60 flex flex-col items-center justify-center aspect-[4/3] p-3 text-center font-sans-ui';
-          card.innerHTML = `
-            <i data-lucide="sparkles" class="w-5 h-5 text-stone-400 mb-1"></i>
-            <span class="text-[9px] font-bold uppercase tracking-wider text-stone-400">Locked</span>
-            <span class="text-[8px] text-stone-400 truncate max-w-[90px] mt-0.5">${art.title}</span>
-          `;
-        }
-        grid.appendChild(card);
-      });
-
-      lucide.createIcons();
-    }
-
-    // Settings Navigation & Tab Switcher
-    function switchSettingsTab(tabName) {
+    // ── Reset with inline confirm ─────────────────────────────
+    let resetArmTimer = null;
+    function onReset() {
+      const btn = $('resetBtn');
+      if (!isActive && drawnSplats === 0 && !isCompleted) { resetCurrentCanvas(); return; }
+      if (btn.classList.contains('armed')) {
+        clearTimeout(resetArmTimer);
+        disarmReset();
+        playTone('click');
+        resetCurrentCanvas();
+        return;
+      }
       playTone('click');
-      const tabs = {
-        timer: { btn: 'tabTimerBtn', panel: 'panelTimer' },
-        growth: { btn: 'tabGrowthBtn', panel: 'panelGrowth' },
-        physics: { btn: 'tabPhysicsBtn', panel: 'panelPhysics' }
-      };
+      btn.classList.add('armed');
+      btn.innerHTML = 'Clear?';
+      resetArmTimer = setTimeout(disarmReset, 2600);
+    }
+    function disarmReset() {
+      const btn = $('resetBtn');
+      btn.classList.remove('armed');
+      btn.innerHTML = '<svg class="i" viewBox="0 0 24 24"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg>';
+    }
 
-      Object.keys(tabs).forEach(t => {
-        const btn = document.getElementById(tabs[t].btn);
-        const panel = document.getElementById(tabs[t].panel);
-        if (t === tabName) {
-          btn.className = 'flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all bg-white text-stone-900 shadow-sm';
-          panel.classList.remove('hidden');
-        } else {
-          btn.className = 'flex-1 py-2 px-1 rounded-xl text-[10px] font-bold uppercase tracking-wider flex items-center justify-center gap-1.5 transition-all text-stone-500 hover:text-stone-800';
-          panel.classList.add('hidden');
-        }
+    // ── Gallery wall ─────────────────────────────────────────
+    function renderGallery() {
+      const grid = $('galleryGrid');
+      grid.innerHTML = '';
+      $('galleryCount').textContent = `${unlockedArtIds.length}/${ART_COLLECTION.length}`;
+      const busy = isActive && !isPaused;
+      ART_COLLECTION.forEach((art, i) => {
+        const open = unlockedArtIds.includes(art.id);
+        const b = document.createElement('button');
+        b.className = 'piece' + (i === currentArtIndex ? ' current' : '');
+        b.disabled = busy;
+        b.setAttribute('aria-label', open ? `Paint ${art.title} again` : 'Paint a hidden piece');
+        const inner = open
+          ? `<img src="${art.url}" alt="" loading="lazy">`
+          : `<div class="locked">${swatchesFor(art).map(c => `<i style="background:${c}"></i>`).join('')}</div>`;
+        b.innerHTML = `<div class="pf"><div class="pm">${inner}</div></div>
+          <div class="t">${open ? art.title : decode(art.title, 0, art.id, 0)}</div>
+          <div class="a">${open ? `${art.artist}, ${art.year}` : '&nbsp;'}</div>`;
+        b.addEventListener('click', () => {
+          playTone('click');
+          closeAll();
+          if (i !== currentArtIndex || isCompleted || drawnSplats > 0) { mode = 'focus'; setArt(i); }
+        });
+        grid.appendChild(b);
       });
     }
 
-    // Initialize interactive event listeners
+    // ── Overlays ─────────────────────────────────────────────
+    function openSheet(id) {
+      closeAll();
+      $('scrim').classList.add('open');
+      $(id).classList.add('open');
+    }
+    function closeAll() {
+      $('scrim').classList.remove('open');
+      $('settingsDrawer').classList.remove('open');
+      $('galleryModal').classList.remove('open');
+    }
+
+    // ── Settings drawer (staged, applied on "Apply") ───────────
+    const temp = {};
+    function syncDrawer() {
+      $('inputFocusMin').value = temp.focusMin; $('labelFocusMin').textContent = `${temp.focusMin}m`;
+      $('inputBreakMin').value = temp.breakMin; $('labelBreakMin').textContent = `${temp.breakMin}m`;
+      $('inputBleedWetness').value = temp.bleedWetness; $('labelBleedWetness').textContent = `${Math.round(temp.bleedWetness * 100)}%`;
+      $('inputBleedSpread').value = temp.bleedSpread; $('labelBleedSpread').textContent = `${temp.bleedSpread}x`;
+      $('inputMaxSplats').value = temp.maxSplats; $('labelMaxSplats').textContent = `${Math.round(temp.maxSplats / 1000)}k`;
+      $('inputBleedFringe').setAttribute('aria-checked', String(temp.bleedFringe));
+      document.querySelectorAll('#renderStyleGroup button').forEach(b => b.classList.toggle('on', b.dataset.style === temp.renderStyle));
+      document.querySelectorAll('#growthPatternGroup button').forEach(b => b.classList.toggle('on', b.dataset.pattern === temp.growthPattern));
+      $('pathName').textContent = temp.growthPattern.replace('-', ' ');
+    }
+
     function setupEventListeners() {
-      // Primary Controls
-      document.getElementById('mainActionBtn').addEventListener('click', toggleTimer);
-      document.getElementById('miniPlayBtn').addEventListener('click', toggleTimer);
-      
-      document.getElementById('resetPromptBtn').addEventListener('click', () => {
+      $('mainActionBtn').addEventListener('click', toggleTimer);
+      $('startBtn').addEventListener('click', toggleTimer);
+      $('matHit').addEventListener('click', () => { if (isActive) toggleTimer(); });
+      $('resetBtn').addEventListener('click', onReset);
+      $('quickSketchBtn').addEventListener('click', triggerQuickSketch);
+      $('skipBtn').addEventListener('click', () => {
         playTone('click');
-        document.getElementById('resetModal').classList.remove('hidden');
-        document.getElementById('resetModal').classList.add('flex');
-      });
-
-      document.getElementById('confirmResetBtn').addEventListener('click', resetCurrentCanvas);
-      document.getElementById('cancelResetBtn').addEventListener('click', () => {
-        playTone('click');
-        document.getElementById('resetModal').classList.add('hidden');
-        document.getElementById('resetModal').classList.remove('flex');
-      });
-
-      document.getElementById('quickSketchBtn').addEventListener('click', triggerQuickSketch);
-      document.getElementById('miniQuickBtn').addEventListener('click', triggerQuickSketch);
-
-      document.getElementById('skipBlockBtn').addEventListener('click', () => {
-        playTone('click');
+        // Zero the clock so the render loop's own flush finishes the painting
         handleSessionCompleted();
       });
+      $('metaNextBtn').addEventListener('click', () => { playTone('click'); mode = 'focus'; selectNextArt(); });
 
-      // Metadata panel buttons
-      document.getElementById('metaBreakBtn').addEventListener('click', () => {
+      $('themeBtn').addEventListener('click', () => { playTone('click'); theme = theme === 'dark' ? 'light' : 'dark'; applyTheme(); saveStore(); });
+      $('openGalleryBtn').addEventListener('click', () => { playTone('click'); renderGallery(); openSheet('galleryModal'); });
+      $('closeGalleryBtn').addEventListener('click', closeAll);
+      $('scrim').addEventListener('click', closeAll);
+
+      $('openSettingsBtn').addEventListener('click', () => {
         playTone('click');
-        mode = 'break';
-        timeRemaining = isTestMode ? 5 : breakDuration;
-        document.getElementById('timerModeLabel').textContent = 'Relaxing Break';
-        document.getElementById('artMetadataPanel').classList.add('opacity-0', 'translate-y-3', 'pointer-events-none', 'h-0');
-        isActive = true;
-        isPaused = false;
-        updateTimerUI();
-        updateMainButtonUI();
+        Object.assign(temp, settings);
+        syncDrawer();
+        openSheet('settingsDrawer');
       });
+      $('closeSettingsBtn').addEventListener('click', closeAll);
 
-      document.getElementById('metaNextBtn').addEventListener('click', () => {
+      const bind = (id, key, parse) => $(id).addEventListener('input', e => { temp[key] = parse(e.target.value); syncDrawer(); });
+      bind('inputFocusMin', 'focusMin', v => parseInt(v));
+      bind('inputBreakMin', 'breakMin', v => parseInt(v));
+      bind('inputBleedWetness', 'bleedWetness', v => parseFloat(v));
+      bind('inputBleedSpread', 'bleedSpread', v => parseFloat(v));
+      bind('inputMaxSplats', 'maxSplats', v => parseInt(v));
+      $('inputBleedFringe').addEventListener('click', () => { temp.bleedFringe = !temp.bleedFringe; syncDrawer(); });
+      document.querySelectorAll('#renderStyleGroup button').forEach(b => b.addEventListener('click', () => { temp.renderStyle = b.dataset.style; syncDrawer(); }));
+      document.querySelectorAll('#growthPatternGroup button').forEach(b => b.addEventListener('click', () => { temp.growthPattern = b.dataset.pattern; syncDrawer(); }));
+
+      $('saveSettingsBtn').addEventListener('click', () => {
         playTone('click');
-        selectRandomArt();
-      });
-
-      // Collapse / Expand Dock Card
-      document.getElementById('toggleCollapseBtn').addEventListener('click', () => {
-        playTone('click');
-        isUiCollapsed = !isUiCollapsed;
-        const chevron = document.getElementById('collapseChevron');
-        const expanded = document.getElementById('dockExpandedContent');
-        const collapsed = document.getElementById('dockCollapsedContent');
-
-        if (isUiCollapsed) {
-          expanded.classList.add('hidden');
-          collapsed.classList.remove('hidden');
-          collapsed.classList.add('flex');
-          chevron.setAttribute('data-lucide', 'chevron-up');
-        } else {
-          expanded.classList.remove('hidden');
-          collapsed.classList.add('hidden');
-          collapsed.classList.remove('flex');
-          chevron.setAttribute('data-lucide', 'chevron-down');
-        }
-        lucide.createIcons();
-      });
-
-      // Gallery Modal
-      document.getElementById('openGalleryBtn').addEventListener('click', () => {
-        playTone('click');
-        renderGalleryModal();
-        document.getElementById('galleryModal').classList.remove('hidden');
-        document.getElementById('galleryModal').classList.add('flex');
-      });
-
-      document.getElementById('closeGalleryBtn').addEventListener('click', () => {
-        playTone('click');
-        document.getElementById('galleryModal').classList.add('hidden');
-        document.getElementById('galleryModal').classList.remove('flex');
-      });
-
-      document.getElementById('dismissGalleryBtn').addEventListener('click', () => {
-        playTone('click');
-        document.getElementById('galleryModal').classList.add('hidden');
-        document.getElementById('galleryModal').classList.remove('flex');
-      });
-
-      // Settings Modal Tabs
-      document.getElementById('tabTimerBtn').addEventListener('click', () => switchSettingsTab('timer'));
-      document.getElementById('tabGrowthBtn').addEventListener('click', () => switchSettingsTab('growth'));
-      document.getElementById('tabPhysicsBtn').addEventListener('click', () => switchSettingsTab('physics'));
-
-      // Open Settings Modal
-      document.getElementById('openSettingsBtn').addEventListener('click', () => {
-        playTone('click');
-        // Preload existing settings into inputs
-        tempSettings.focusMin = Math.round(focusDuration / 60);
-        tempSettings.breakMin = Math.round(breakDuration / 60);
-        tempSettings.growthPattern = growthPattern;
-        tempSettings.renderStyle = renderStyle;
-        tempSettings.bleedWetness = bleedWetness;
-        tempSettings.bleedSpread = bleedSpread;
-        tempSettings.bleedFringe = bleedFringe;
-        tempSettings.maxSplats = maxSplats;
-
-        document.getElementById('inputFocusMin').value = tempSettings.focusMin;
-        document.getElementById('labelFocusMin').textContent = `${tempSettings.focusMin}m`;
-        document.getElementById('inputBreakMin').value = tempSettings.breakMin;
-        document.getElementById('labelBreakMin').textContent = `${tempSettings.breakMin}m`;
-
-        document.getElementById('inputBleedWetness').value = tempSettings.bleedWetness;
-        document.getElementById('labelBleedWetness').textContent = `${Math.round(tempSettings.bleedWetness * 100)}%`;
-        document.getElementById('inputBleedSpread').value = tempSettings.bleedSpread;
-        document.getElementById('labelBleedSpread').textContent = `${tempSettings.bleedSpread}x`;
-        document.getElementById('inputBleedFringe').checked = tempSettings.bleedFringe;
-        document.getElementById('inputMaxSplats').value = tempSettings.maxSplats;
-        document.getElementById('labelMaxSplats').textContent = `${Math.round(tempSettings.maxSplats / 1000)}k`;
-
-        document.getElementById('settingsModal').classList.remove('hidden');
-        document.getElementById('settingsModal').classList.add('flex');
-      });
-
-      document.getElementById('closeSettingsBtn').addEventListener('click', () => {
-        playTone('click');
-        document.getElementById('settingsModal').classList.add('hidden');
-        document.getElementById('settingsModal').classList.remove('flex');
-      });
-
-      document.getElementById('cancelSettingsBtn').addEventListener('click', () => {
-        playTone('click');
-        document.getElementById('settingsModal').classList.add('hidden');
-        document.getElementById('settingsModal').classList.remove('flex');
-      });
-
-      // Live Range Listeners
-      document.getElementById('inputFocusMin').addEventListener('input', (e) => {
-        tempSettings.focusMin = parseInt(e.target.value);
-        document.getElementById('labelFocusMin').textContent = `${tempSettings.focusMin}m`;
-      });
-
-      document.getElementById('inputBreakMin').addEventListener('input', (e) => {
-        tempSettings.breakMin = parseInt(e.target.value);
-        document.getElementById('labelBreakMin').textContent = `${tempSettings.breakMin}m`;
-      });
-
-      document.getElementById('inputBleedWetness').addEventListener('input', (e) => {
-        tempSettings.bleedWetness = parseFloat(e.target.value);
-        document.getElementById('labelBleedWetness').textContent = `${Math.round(tempSettings.bleedWetness * 100)}%`;
-      });
-
-      document.getElementById('inputBleedSpread').addEventListener('input', (e) => {
-        tempSettings.bleedSpread = parseFloat(e.target.value);
-        document.getElementById('labelBleedSpread').textContent = `${tempSettings.bleedSpread}x`;
-      });
-
-      document.getElementById('inputMaxSplats').addEventListener('input', (e) => {
-        tempSettings.maxSplats = parseInt(e.target.value);
-        document.getElementById('labelMaxSplats').textContent = `${Math.round(tempSettings.maxSplats / 1000)}k`;
-      });
-
-      // Growth pattern selection
-      document.querySelectorAll('.pattern-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          tempSettings.growthPattern = btn.dataset.pattern;
-          document.querySelectorAll('.pattern-btn').forEach(b => {
-            b.className = 'pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-white text-stone-600 border-stone-200 hover:bg-stone-50';
-          });
-          btn.className = 'pattern-btn py-2 px-1.5 text-[9.5px] font-bold uppercase tracking-wide rounded-xl border transition-all bg-stone-900 text-white border-stone-900 shadow-sm';
-        });
-      });
-
-      // Render mode selection
-      document.querySelectorAll('.style-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-          tempSettings.renderStyle = btn.dataset.style;
-          document.querySelectorAll('.style-btn').forEach(b => {
-            b.className = 'style-btn w-full text-left p-3 rounded-2xl border transition-all bg-white border-stone-200 hover:bg-stone-50/50';
-          });
-          btn.className = 'style-btn w-full text-left p-3 rounded-2xl border transition-all bg-stone-50 border-stone-800 ring-1 ring-stone-800/20';
-        });
-      });
-
-      // Save & Apply Settings
-      document.getElementById('saveSettingsBtn').addEventListener('click', () => {
-        playTone('click');
+        const changed = Object.keys(temp).some(k => temp[k] !== settings[k]);
+        Object.assign(settings, temp);
+        saveStore();
+        closeAll();
+        if (!changed) return;
         isTestMode = false;
-        document.getElementById('quickModeBadge').classList.add('hidden');
-        document.getElementById('quickModeBadge').classList.remove('flex');
-
-        focusDuration = tempSettings.focusMin * 60;
-        breakDuration = tempSettings.breakMin * 60;
-        timeRemaining = mode === 'focus' ? focusDuration : breakDuration;
-
-        growthPattern = tempSettings.growthPattern;
-        renderStyle = tempSettings.renderStyle;
-        bleedWetness = tempSettings.bleedWetness;
-        bleedSpread = tempSettings.bleedSpread;
-        bleedFringe = document.getElementById('inputBleedFringe').checked;
-        maxSplats = tempSettings.maxSplats;
-
-        document.getElementById('promptStyle').textContent = renderStyle;
-        document.getElementById('promptPattern').textContent = growthPattern;
-
+        applySettings();
+        mode = 'focus';
         resetCurrentCanvas();
-        document.getElementById('settingsModal').classList.add('hidden');
-        document.getElementById('settingsModal').classList.remove('flex');
       });
 
-      // Keyboard Shortcuts
       window.addEventListener('keydown', (e) => {
-        if (e.code === 'Space' && e.target.tagName !== 'INPUT' && e.target.tagName !== 'BUTTON') {
-          e.preventDefault();
-          toggleTimer();
-        } else if (e.code === 'Escape') {
-          document.getElementById('settingsModal').classList.add('hidden');
-          document.getElementById('galleryModal').classList.add('hidden');
-          document.getElementById('resetModal').classList.add('hidden');
-        }
+        if (e.target.tagName === 'INPUT' || e.metaKey || e.ctrlKey || e.altKey) return;
+        const sheetOpen = $('scrim').classList.contains('open');
+        if (e.code === 'Escape') { closeAll(); return; }
+        if (sheetOpen) return;
+        if (e.code === 'Space' && e.target.tagName !== 'BUTTON') { e.preventDefault(); toggleTimer(); }
+        else if (e.key === 'r' || e.key === 'R') onReset();
+        else if (e.key === 'q' || e.key === 'Q') triggerQuickSketch();
+        else if (e.key === 'g' || e.key === 'G') $('openGalleryBtn').click();
+        else if (e.key === 's' || e.key === 'S') $('openSettingsBtn').click();
       });
     }
 
-    // Initialize application on window load
     window.addEventListener('DOMContentLoaded', () => {
-      lucide.createIcons();
+      loadStore();
+      applySettings();
+      applyTheme();
+      timeRemaining = focusDuration;
       setupEventListeners();
       loadCurrentArtwork();
+      renderPlacardMeta();
       startTimerLoop();
       updateTimerUI();
+      updateMainButtonUI();
       updateCollectionCount();
+      renderPips();
       animationFrameId = requestAnimationFrame(updateCanvas);
     });
-  </script>
+</script>
 </body>
 </html>
