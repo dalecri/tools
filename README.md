@@ -10,7 +10,6 @@ Twelve small interactive tools, trackers, and generators in one repo, each in it
 | DREAMLOOP | [dreamloop/](dreamloop/) | A dreamy Strudel step sequencer: extended chords, haze, swing, and a seeded drift melody. |
 | TyQuest Retro | [tyquest/](tyquest/) | A pixel task tracker made for Tyler, with room-code sync. |
 | Paint Pomodoro | [paint-pomodoro/](paint-pomodoro/) | A pomodoro timer inside a natural watercolor studio. |
-| Softleaf Journal | [digital-journal-app/](digital-journal-app/) | A calm journaling app. |
 | Wordkeep | [castle-wordkeep/](castle-wordkeep/) | A quiet home for writing and words. |
 | Little Folders | [little-folders/](little-folders/) | A tiny folder-based organizer. |
 | Tamagotchi Password Generator | [tamagotchi-password-gen/](tamagotchi-password-gen/) | A password generator raised like a virtual pet. |
@@ -32,3 +31,7 @@ Twelve small interactive tools, trackers, and generators in one repo, each in it
 
 Consolidated 2026-10-28 from the single-tool repos mood_tracker, typographic-weather-loom, tyquest, paint-pomodoro, digital-journal-app, castle-wordkeep, little-folders, tamagotchi-password-gen, and password-geode, with Gameboy-about-me added the same day (all files moved byte-for-byte, including castle-wordkeep's JS modules, tyquest's images, and password-geode's scripts and screenshots). Note: `mood_tracker` (this one, the original) is a different repo from `mood-tracker`, which remains standalone. The original `mood_tracker` was removed on 2026-11-05 in favour of the newer Minimal Mood Tracker.
 Iso Pattern Forge was added on 2026-11-05: a single-file isometric outline pattern generator (built by Claude from a prompt by Automata, checked against that prompt before shelving).
+
+## Archive
+
+- **Softleaf Journal** — preserved at [archive/softleaf-journal.html](archive/softleaf-journal.html). Archived 2026-11-08: an older journal build superseded by Little Folders; kept byte-identical, no longer in the gallery.
